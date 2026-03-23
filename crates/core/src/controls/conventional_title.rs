@@ -102,7 +102,7 @@ mod tests {
 
     fn make_change(title: &str) -> GovernedChange {
         GovernedChange {
-            id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+            id: ChangeRequestId::new("test", "owner/repo#1"),
             title: title.to_string(),
             summary: None,
             submitted_by: None,

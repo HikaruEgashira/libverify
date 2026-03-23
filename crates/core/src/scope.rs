@@ -1,13 +1,13 @@
-//! Scope classification and semantic connectivity logic for PR change analysis.
+//! Scope classification and semantic connectivity logic for change request analysis.
 //!
-//! Determines whether a PR's changes are well-scoped (single logical unit)
+//! Determines whether a change request's changes are well-scoped (single logical unit)
 //! or spread across disconnected domains.
 
 use std::collections::{HashMap, HashSet};
 
 use crate::verdict::Severity;
 
-/// Classify the scope of a PR based on the number of connected components
+/// Classify the scope of a change request based on the number of connected components
 /// among its changed code files.
 /// Verified by Creusot in `gh-verify-verif` crate.
 pub fn classify_scope(code_files_count: usize, components: usize) -> Severity {
@@ -957,7 +957,7 @@ mod tests {
 
     #[test]
     fn feature_namespace_fires_on_single_feature_rollout() {
-        // Realistic stencil PR paths (dotfiles already filtered by is_non_code_file)
+        // Realistic stencil CR paths (dotfiles already filtered by is_non_code_file)
         let paths = &[
             "src/compiler/config/outputs/validate-custom-element.ts",
             "src/compiler/config/test/validate-output-dist-custom-element.spec.ts",

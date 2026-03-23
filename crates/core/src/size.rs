@@ -13,7 +13,7 @@ pub fn is_generated_file(filename: &str) -> bool {
 
 use crate::verdict::Severity;
 
-/// Classify a PR's size into a severity level.
+/// Classify a change request's size into a severity level.
 ///
 /// Returns `Error` when either dimension exceeds its error threshold,
 /// `Warning` when either exceeds its warning threshold, `Pass` otherwise.

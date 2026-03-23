@@ -8,7 +8,7 @@ use crate::scope::{
 use crate::union_find::{NodeKind, UnionFind};
 use crate::verdict::Severity;
 
-/// Verifies that PR changes are well-scoped (single logical unit).
+/// Verifies that change request changes are well-scoped (single logical unit).
 pub struct ScopedChangeControl;
 
 impl Control for ScopedChangeControl {
@@ -78,7 +78,7 @@ fn evaluate_change(id: ControlId, cr: &GovernedChange) -> ControlFinding {
     if code_files.len() <= 1 {
         return ControlFinding::satisfied(
             id,
-            format!("{cr_subject}: PR is well-scoped"),
+            format!("{cr_subject}: change request is well-scoped"),
             code_files.iter().map(|a| a.path.clone()).collect(),
         );
     }
@@ -148,9 +148,11 @@ fn evaluate_change(id: ControlId, cr: &GovernedChange) -> ControlFinding {
     let subjects: Vec<String> = code_files.iter().map(|a| a.path.clone()).collect();
 
     match severity {
-        Severity::Pass => {
-            ControlFinding::satisfied(id, format!("{cr_subject}: PR is well-scoped"), subjects)
-        }
+        Severity::Pass => ControlFinding::satisfied(
+            id,
+            format!("{cr_subject}: change request is well-scoped"),
+            subjects,
+        ),
         _ => {
             let comp_groups = graph.get_components();
             let mut detail = String::new();
@@ -163,7 +165,9 @@ fn evaluate_change(id: ControlId, cr: &GovernedChange) -> ControlFinding {
             }
             ControlFinding::violated(
                 id,
-                format!("{cr_subject}: PR has {components} disconnected change clusters\n{detail}"),
+                format!(
+                    "{cr_subject}: change request has {components} disconnected change clusters\n{detail}"
+                ),
                 subjects,
             )
         }
@@ -190,7 +194,7 @@ mod tests {
     fn bundle_with(assets: Vec<ChangedAsset>) -> EvidenceBundle {
         EvidenceBundle {
             change_requests: vec![GovernedChange {
-                id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+                id: ChangeRequestId::new("test", "owner/repo#1"),
                 title: "test".to_string(),
                 summary: None,
                 submitted_by: None,

@@ -1,7 +1,7 @@
 use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{CheckConclusion, EvidenceBundle, EvidenceState};
 
-/// Verifies that CI check runs on the PR HEAD commit all passed.
+/// Verifies that CI check runs on the change request HEAD commit all passed.
 pub struct RequiredStatusChecksControl;
 
 impl Control for RequiredStatusChecksControl {

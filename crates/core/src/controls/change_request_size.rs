@@ -117,7 +117,7 @@ mod tests {
     fn bundle_with(assets: EvidenceState<Vec<ChangedAsset>>) -> EvidenceBundle {
         EvidenceBundle {
             change_requests: vec![GovernedChange {
-                id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+                id: ChangeRequestId::new("test", "owner/repo#1"),
                 title: "test".to_string(),
                 summary: None,
                 submitted_by: None,

@@ -7,7 +7,7 @@ use crate::verdict::Severity;
 /// by checking actual commit history for merge commits (evidence of non-linear history).
 ///
 /// Instead of checking branch protection API settings (which require admin permissions),
-/// this control examines the factual commit history collected from the PR.
+/// this control examines the factual commit history collected from the change request.
 /// See ADR-0002 for rationale.
 pub struct BranchHistoryIntegrityControl;
 
@@ -109,7 +109,7 @@ mod tests {
 
     fn make_change(revisions: EvidenceState<Vec<SourceRevision>>) -> GovernedChange {
         GovernedChange {
-            id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+            id: ChangeRequestId::new("test", "owner/repo#1"),
             title: "feat: test".to_string(),
             summary: None,
             submitted_by: Some("author".to_string()),

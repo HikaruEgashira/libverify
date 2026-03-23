@@ -47,7 +47,7 @@ fn evaluate_batch(id: ControlId, batch: &PromotionBatch) -> ControlFinding {
                 ControlFinding::violated(
                     id,
                     format!(
-                        "{batch_subject}: no linked change requests found — release has no PR traceability"
+                        "{batch_subject}: no linked change requests found — release has no CR traceability"
                     ),
                     vec![batch_subject],
                 )
@@ -102,8 +102,8 @@ mod tests {
     #[test]
     fn satisfied_when_crs_linked() {
         let batch = make_batch(EvidenceState::complete(vec![
-            ChangeRequestId::new("github_pr", "owner/repo#1"),
-            ChangeRequestId::new("github_pr", "owner/repo#2"),
+            ChangeRequestId::new("test", "owner/repo#1"),
+            ChangeRequestId::new("test", "owner/repo#2"),
         ]));
         let findings = ReleaseTraceabilityControl.evaluate(&bundle(vec![batch]));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);

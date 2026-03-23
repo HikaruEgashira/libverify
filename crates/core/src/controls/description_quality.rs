@@ -71,7 +71,7 @@ mod tests {
 
     fn make_change(summary: Option<&str>) -> GovernedChange {
         GovernedChange {
-            id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+            id: ChangeRequestId::new("test", "owner/repo#1"),
             title: "test".to_string(),
             summary: summary.map(|s| s.to_string()),
             submitted_by: None,

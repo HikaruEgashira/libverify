@@ -132,7 +132,7 @@ mod tests {
         revisions: EvidenceState<Vec<SourceRevision>>,
     ) -> GovernedChange {
         GovernedChange {
-            id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+            id: ChangeRequestId::new("test", "owner/repo#1"),
             title: "test".to_string(),
             summary: None,
             submitted_by: None,

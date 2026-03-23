@@ -4,7 +4,7 @@ use crate::evidence::{EvidenceBundle, EvidenceState, GovernedChange};
 /// Verifies that source revisions follow a linear history policy (no merge commits).
 ///
 /// Maps to SOC2 CC8.1: change management process integrity.
-/// Merge commits in a PR indicate non-linear history (e.g. merging the base
+/// Merge commits in a change request indicate non-linear history (e.g. merging the base
 /// branch into the feature branch), which can obscure the audit trail and
 /// make it harder to review individual changes.
 pub struct MergeCommitPolicyControl;
@@ -101,7 +101,7 @@ mod tests {
 
     fn make_change(revisions: EvidenceState<Vec<SourceRevision>>) -> GovernedChange {
         GovernedChange {
-            id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+            id: ChangeRequestId::new("test", "owner/repo#1"),
             title: "test".to_string(),
             summary: None,
             submitted_by: None,

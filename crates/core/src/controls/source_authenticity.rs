@@ -122,7 +122,7 @@ mod tests {
 
     fn make_change(verified: bool) -> GovernedChange {
         GovernedChange {
-            id: ChangeRequestId::new("github_pr", "owner/repo#7"),
+            id: ChangeRequestId::new("test", "owner/repo#7"),
             title: "fix: sign commits".to_string(),
             summary: None,
             submitted_by: Some("author".to_string()),

@@ -144,7 +144,7 @@ mod tests {
             .collect();
 
         GovernedChange {
-            id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+            id: ChangeRequestId::new("test", "owner/repo#1"),
             title: "feat: add new control".to_string(),
             summary: None,
             submitted_by: Some("author".to_string()),

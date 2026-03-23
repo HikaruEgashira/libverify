@@ -18,7 +18,7 @@ pub fn short_sha(sha: &str) -> &str {
 // critical logic is proven correct.
 
 /// Core predicate for the four-eyes principle.
-/// An approver is independent iff they are neither a commit author nor the PR author.
+/// An approver is independent iff they are neither a commit author nor the change request author.
 ///
 /// Verified by Creusot in `gh-verify-verif` crate.
 pub fn is_approver_independent(is_commit_author: bool, is_pr_author: bool) -> bool {

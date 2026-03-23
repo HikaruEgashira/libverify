@@ -131,7 +131,7 @@ mod tests {
 
     fn make_change() -> GovernedChange {
         GovernedChange {
-            id: ChangeRequestId::new("github_pr", "owner/repo#1"),
+            id: ChangeRequestId::new("test", "owner/repo#1"),
             title: "feat: add evidence layer".to_string(),
             summary: None,
             submitted_by: Some("author".to_string()),
@@ -187,7 +187,8 @@ mod tests {
             }],
             vec![EvidenceGap::Unsupported {
                 source: "github".to_string(),
-                capability: "author login unavailable for PR commit evidence".to_string(),
+                capability: "author login unavailable for change request commit evidence"
+                    .to_string(),
             }],
         );
 

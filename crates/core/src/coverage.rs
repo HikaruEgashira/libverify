@@ -1,4 +1,4 @@
-//! LCOV-based coverage analysis for pull request diffs.
+//! LCOV-based coverage analysis for change request diffs.
 //!
 //! Pure functions that parse LCOV reports, extract changed lines from
 //! unified diffs, and classify test coverage severity. No I/O — all
@@ -39,7 +39,7 @@ pub struct CoverageReport {
     pub files: Vec<FileCoverage>,
 }
 
-/// Per-file coverage analysis result for PR changed lines.
+/// Per-file coverage analysis result for change request changed lines.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileAnalysis {
     pub path: String,
@@ -49,7 +49,7 @@ pub struct FileAnalysis {
     pub coverage_pct: f64,
 }
 
-/// Aggregate coverage analysis for the entire PR.
+/// Aggregate coverage analysis for the entire change request.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoverageAnalysis {
     pub files: Vec<FileAnalysis>,
@@ -160,7 +160,7 @@ pub fn extract_changed_lines(patch: &str) -> Vec<u32> {
     result
 }
 
-/// Check whether an LCOV path (often absolute) matches a PR path (relative).
+/// Check whether an LCOV path (often absolute) matches a change request path (relative).
 ///
 /// Returns true if `lcov_path` ends with `/<pr_path>`, or if they are
 /// equal after stripping `./` prefixes.
@@ -178,7 +178,7 @@ pub fn resolve_path(lcov_path: &str, pr_path: &str) -> bool {
     lcov_normalized.ends_with(&suffix)
 }
 
-/// Analyze coverage of PR changed lines against a parsed report.
+/// Analyze coverage of change request changed lines against a parsed report.
 ///
 /// For each changed file, finds the matching LCOV entry via `resolve_path`,
 /// then checks which changed lines have hit_count > 0. Files not present
@@ -445,7 +445,7 @@ end_of_record
 
     // --- resolve_path ---
 
-    /// WHY: LCOV typically records absolute paths. The PR uses repo-relative
+    /// WHY: LCOV typically records absolute paths. The CR uses repo-relative
     /// paths. Suffix matching bridges this gap.
     #[test]
     fn resolve_path_absolute_to_relative() {
@@ -455,7 +455,7 @@ end_of_record
         ));
     }
 
-    /// WHY: When LCOV path equals PR path exactly (both relative), it must match.
+    /// WHY: When LCOV path equals CR path exactly (both relative), it must match.
     #[test]
     fn resolve_path_exact() {
         assert!(resolve_path("src/main.rs", "src/main.rs"));

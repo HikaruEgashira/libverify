@@ -1,4 +1,4 @@
-//! Test coverage heuristics for pull request diffs.
+//! Test coverage heuristics for change request diffs.
 //!
 //! This module maps changed source files to likely companion test files
 //! using path conventions and strict semantic matching guards.

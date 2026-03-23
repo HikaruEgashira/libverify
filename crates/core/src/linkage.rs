@@ -1,29 +1,31 @@
 use serde::{Deserialize, Serialize};
 
-/// The kind of issue reference found in a PR body.
+/// The kind of issue reference found in a change request body.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum IssueRefKind {
-    GitHubIssue,
+    /// Numeric issue: `#123` (GitHub, GitLab, Bitbucket, Gitea)
+    NumericIssue,
     /// Project ticket in KEY-123 format (Jira, Linear, Shortcut, etc.).
     ProjectTicket,
     Url,
 }
 
-// Backward-compatible alias for callers that reference JiraTicket.
+// Backward-compatible aliases.
 #[allow(non_upper_case_globals)]
 impl IssueRefKind {
     pub const JiraTicket: Self = Self::ProjectTicket;
+    pub const GitHubIssue: Self = Self::NumericIssue;
 }
 
-/// A single issue reference extracted from PR text.
+/// A single issue reference extracted from change request text.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IssueReference {
     pub kind: IssueRefKind,
     pub value: String,
 }
 
-/// GitHub closing keyword prefixes (case-insensitive matching handled by caller).
+/// Closing keyword prefixes (GitHub, GitLab, Bitbucket) — case-insensitive matching handled by caller.
 const CLOSING_KEYWORDS: &[&str] = &[
     "fixes", "fix", "fixed", "closes", "close", "closed", "resolves", "resolve", "resolved",
 ];
@@ -44,10 +46,10 @@ const TRACKER_URL_PATTERNS: &[&str] = &[
     "notion.so/",        // Notion
 ];
 
-/// Extract issue references from a PR body.
+/// Extract issue references from a change request body.
 ///
 /// Recognized patterns:
-/// - GitHub issue: `#123`, `fixes #456`, `closes #789`, `resolves #012`
+/// - Numeric issue: `#123`, `fixes #456`, `closes #789`, `resolves #012` (GitHub, GitLab, Bitbucket, Gitea)
 /// - Project ticket: `PROJ-123`, `ENG-456` (Jira, Linear, etc.)
 /// - Shortcut: `sc-12345` (case-insensitive two-letter prefix)
 /// - URL: URLs containing known tracker patterns (GitHub, Jira, Linear, Notion, Shortcut)
@@ -58,8 +60,8 @@ pub fn extract_issue_references(body: &str, custom_patterns: &[&str]) -> Vec<Iss
     // Extract URL references first (before other parsing mutates state)
     extract_urls(body, &mut refs);
 
-    // Extract GitHub issue references (#N and keyword #N)
-    extract_github_issues(body, &mut refs);
+    // Extract numeric issue references (#N and keyword #N)
+    extract_numeric_issues(body, &mut refs);
 
     // Extract project ticket references (PROJ-123, ENG-456, sc-12345)
     extract_project_tickets(body, &mut refs);
@@ -79,12 +81,12 @@ pub fn has_issue_linkage(refs: &[IssueReference]) -> bool {
     !refs.is_empty()
 }
 
-/// Extract GitHub issue references: bare `#123` and keyword-prefixed `fixes #123`.
+/// Extract numeric issue references: bare `#123` and keyword-prefixed `fixes #123`.
 ///
 /// All indexing operates on `Vec<char>` to avoid byte/char index confusion
 /// with non-ASCII input. The keyword text for the output is reconstructed
 /// from `body_chars` (original casing) rather than slicing `body` by byte.
-fn extract_github_issues(body: &str, refs: &mut Vec<IssueReference>) {
+fn extract_numeric_issues(body: &str, refs: &mut Vec<IssueReference>) {
     let lower = body.to_lowercase();
     let chars: Vec<char> = lower.chars().collect();
     let body_chars: Vec<char> = body.chars().collect();
@@ -114,7 +116,7 @@ fn extract_github_issues(body: &str, refs: &mut Vec<IssueReference>) {
                     let kw_original: String = body_chars[i..i + kw_chars.len()].iter().collect();
                     let full = format!("{kw_original} #{num_str}");
                     refs.push(IssueReference {
-                        kind: IssueRefKind::GitHubIssue,
+                        kind: IssueRefKind::NumericIssue,
                         value: full,
                     });
                     i = end;
@@ -133,7 +135,7 @@ fn extract_github_issues(body: &str, refs: &mut Vec<IssueReference>) {
             let preceded_ok = i == 0 || (!chars[i - 1].is_alphanumeric() && chars[i - 1] != '&');
             if preceded_ok && let Some((num_str, end)) = parse_digits(&body_chars, i + 1) {
                 refs.push(IssueReference {
-                    kind: IssueRefKind::GitHubIssue,
+                    kind: IssueRefKind::NumericIssue,
                     value: format!("#{num_str}"),
                 });
                 i = end;
@@ -149,7 +151,7 @@ fn extract_github_issues(body: &str, refs: &mut Vec<IssueReference>) {
 ///
 /// Returns `None` if there are no digits **or** if the digit run is immediately
 /// followed by an alphanumeric character, `_`, or `-`. This prevents matching
-/// `#123abc` as a GitHub issue reference while still accepting `#123`, `#123 `,
+/// `#123abc` as a numeric issue reference while still accepting `#123`, `#123 `,
 /// `#123.`, and `#123!`.
 fn parse_digits(chars: &[char], start: usize) -> Option<(String, usize)> {
     let mut end = start;
