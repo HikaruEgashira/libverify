@@ -95,7 +95,7 @@ pub struct SlsaLevelProfile {
 impl SlsaLevelProfile {
     pub fn new(source_level: SlsaLevel, build_level: SlsaLevel) -> Self {
         let profile_name =
-            format!("slsa-source-{}-build-{}", source_level, build_level).to_ascii_lowercase();
+            format!("slsa-source-{source_level}-build-{build_level}").to_ascii_lowercase();
         Self {
             source_level,
             build_level,

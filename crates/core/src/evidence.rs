@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// Controls use this to distinguish between a verified absence and an
 /// evidence-collection failure, which maps to different control statuses.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(tag = "state", rename_all = "snake_case")]
 pub enum EvidenceState<T> {
     /// All expected data was collected successfully.
@@ -16,13 +16,8 @@ pub enum EvidenceState<T> {
     /// No usable data could be collected; only gap descriptions remain.
     Missing { gaps: Vec<EvidenceGap> },
     /// The evidence category does not apply to this context.
+    #[default]
     NotApplicable,
-}
-
-impl<T> Default for EvidenceState<T> {
-    fn default() -> Self {
-        Self::NotApplicable
-    }
 }
 
 impl<T> EvidenceState<T> {
