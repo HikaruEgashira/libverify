@@ -44,10 +44,10 @@ pub fn render(
     if only_failures {
         filter_sarif_runs(&mut sarif);
     }
-    if let Some(evidence) = &result.evidence {
-        if let Some(run) = sarif["runs"].as_array_mut().and_then(|a| a.first_mut()) {
-            run["properties"]["evidence"] = serde_json::to_value(evidence)?;
-        }
+    if let Some(evidence) = &result.evidence
+        && let Some(run) = sarif["runs"].as_array_mut().and_then(|a| a.first_mut())
+    {
+        run["properties"]["evidence"] = serde_json::to_value(evidence)?;
     }
     Ok(serde_json::to_string_pretty(&sarif)?)
 }
