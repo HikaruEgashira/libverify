@@ -11,11 +11,10 @@ pub enum IssueRefKind {
     Url,
 }
 
-// Backward-compatible aliases.
+// Backward-compatible alias.
 #[allow(non_upper_case_globals)]
 impl IssueRefKind {
     pub const JiraTicket: Self = Self::ProjectTicket;
-    pub const GitHubIssue: Self = Self::NumericIssue;
 }
 
 /// A single issue reference extracted from change request text.
@@ -380,7 +379,7 @@ mod tests {
     fn github_issue_bare_hash() {
         let refs = extract_issue_references("Related to #123", &[]);
         assert!(has_issue_linkage(&refs));
-        assert_eq!(refs[0].kind, IssueRefKind::GitHubIssue);
+        assert_eq!(refs[0].kind, IssueRefKind::NumericIssue);
         assert_eq!(refs[0].value, "#123");
     }
 
@@ -446,7 +445,7 @@ mod tests {
         assert!(has_issue_linkage(&refs));
         assert!(refs.len() >= 3);
         let kinds: Vec<&IssueRefKind> = refs.iter().map(|r| &r.kind).collect();
-        assert!(kinds.contains(&&IssueRefKind::GitHubIssue));
+        assert!(kinds.contains(&&IssueRefKind::NumericIssue));
         assert!(kinds.contains(&&IssueRefKind::JiraTicket));
         assert!(kinds.contains(&&IssueRefKind::Url));
     }
