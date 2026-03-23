@@ -11,9 +11,7 @@ fn builtin_rule_description(id: &str) -> &'static str {
         "branch-history-integrity" => {
             "Branch history must be continuous and protected from force-push"
         }
-        "branch-protection-enforcement" => {
-            "Branch protection rules must be continuously enforced"
-        }
+        "branch-protection-enforcement" => "Branch protection rules must be continuously enforced",
         "two-party-review" => "At least two independent reviewers must approve changes",
         "build-provenance" => "Artifacts must have verified SLSA provenance",
         "required-status-checks" => "At least one required status check must be configured",
@@ -30,9 +28,7 @@ fn builtin_rule_description(id: &str) -> &'static str {
         "description-quality" => "Change requests must include a meaningful description",
         "merge-commit-policy" => "Source revisions must follow linear history (no merge commits)",
         "conventional-title" => "Titles must follow Conventional Commits format",
-        "security-file-change" => {
-            "Changes to security-sensitive files require heightened scrutiny"
-        }
+        "security-file-change" => "Changes to security-sensitive files require heightened scrutiny",
         "release-traceability" => "Release batches must trace to governed change requests",
         _ => "Custom control",
     }

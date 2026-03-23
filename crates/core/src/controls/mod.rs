@@ -19,7 +19,7 @@ pub mod stale_review;
 pub mod test_coverage;
 pub mod two_party_review;
 
-use crate::control::{builtin, Control};
+use crate::control::{Control, builtin};
 use crate::slsa::{SlsaLevel, SlsaTrack};
 
 use self::branch_history_integrity::BranchHistoryIntegrityControl;
@@ -125,8 +125,7 @@ mod tests {
     fn slsa_l1_returns_l1_controls_only() {
         let controls = slsa_controls(SlsaLevel::L1, SlsaLevel::L1);
         for c in &controls {
-            let mapping =
-                control_slsa_mapping(&c.id()).expect("should be SLSA-mapped");
+            let mapping = control_slsa_mapping(&c.id()).expect("should be SLSA-mapped");
             assert!(
                 mapping.level <= SlsaLevel::L1,
                 "{:?} is L{:?} but should be L1 or below",
@@ -140,7 +139,10 @@ mod tests {
     fn all_slsa_includes_l3_build_and_l4_source() {
         let controls = all_slsa_controls();
         let ids: Vec<_> = controls.iter().map(|c| c.id()).collect();
-        assert!(ids.iter().any(|id| id.as_str() == builtin::TWO_PARTY_REVIEW));
+        assert!(
+            ids.iter()
+                .any(|id| id.as_str() == builtin::TWO_PARTY_REVIEW)
+        );
         assert!(ids.iter().any(|id| id.as_str() == builtin::BUILD_ISOLATION));
     }
 
@@ -148,7 +150,10 @@ mod tests {
     fn all_controls_includes_compliance() {
         let controls = all_controls();
         let ids: Vec<_> = controls.iter().map(|c| c.id()).collect();
-        assert!(ids.iter().any(|id| id.as_str() == builtin::CHANGE_REQUEST_SIZE));
+        assert!(
+            ids.iter()
+                .any(|id| id.as_str() == builtin::CHANGE_REQUEST_SIZE)
+        );
         assert!(ids.iter().any(|id| id.as_str() == builtin::ISSUE_LINKAGE));
     }
 
@@ -205,16 +210,28 @@ mod tests {
     fn slsa_controls_for_level_source_l2() {
         let controls = slsa_controls_for_level(SlsaTrack::Source, SlsaLevel::L2);
         let ids: Vec<_> = controls.iter().map(|c| c.id()).collect();
-        assert!(ids.iter().any(|id| id.as_str() == builtin::BRANCH_HISTORY_INTEGRITY));
-        assert!(!ids.iter().any(|id| id.as_str() == builtin::BRANCH_PROTECTION_ENFORCEMENT));
+        assert!(
+            ids.iter()
+                .any(|id| id.as_str() == builtin::BRANCH_HISTORY_INTEGRITY)
+        );
+        assert!(
+            !ids.iter()
+                .any(|id| id.as_str() == builtin::BRANCH_PROTECTION_ENFORCEMENT)
+        );
     }
 
     #[test]
     fn slsa_controls_for_level_build_l2() {
         let controls = slsa_controls_for_level(SlsaTrack::Build, SlsaLevel::L2);
         let ids: Vec<_> = controls.iter().map(|c| c.id()).collect();
-        assert!(ids.iter().any(|id| id.as_str() == builtin::HOSTED_BUILD_PLATFORM));
-        assert!(ids.iter().any(|id| id.as_str() == builtin::PROVENANCE_AUTHENTICITY));
+        assert!(
+            ids.iter()
+                .any(|id| id.as_str() == builtin::HOSTED_BUILD_PLATFORM)
+        );
+        assert!(
+            ids.iter()
+                .any(|id| id.as_str() == builtin::PROVENANCE_AUTHENTICITY)
+        );
         assert!(!ids.iter().any(|id| id.as_str() == builtin::BUILD_ISOLATION));
     }
 }

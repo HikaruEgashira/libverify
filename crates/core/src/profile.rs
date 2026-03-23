@@ -94,8 +94,8 @@ pub struct SlsaLevelProfile {
 
 impl SlsaLevelProfile {
     pub fn new(source_level: SlsaLevel, build_level: SlsaLevel) -> Self {
-        let profile_name = format!("slsa-source-{}-build-{}", source_level, build_level)
-            .to_ascii_lowercase();
+        let profile_name =
+            format!("slsa-source-{}-build-{}", source_level, build_level).to_ascii_lowercase();
         Self {
             source_level,
             build_level,
@@ -189,7 +189,10 @@ pub fn apply_profile(
     profile: &dyn ControlProfile,
     findings: &[ControlFinding],
 ) -> Vec<ProfileOutcome> {
-    findings.iter().map(|finding| profile.map(finding)).collect()
+    findings
+        .iter()
+        .map(|finding| profile.map(finding))
+        .collect()
 }
 
 #[cfg(test)]

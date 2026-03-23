@@ -1,7 +1,5 @@
 use anyhow::Result;
-use libverify_core::assessment::{
-    AssessmentReport, BatchEntry, BatchReport, VerificationResult,
-};
+use libverify_core::assessment::{AssessmentReport, BatchEntry, BatchReport, VerificationResult};
 use libverify_core::profile::GateDecision;
 
 pub fn render(result: &VerificationResult, only_failures: bool) -> Result<String> {

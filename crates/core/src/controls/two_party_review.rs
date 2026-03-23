@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{
     ApprovalDisposition, EvidenceBundle, EvidenceGap, EvidenceState, GovernedChange,
 };
@@ -261,6 +261,9 @@ mod tests {
 
     #[test]
     fn correct_control_id() {
-        assert_eq!(TwoPartyReviewControl.id(), builtin::id(builtin::TWO_PARTY_REVIEW));
+        assert_eq!(
+            TwoPartyReviewControl.id(),
+            builtin::id(builtin::TWO_PARTY_REVIEW)
+        );
     }
 }

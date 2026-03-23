@@ -167,15 +167,10 @@ mod tests {
             ControlStatus::Violated => {
                 ControlFinding::violated(id, "test rationale", vec!["subject".into()])
             }
-            ControlStatus::Indeterminate => ControlFinding::indeterminate(
-                id,
-                "test rationale",
-                vec!["subject".into()],
-                vec![],
-            ),
-            ControlStatus::NotApplicable => {
-                ControlFinding::not_applicable(id, "test rationale")
+            ControlStatus::Indeterminate => {
+                ControlFinding::indeterminate(id, "test rationale", vec!["subject".into()], vec![])
             }
+            ControlStatus::NotApplicable => ControlFinding::not_applicable(id, "test rationale"),
         }
     }
 

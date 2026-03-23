@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, EvidenceState, GovernedChange};
 use crate::scope::{
     FileRole, classify_file_role, classify_scope, extract_feature_namespace, is_non_code_file,

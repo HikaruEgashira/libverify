@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, EvidenceState};
 use crate::integrity::build_isolation_severity;
 use crate::verdict::Severity;
@@ -118,7 +118,10 @@ mod tests {
         let findings = BuildIsolationControl.evaluate(&evidence);
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
-        assert_eq!(findings[0].control_id, builtin::id(builtin::BUILD_ISOLATION));
+        assert_eq!(
+            findings[0].control_id,
+            builtin::id(builtin::BUILD_ISOLATION)
+        );
     }
 
     #[test]
@@ -274,6 +277,9 @@ mod tests {
 
     #[test]
     fn correct_control_id() {
-        assert_eq!(BuildIsolationControl.id(), builtin::id(builtin::BUILD_ISOLATION));
+        assert_eq!(
+            BuildIsolationControl.id(),
+            builtin::id(builtin::BUILD_ISOLATION)
+        );
     }
 }

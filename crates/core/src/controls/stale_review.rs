@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{ApprovalDisposition, EvidenceBundle, EvidenceState, GovernedChange};
 
 /// Detects approval decisions that predate the latest non-merge source revision.

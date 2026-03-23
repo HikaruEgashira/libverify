@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, GovernedChange};
 
 /// Minimum body length (in characters) for a change request description.

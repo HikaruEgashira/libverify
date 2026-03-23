@@ -785,7 +785,10 @@ mod tests {
         );
         // RSpec spec/ directory (top-level and nested)
         assert_eq!(classify_file_role("spec/parser_spec.rb"), FileRole::Test);
-        assert_eq!(classify_file_role("spec/models/user_spec.rb"), FileRole::Test);
+        assert_eq!(
+            classify_file_role("spec/models/user_spec.rb"),
+            FileRole::Test
+        );
         assert_eq!(
             classify_file_role("gems/mylib/spec/mylib_spec.rb"),
             FileRole::Test

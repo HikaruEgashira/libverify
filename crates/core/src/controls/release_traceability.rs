@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, EvidenceState, PromotionBatch};
 
 /// Verifies that release promotion batches have linked change requests.

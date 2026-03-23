@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, EvidenceState, GovernedChange};
 use crate::integrity::branch_history_severity;
 use crate::verdict::Severity;
@@ -133,7 +133,10 @@ mod tests {
         let findings = BranchHistoryIntegrityControl.evaluate(&evidence);
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
-        assert_eq!(findings[0].control_id, builtin::id(builtin::BRANCH_HISTORY_INTEGRITY));
+        assert_eq!(
+            findings[0].control_id,
+            builtin::id(builtin::BRANCH_HISTORY_INTEGRITY)
+        );
     }
 
     #[test]

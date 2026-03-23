@@ -30,13 +30,23 @@ pub fn parse_format(s: &str) -> Result<Format> {
 pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {
     match opts.format {
         Format::Json => json::render(result, opts.only_failures),
-        Format::Sarif => sarif::render(result, opts.only_failures, &opts.tool_name, &opts.tool_version),
+        Format::Sarif => sarif::render(
+            result,
+            opts.only_failures,
+            &opts.tool_name,
+            &opts.tool_version,
+        ),
     }
 }
 
 pub fn render_batch(opts: &OutputOptions, batch: &BatchReport) -> Result<String> {
     match opts.format {
         Format::Json => json::render_batch(batch, opts.only_failures),
-        Format::Sarif => sarif::render_batch(batch, opts.only_failures, &opts.tool_name, &opts.tool_version),
+        Format::Sarif => sarif::render_batch(
+            batch,
+            opts.only_failures,
+            &opts.tool_name,
+            &opts.tool_version,
+        ),
     }
 }

@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, EvidenceState};
 use crate::size::{classify_pr_size, is_generated_file};
 use crate::verdict::Severity;
@@ -73,7 +73,9 @@ fn evaluate_change(id: ControlId, cr: &crate::evidence::GovernedChange) -> Contr
     match severity {
         Severity::Pass => ControlFinding::satisfied(
             id,
-            format!("Change request size is acceptable ({total_lines} lines across {total_files} files)"),
+            format!(
+                "Change request size is acceptable ({total_lines} lines across {total_files} files)"
+            ),
             subjects,
         ),
         Severity::Warning => ControlFinding::violated(

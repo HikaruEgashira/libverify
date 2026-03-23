@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, EvidenceState};
 use crate::integrity::provenance_authenticity_severity;
 use crate::verdict::Severity;
@@ -128,7 +128,10 @@ mod tests {
         let findings = ProvenanceAuthenticityControl.evaluate(&evidence);
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
-        assert_eq!(findings[0].control_id, builtin::id(builtin::PROVENANCE_AUTHENTICITY));
+        assert_eq!(
+            findings[0].control_id,
+            builtin::id(builtin::PROVENANCE_AUTHENTICITY)
+        );
     }
 
     #[test]

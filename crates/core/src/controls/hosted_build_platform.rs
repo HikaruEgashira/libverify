@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, EvidenceState};
 use crate::integrity::hosted_build_severity;
 use crate::verdict::Severity;
@@ -98,7 +98,10 @@ mod tests {
         let findings = HostedBuildPlatformControl.evaluate(&evidence);
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
-        assert_eq!(findings[0].control_id, builtin::id(builtin::HOSTED_BUILD_PLATFORM));
+        assert_eq!(
+            findings[0].control_id,
+            builtin::id(builtin::HOSTED_BUILD_PLATFORM)
+        );
     }
 
     #[test]

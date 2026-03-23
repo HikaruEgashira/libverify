@@ -1,4 +1,4 @@
-use crate::control::{builtin, Control, ControlFinding, ControlId};
+use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{CheckConclusion, EvidenceBundle, EvidenceState};
 
 /// Verifies that CI check runs on the PR HEAD commit all passed.
