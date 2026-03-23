@@ -1,0 +1,9 @@
+[package]
+name = "libverify-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Platform-agnostic SDLC verification engine — evidence model, controls, assessment"
+
+[dependencies]
+serde = { workspace = true }

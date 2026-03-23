@@ -1,0 +1,9 @@
+[package]
+name = "libverify-verif"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Creusot formal verification targets for libverify predicates"
+
+[dependencies]
+creusot-std = { workspace = true }

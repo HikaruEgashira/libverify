@@ -1,0 +1,12 @@
+[package]
+name = "libverify-output"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Output formatters (SARIF, JSON) for libverify verification results"
+
+[dependencies]
+libverify-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }

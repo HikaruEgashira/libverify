@@ -1,0 +1,13 @@
+[package]
+name = "libverify-policy"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "OPA Rego policy engine for libverify — maps control findings to gate decisions"
+
+[dependencies]
+libverify-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+regorus = { workspace = true }
