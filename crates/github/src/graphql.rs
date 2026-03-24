@@ -415,11 +415,11 @@ fn extract_status_checks(
 }
 
 fn check_errors(resp: &GqlResponse) -> Result<()> {
-    if let Some(errors) = &resp.errors {
-        if resp.data.is_none() {
-            let msgs: Vec<&str> = errors.iter().map(|e| e.message.as_str()).collect();
-            bail!("GraphQL errors: {}", msgs.join(", "));
-        }
+    if let Some(errors) = &resp.errors
+        && resp.data.is_none()
+    {
+        let msgs: Vec<&str> = errors.iter().map(|e| e.message.as_str()).collect();
+        bail!("GraphQL errors: {}", msgs.join(", "));
     }
     Ok(())
 }
@@ -550,24 +550,23 @@ pub fn resolve_commit_prs(
 
         for (i, sha) in chunk.iter().enumerate() {
             let key = format!("c{i}");
-            if let Some(obj) = repo_data.get(&key) {
-                if !obj.is_null()
-                    && let Ok(commit) = serde_json::from_value::<GqlCommitWithPrs>(obj.clone())
-                {
-                    let prs = commit
-                        .associated_pull_requests
-                        .nodes
-                        .into_iter()
-                        .map(|pr| PullRequestSummary {
-                            number: pr.number,
-                            merged_at: pr.merged_at,
-                            user: PrUser {
-                                login: pr.author.map(|a| a.login).unwrap_or_default(),
-                            },
-                        })
-                        .collect();
-                    result.insert(sha.to_string(), prs);
-                }
+            if let Some(obj) = repo_data.get(&key)
+                && !obj.is_null()
+                && let Ok(commit) = serde_json::from_value::<GqlCommitWithPrs>(obj.clone())
+            {
+                let prs = commit
+                    .associated_pull_requests
+                    .nodes
+                    .into_iter()
+                    .map(|pr| PullRequestSummary {
+                        number: pr.number,
+                        merged_at: pr.merged_at,
+                        user: PrUser {
+                            login: pr.author.map(|a| a.login).unwrap_or_default(),
+                        },
+                    })
+                    .collect();
+                result.insert(sha.to_string(), prs);
             }
         }
     }
