@@ -224,6 +224,7 @@ pub enum VerificationOutcome {
     SignerMismatch { detail: String },
     TransparencyLogMissing { detail: String },
     AttestationAbsent { detail: String },
+    DigestMismatch { detail: String },
     Failed { detail: String },
 }
 
@@ -239,6 +240,7 @@ impl VerificationOutcome {
             | Self::SignerMismatch { detail }
             | Self::TransparencyLogMissing { detail }
             | Self::AttestationAbsent { detail }
+            | Self::DigestMismatch { detail }
             | Self::Failed { detail } => Some(detail),
         }
     }
@@ -250,6 +252,7 @@ impl VerificationOutcome {
             Self::SignerMismatch { .. } => Some("signer_mismatch"),
             Self::TransparencyLogMissing { .. } => Some("transparency_log_missing"),
             Self::AttestationAbsent { .. } => Some("attestation_absent"),
+            Self::DigestMismatch { .. } => Some("digest_mismatch"),
             Self::Failed { .. } => Some("failed"),
         }
     }
@@ -326,12 +329,25 @@ pub struct DependencySignatureEvidence {
     /// Source commit SHA at which the package was built.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_commit: Option<String>,
-    /// Artifact digest (e.g. "sha512:...") from lock file or registry.
+    /// Expected artifact digest from lock file (e.g. "sha512:..." from Cargo.lock/package-lock.json).
+    /// Compare with `actual_digest` to detect registry-side artifact replacement.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subject_digest: Option<String>,
+    pub pinned_digest: Option<String>,
+    /// Actual artifact digest computed from the downloaded artifact.
+    /// A mismatch with `pinned_digest` indicates a potential supply-chain attack.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actual_digest: Option<String>,
     /// Transparency log entry URL (e.g. Rekor log index for Sigstore).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transparency_log_uri: Option<String>,
+    /// Whether this is a direct dependency (true) or transitive (false).
+    /// Transitive dependencies are more susceptible to typosquatting attacks.
+    #[serde(default = "default_true")]
+    pub is_direct: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 /// Build platform evidence for Build Track L2+.

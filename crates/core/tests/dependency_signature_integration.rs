@@ -32,8 +32,10 @@ fn dep(name: &str, version: &str, verified: bool) -> DependencySignatureEvidence
         signer_identity: None,
         source_repo: None,
         source_commit: None,
-        subject_digest: None,
+        pinned_digest: None,
+        actual_digest: None,
         transparency_log_uri: None,
+        is_direct: true,
     }
 }
 

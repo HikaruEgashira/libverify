@@ -444,4 +444,16 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn dependency_signature_severity_equivalence() {
+        assert_eq!(dependency_signature_severity(0), Severity::Pass);
+        for count in 1..=100 {
+            assert_eq!(
+                dependency_signature_severity(count),
+                Severity::Error,
+                "dependency_signature_severity({count}) should be Error"
+            );
+        }
+    }
 }

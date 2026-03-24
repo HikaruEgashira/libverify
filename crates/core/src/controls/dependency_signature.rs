@@ -151,8 +151,10 @@ mod tests {
             signer_identity: None,
             source_repo: None,
             source_commit: None,
-            subject_digest: None,
+            pinned_digest: None,
+            actual_digest: None,
             transparency_log_uri: None,
+            is_direct: true,
         }
     }
 
@@ -185,7 +187,9 @@ mod tests {
             },
             source_repo: source_repo.map(str::to_string),
             source_commit: None,
-            subject_digest: None,
+            pinned_digest: None,
+            actual_digest: None,
+            is_direct: true,
             transparency_log_uri: if verified {
                 Some("https://rekor.sigstore.dev/api/v1/log/entries/...".to_string())
             } else {
@@ -304,7 +308,9 @@ mod tests {
             signer_identity: None,
             source_repo: None,
             source_commit: None,
-            subject_digest: None,
+            pinned_digest: None,
+            actual_digest: None,
+            is_direct: true,
             transparency_log_uri: None,
         }]);
         let findings = DependencySignatureControl.evaluate(&evidence);
@@ -394,6 +400,52 @@ mod tests {
         ]));
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("lodash@4.17.21"));
+    }
+
+    #[test]
+    fn violated_with_digest_mismatch() {
+        let evidence = make_bundle(vec![DependencySignatureEvidence {
+            name: "replaced-pkg".to_string(),
+            version: "1.0.0".to_string(),
+            registry: Some("registry.npmjs.org".to_string()),
+            verification: VerificationOutcome::DigestMismatch {
+                detail: "sha512 mismatch: expected abc..., got def...".to_string(),
+            },
+            signature_mechanism: None,
+            signer_identity: None,
+            source_repo: None,
+            source_commit: None,
+            pinned_digest: Some("sha512:abc123".to_string()),
+            actual_digest: Some("sha512:def456".to_string()),
+            transparency_log_uri: None,
+            is_direct: false,
+        }]);
+        let findings = DependencySignatureControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+        assert!(findings[0].rationale.contains("digest_mismatch"));
+    }
+
+    #[test]
+    fn violated_with_signer_mismatch() {
+        let evidence = make_bundle(vec![DependencySignatureEvidence {
+            name: "hijacked-pkg".to_string(),
+            version: "2.0.0".to_string(),
+            registry: Some("registry.npmjs.org".to_string()),
+            verification: VerificationOutcome::SignerMismatch {
+                detail: "expected signer: alice@example.com, got: eve@attacker.com".to_string(),
+            },
+            signature_mechanism: Some("sigstore".to_string()),
+            signer_identity: Some("eve@attacker.com".to_string()),
+            source_repo: None,
+            source_commit: None,
+            pinned_digest: None,
+            actual_digest: None,
+            transparency_log_uri: None,
+            is_direct: true,
+        }]);
+        let findings = DependencySignatureControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+        assert!(findings[0].rationale.contains("signer_mismatch"));
     }
 
     #[test]
