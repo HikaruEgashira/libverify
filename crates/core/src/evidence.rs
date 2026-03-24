@@ -219,7 +219,11 @@ pub struct PromotionBatch {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "outcome", rename_all = "snake_case")]
 pub enum VerificationOutcome {
+    /// Cryptographic signature verified (Sigstore, PGP, cosign, etc.).
     Verified,
+    /// Checksum/integrity hash matched but no cryptographic signature was verified.
+    /// This confirms download integrity but NOT authenticity.
+    ChecksumMatch,
     SignatureInvalid { detail: String },
     SignerMismatch { detail: String },
     TransparencyLogMissing { detail: String },
@@ -229,13 +233,19 @@ pub enum VerificationOutcome {
 }
 
 impl VerificationOutcome {
+    /// Returns true for both `Verified` (signature) and `ChecksumMatch` (integrity).
     pub fn is_verified(&self) -> bool {
+        matches!(self, Self::Verified | Self::ChecksumMatch)
+    }
+
+    /// Returns true only for cryptographic signature verification.
+    pub fn is_cryptographically_signed(&self) -> bool {
         matches!(self, Self::Verified)
     }
 
     pub fn failure_detail(&self) -> Option<&str> {
         match self {
-            Self::Verified => None,
+            Self::Verified | Self::ChecksumMatch => None,
             Self::SignatureInvalid { detail }
             | Self::SignerMismatch { detail }
             | Self::TransparencyLogMissing { detail }
@@ -247,7 +257,7 @@ impl VerificationOutcome {
 
     pub fn failure_kind(&self) -> Option<&'static str> {
         match self {
-            Self::Verified => None,
+            Self::Verified | Self::ChecksumMatch => None,
             Self::SignatureInvalid { .. } => Some("signature_invalid"),
             Self::SignerMismatch { .. } => Some("signer_mismatch"),
             Self::TransparencyLogMissing { .. } => Some("transparency_log_missing"),

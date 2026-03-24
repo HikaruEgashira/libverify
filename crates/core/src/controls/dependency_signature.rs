@@ -3,12 +3,15 @@ use crate::evidence::{EvidenceBundle, EvidenceState};
 use crate::integrity::dependency_signature_severity;
 use crate::verdict::Severity;
 
-/// Verifies that all dependencies have valid cryptographic signatures or provenance.
+/// Verifies that all dependencies have been checked for integrity or provenance.
 ///
-/// Supports multiple verification mechanisms including npm provenance (Sigstore/SLSA),
-/// PGP signatures, and lock-file checksum pinning. Uses `VerificationOutcome` for
-/// structured failure reasons, distinguishing between absent signatures, invalid
-/// signatures, signer mismatches, and missing transparency log entries.
+/// Distinguishes two levels of verification:
+/// - **`Verified`**: Cryptographic signature confirmed (Sigstore, PGP, cosign)
+/// - **`ChecksumMatch`**: Integrity hash matched (Cargo.lock checksum, npm SRI hash)
+///   — confirms download integrity but NOT authenticity
+///
+/// Both levels pass this control, but the rationale clearly reports the breakdown
+/// (e.g. "140 checksum, 2 sigstore") so consumers can distinguish trust levels.
 ///
 /// When evidence is `Partial` (some dependencies could not be checked), the control
 /// propagates the evidence gaps into the finding and appends a warning to the rationale.

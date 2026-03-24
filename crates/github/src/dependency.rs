@@ -197,7 +197,7 @@ fn push_npm_dep(
     let integrity = info.get("integrity").and_then(|i| i.as_str());
 
     let (verification, pinned_digest) = match integrity {
-        Some(hash) => (VerificationOutcome::Verified, Some(hash.to_string())),
+        Some(hash) => (VerificationOutcome::ChecksumMatch, Some(hash.to_string())),
         None => (
             VerificationOutcome::AttestationAbsent {
                 detail: "no integrity hash in package-lock.json".to_string(),
@@ -301,10 +301,11 @@ fn flush_cargo_package(
 ) {
     if let (Some(name), Some(version)) = (name, version) {
         // Skip path/workspace dependencies (no source field)
-        if source.is_none() {
-            return;
-        }
-        deps.push(make_cargo_dep(&name, &version, checksum.as_deref()));
+        let source = match source {
+            Some(s) => s,
+            None => return,
+        };
+        deps.push(make_cargo_dep(&name, &version, checksum.as_deref(), &source));
     }
 }
 
@@ -312,10 +313,11 @@ fn make_cargo_dep(
     name: &str,
     version: &str,
     checksum: Option<&str>,
+    source: &str,
 ) -> DependencySignatureEvidence {
     let (verification, mechanism, pinned_digest) = match checksum {
         Some(cs) => (
-            VerificationOutcome::Verified,
+            VerificationOutcome::ChecksumMatch,
             Some("checksum".to_string()),
             Some(format!("sha256:{cs}")),
         ),
@@ -328,10 +330,19 @@ fn make_cargo_dep(
         ),
     };
 
+    // Derive registry from source field
+    let registry = if source.starts_with("registry+") {
+        Some("crates.io".to_string())
+    } else if source.starts_with("git+") {
+        Some(source.to_string())
+    } else {
+        Some(source.to_string())
+    };
+
     DependencySignatureEvidence {
         name: name.to_string(),
         version: version.to_string(),
-        registry: Some("crates.io".to_string()),
+        registry,
         verification,
         signature_mechanism: mechanism,
         signer_identity: None,
