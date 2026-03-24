@@ -83,6 +83,10 @@ fn summarize_mechanisms(deps: &[crate::evidence::DependencySignatureEvidence]) -
 }
 
 /// Returns true if pinned and actual digests both exist and differ.
+///
+/// `actual_digest` is populated by build-time adapters (not lock-file parsers).
+/// Lock-file-only collection sets `pinned_digest` but leaves `actual_digest` as None,
+/// so this check only fires when a build-time adapter provides the actual hash.
 fn has_digest_mismatch(dep: &crate::evidence::DependencySignatureEvidence) -> bool {
     match (&dep.pinned_digest, &dep.actual_digest) {
         (Some(pinned), Some(actual)) => pinned != actual,

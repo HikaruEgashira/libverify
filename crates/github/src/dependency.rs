@@ -221,7 +221,7 @@ fn push_npm_dep(
         version: version.to_string(),
         registry: Some("registry.npmjs.org".to_string()),
         verification,
-        signature_mechanism: integrity.map(|_| "integrity-hash".to_string()),
+        signature_mechanism: integrity.map(|_| "checksum".to_string()),
         signer_identity: None,
         source_repo: None,
         source_commit: None,

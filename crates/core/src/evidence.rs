@@ -340,11 +340,13 @@ pub struct DependencySignatureEvidence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_commit: Option<String>,
     /// Expected artifact digest from lock file (e.g. "sha512:..." from Cargo.lock/package-lock.json).
-    /// Compare with `actual_digest` to detect registry-side artifact replacement.
+    /// Populated by lock-file parsers. Compare with `actual_digest` to detect artifact replacement.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pinned_digest: Option<String>,
-    /// Actual artifact digest computed from the downloaded artifact.
-    /// A mismatch with `pinned_digest` indicates a potential supply-chain attack.
+    /// Actual artifact digest computed from downloaded artifact at install/build time.
+    /// Populated by build-time adapters (not lock-file parsers). When both `pinned_digest`
+    /// and `actual_digest` are present, `has_digest_mismatch()` in the control detects
+    /// registry-side artifact replacement attacks.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub actual_digest: Option<String>,
     /// Transparency log entry URL (e.g. Rekor log index for Sigstore).
