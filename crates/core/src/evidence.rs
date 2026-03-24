@@ -291,16 +291,47 @@ pub struct CheckRunEvidence {
     pub app_slug: Option<String>,
 }
 
-/// Signature verification status for a single dependency.
+/// Provenance and signature verification evidence for a single dependency.
+///
+/// Supports multiple verification mechanisms including:
+/// - **npm provenance**: Sigstore-signed SLSA provenance via `npm audit signatures`
+/// - **Sigstore/cosign**: General Sigstore verification with Rekor transparency log
+/// - **PGP signatures**: Traditional GPG/PGP package signatures
+/// - **Checksum pinning**: Lock-file checksum verification (e.g. Cargo.lock, package-lock.json)
+///
+/// The `verification` field uses `VerificationOutcome` for structured failure reasons,
+/// matching the pattern used by `ArtifactAttestation`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DependencySignatureEvidence {
+    /// Package name (e.g. "serde", "lodash").
     pub name: String,
+    /// Package version (e.g. "1.0.204", "4.17.21").
     pub version: String,
+    /// Registry origin (e.g. "crates.io", "registry.npmjs.org").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
-    pub signature_verified: bool,
+    /// Structured verification outcome, reusing `VerificationOutcome` for consistency
+    /// with `ArtifactAttestation`. `Verified` = signature valid, otherwise structured failure.
+    pub verification: VerificationOutcome,
+    /// Signing mechanism (e.g. "sigstore", "pgp", "checksum").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signature_mechanism: Option<String>,
+    /// Signer identity: OIDC issuer URI, public key fingerprint, or email.
+    /// For npm provenance this is the GitHub Actions OIDC token subject.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signer_identity: Option<String>,
+    /// Source repository that built the package (from SLSA provenance predicate).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_repo: Option<String>,
+    /// Source commit SHA at which the package was built.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_commit: Option<String>,
+    /// Artifact digest (e.g. "sha512:...") from lock file or registry.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject_digest: Option<String>,
+    /// Transparency log entry URL (e.g. Rekor log index for Sigstore).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transparency_log_uri: Option<String>,
 }
 
 /// Build platform evidence for Build Track L2+.

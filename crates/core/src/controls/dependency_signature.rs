@@ -3,7 +3,15 @@ use crate::evidence::{EvidenceBundle, EvidenceState};
 use crate::integrity::dependency_signature_severity;
 use crate::verdict::Severity;
 
-/// Verifies that all dependencies have valid cryptographic signatures.
+/// Verifies that all dependencies have valid cryptographic signatures or provenance.
+///
+/// Supports multiple verification mechanisms including npm provenance (Sigstore/SLSA),
+/// PGP signatures, and lock-file checksum pinning. Uses `VerificationOutcome` for
+/// structured failure reasons, distinguishing between absent signatures, invalid
+/// signatures, signer mismatches, and missing transparency log entries.
+///
+/// When evidence is `Partial` (some dependencies could not be checked), the control
+/// propagates the evidence gaps into the finding and appends a warning to the rationale.
 pub struct DependencySignatureControl;
 
 impl Control for DependencySignatureControl {
@@ -29,63 +37,157 @@ impl Control for DependencySignatureControl {
                     gaps.clone(),
                 )]
             }
-            EvidenceState::Complete { value } | EvidenceState::Partial { value, .. } => {
+            EvidenceState::Complete { value } => {
                 if value.is_empty() {
                     return vec![ControlFinding::not_applicable(
                         id,
                         "No dependencies were present",
                     )];
                 }
-
-                let subjects: Vec<String> = value
-                    .iter()
-                    .map(|d| format!("{}@{}", d.name, d.version))
-                    .collect();
-
-                let unsigned: Vec<String> = value
-                    .iter()
-                    .filter(|d| !d.signature_verified)
-                    .map(|d| format!("{}@{}", d.name, d.version))
-                    .collect();
-
-                let finding = match dependency_signature_severity(unsigned.len()) {
-                    Severity::Pass => ControlFinding::satisfied(
+                evaluate_deps(&id, value, &[])
+            }
+            EvidenceState::Partial { value, gaps } => {
+                if value.is_empty() {
+                    return vec![ControlFinding::indeterminate(
                         id,
                         format!(
-                            "All {} dependency signature(s) verified",
-                            value.len()
+                            "No verified dependencies available; {} evidence gap(s) reported",
+                            gaps.len()
                         ),
-                        subjects,
-                    ),
-                    _ => ControlFinding::violated(
-                        id,
-                        format!(
-                            "Unsigned dependency(ies): {}",
-                            unsigned.join("; ")
-                        ),
-                        subjects,
-                    ),
-                };
-                vec![finding]
+                        Vec::new(),
+                        gaps.clone(),
+                    )];
+                }
+                evaluate_deps(&id, value, gaps)
             }
         }
     }
+}
+
+fn evaluate_deps(
+    id: &ControlId,
+    deps: &[crate::evidence::DependencySignatureEvidence],
+    gaps: &[crate::evidence::EvidenceGap],
+) -> Vec<ControlFinding> {
+    let subjects: Vec<String> = deps
+        .iter()
+        .map(|d| format!("{}@{}", d.name, d.version))
+        .collect();
+
+    let unverified: Vec<String> = deps
+        .iter()
+        .filter(|d| !d.verification.is_verified())
+        .map(|d| {
+            let reason = d
+                .verification
+                .failure_kind()
+                .unwrap_or("unverified");
+            format!("{}@{} ({})", d.name, d.version, reason)
+        })
+        .collect();
+
+    let gap_suffix = if gaps.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " (WARNING: {} evidence gap(s) — unverified dependencies may be hidden)",
+            gaps.len()
+        )
+    };
+
+    let mut finding = match dependency_signature_severity(unverified.len()) {
+        Severity::Pass => ControlFinding::satisfied(
+            id.clone(),
+            format!(
+                "All {} dependency signature(s) verified{}",
+                deps.len(),
+                gap_suffix,
+            ),
+            subjects,
+        ),
+        _ => ControlFinding::violated(
+            id.clone(),
+            format!(
+                "Unverified dependency(ies): {}{}",
+                unverified.join("; "),
+                gap_suffix,
+            ),
+            subjects,
+        ),
+    };
+
+    if !gaps.is_empty() {
+        finding.evidence_gaps = gaps.to_vec();
+    }
+
+    vec![finding]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::control::ControlStatus;
-    use crate::evidence::{DependencySignatureEvidence, EvidenceGap};
+    use crate::evidence::{
+        DependencySignatureEvidence, EvidenceGap, VerificationOutcome,
+    };
 
     fn make_dep(name: &str, version: &str, verified: bool) -> DependencySignatureEvidence {
         DependencySignatureEvidence {
             name: name.to_string(),
             version: version.to_string(),
             registry: Some("crates.io".to_string()),
-            signature_verified: verified,
+            verification: if verified {
+                VerificationOutcome::Verified
+            } else {
+                VerificationOutcome::AttestationAbsent {
+                    detail: "no signature found".to_string(),
+                }
+            },
             signature_mechanism: if verified {
                 Some("sigstore".to_string())
+            } else {
+                None
+            },
+            signer_identity: None,
+            source_repo: None,
+            source_commit: None,
+            subject_digest: None,
+            transparency_log_uri: None,
+        }
+    }
+
+    fn make_npm_dep(
+        name: &str,
+        version: &str,
+        verified: bool,
+        source_repo: Option<&str>,
+    ) -> DependencySignatureEvidence {
+        DependencySignatureEvidence {
+            name: name.to_string(),
+            version: version.to_string(),
+            registry: Some("registry.npmjs.org".to_string()),
+            verification: if verified {
+                VerificationOutcome::Verified
+            } else {
+                VerificationOutcome::AttestationAbsent {
+                    detail: "npm provenance not found".to_string(),
+                }
+            },
+            signature_mechanism: if verified {
+                Some("sigstore".to_string())
+            } else {
+                None
+            },
+            signer_identity: if verified {
+                Some("https://github.com/login/oauth".to_string())
+            } else {
+                None
+            },
+            source_repo: source_repo.map(str::to_string),
+            source_commit: None,
+            subject_digest: None,
+            transparency_log_uri: if verified {
+                Some("https://rekor.sigstore.dev/api/v1/log/entries/...".to_string())
             } else {
                 None
             },
@@ -151,13 +253,15 @@ mod tests {
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
         assert_eq!(findings[0].subjects.len(), 2);
-        assert!(findings[0].rationale.contains("2 dependency signature(s) verified"));
+        assert!(findings[0]
+            .rationale
+            .contains("2 dependency signature(s) verified"));
     }
 
     #[test]
     fn satisfied_single_dependency() {
-        let findings =
-            DependencySignatureControl.evaluate(&make_bundle(vec![make_dep("serde", "1.0.204", true)]));
+        let findings = DependencySignatureControl
+            .evaluate(&make_bundle(vec![make_dep("serde", "1.0.204", true)]));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
         assert_eq!(findings[0].subjects, vec!["serde@1.0.204"]);
     }
@@ -173,6 +277,7 @@ mod tests {
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("sketchy-lib@0.1.0"));
+        assert!(findings[0].rationale.contains("attestation_absent"));
     }
 
     #[test]
@@ -186,10 +291,31 @@ mod tests {
         assert!(findings[0].rationale.contains("bar@2.0.0"));
     }
 
-    // --- Edge cases ---
+    #[test]
+    fn violated_with_signature_invalid_reason() {
+        let evidence = make_bundle(vec![DependencySignatureEvidence {
+            name: "tampered-pkg".to_string(),
+            version: "1.0.0".to_string(),
+            registry: Some("registry.npmjs.org".to_string()),
+            verification: VerificationOutcome::SignatureInvalid {
+                detail: "ECDSA signature mismatch".to_string(),
+            },
+            signature_mechanism: Some("sigstore".to_string()),
+            signer_identity: None,
+            source_repo: None,
+            source_commit: None,
+            subject_digest: None,
+            transparency_log_uri: None,
+        }]);
+        let findings = DependencySignatureControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+        assert!(findings[0].rationale.contains("signature_invalid"));
+    }
+
+    // --- Partial evidence handling ---
 
     #[test]
-    fn partial_evidence_with_signed_deps_satisfied() {
+    fn partial_evidence_with_signed_deps_includes_gap_warning() {
         let evidence = EvidenceBundle {
             dependency_signatures: EvidenceState::partial(
                 vec![make_dep("serde", "1.0.204", true)],
@@ -202,6 +328,16 @@ mod tests {
         };
         let findings = DependencySignatureControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
+        assert!(
+            findings[0].rationale.contains("evidence gap"),
+            "Partial evidence must warn about gaps in rationale: {}",
+            findings[0].rationale
+        );
+        assert_eq!(
+            findings[0].evidence_gaps.len(),
+            1,
+            "Partial evidence gaps must propagate to finding"
+        );
     }
 
     #[test]
@@ -218,6 +354,46 @@ mod tests {
         };
         let findings = DependencySignatureControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Violated);
+        assert!(findings[0].rationale.contains("evidence gap"));
+        assert_eq!(findings[0].evidence_gaps.len(), 1);
+    }
+
+    #[test]
+    fn partial_evidence_empty_deps_is_indeterminate() {
+        let evidence = EvidenceBundle {
+            dependency_signatures: EvidenceState::partial(
+                vec![],
+                vec![EvidenceGap::CollectionFailed {
+                    source: "npm-registry".to_string(),
+                    subject: "audit-signatures".to_string(),
+                    detail: "timeout".to_string(),
+                }],
+            ),
+            ..Default::default()
+        };
+        let findings = DependencySignatureControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Indeterminate);
+    }
+
+    // --- npm provenance ---
+
+    #[test]
+    fn npm_provenance_satisfied_with_source_repo() {
+        let findings = DependencySignatureControl.evaluate(&make_bundle(vec![
+            make_npm_dep("react", "18.3.1", true, Some("facebook/react")),
+            make_npm_dep("express", "4.18.2", true, Some("expressjs/express")),
+        ]));
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+    }
+
+    #[test]
+    fn npm_provenance_mixed_legacy_violated() {
+        let findings = DependencySignatureControl.evaluate(&make_bundle(vec![
+            make_npm_dep("react", "18.3.1", true, Some("facebook/react")),
+            make_npm_dep("lodash", "4.17.21", false, None),
+        ]));
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+        assert!(findings[0].rationale.contains("lodash@4.17.21"));
     }
 
     #[test]

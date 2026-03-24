@@ -130,7 +130,9 @@ pub fn build_isolation_severity(non_isolated_count: usize) -> Severity {
 }
 
 /// Core predicate for dependency signature verification severity.
-/// Zero unsigned dependencies -> Pass, any unsigned -> Error.
+/// Zero unverified dependencies -> Pass, any unverified -> Error.
+///
+/// Verified by Creusot in `libverify-verif` crate.
 pub fn dependency_signature_severity(unsigned_count: usize) -> Severity {
     if unsigned_count == 0 {
         Severity::Pass

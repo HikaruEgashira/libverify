@@ -30,6 +30,9 @@ fn builtin_rule_description(id: &str) -> &'static str {
         "conventional-title" => "Titles must follow Conventional Commits format",
         "security-file-change" => "Changes to security-sensitive files require heightened scrutiny",
         "release-traceability" => "Release batches must trace to governed change requests",
+        "dependency-signature" => {
+            "All dependencies must have verified cryptographic signatures or provenance"
+        }
         _ => "Custom control",
     }
 }

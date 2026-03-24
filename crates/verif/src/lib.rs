@@ -172,6 +172,19 @@ pub fn build_isolation_severity(non_isolated_count: usize) -> Severity {
     }
 }
 
+/// Dependency signature verification severity.
+///
+/// Pass iff zero dependencies lack verified signatures; Error otherwise.
+#[ensures(unsigned_count == 0usize ==> result == Severity::Pass)]
+#[ensures(unsigned_count >= 1usize ==> result == Severity::Error)]
+pub fn dependency_signature_severity(unsigned_count: usize) -> Severity {
+    if unsigned_count == 0 {
+        Severity::Pass
+    } else {
+        Severity::Error
+    }
+}
+
 // --- Compliance control predicates (SOC2 CC7/CC8) ---
 
 /// Stale review severity (CC7.2).
