@@ -368,13 +368,31 @@ pub fn map_build_platform_evidence(check_runs: &[CheckRunEvidence]) -> Vec<Build
 /// EasyCLA is a compliance check.
 fn infer_platform_from_name(name: &str) -> &'static str {
     let lower = name.to_ascii_lowercase();
+    // Prow (Kubernetes, CNCF): "pull-kubernetes-*", "ci-*", "tide"
     if lower.starts_with("pull-") || lower.starts_with("ci-") || lower == "tide" {
-        "prow"
-    } else if lower.contains("easycla") || lower.contains("cla") {
-        "github-actions" // CLA checks typically run on GitHub
-    } else {
-        "unknown"
+        return "prow";
     }
+    // Bors (Rust, Servo): "Bors auto build", "bors try"
+    if lower.starts_with("bors") {
+        return "github-actions"; // bors runs via GitHub, treat as hosted
+    }
+    // CLA checks
+    if lower.contains("easycla") || lower.contains("cla") {
+        return "github-actions";
+    }
+    // Codecov/coverage reporting
+    if lower.contains("codecov") || lower.contains("coverage") {
+        return "codecov";
+    }
+    // Netlify (deploy previews reported as status checks without app_slug)
+    if lower.contains("netlify") {
+        return "netlify";
+    }
+    // Cirrus CI
+    if lower.contains("cirrus") {
+        return "cirrus-ci";
+    }
+    "unknown"
 }
 
 fn map_issue_ref_kind(kind: &libverify_core::linkage::IssueRefKind) -> &'static str {
