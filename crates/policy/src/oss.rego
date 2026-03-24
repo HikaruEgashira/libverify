@@ -1,13 +1,16 @@
 # OSS project / solo developer preset.
-# Tolerates unsigned commits and self-reviewed merges that are common
-# in open-source and personal projects, while keeping all other
-# controls strict.
+# Tolerates unsigned commits, self-reviewed merges, and dev-quality conventions
+# that are common in open-source and personal projects.
 #
-# ASPM posture controls are relaxed for OSS:
-#   - codeowners-coverage: many small projects don't use CODEOWNERS
-#   - secret-scanning: not available on all GitHub plans
-#   - vulnerability-scanning: projects may use external scanners (Snyk, Trivy)
-#   - security-policy: strict — SECURITY.md is the primary disclosure channel for OSS
+# Relaxations:
+#   - source-authenticity: unsigned commits → review (common in OSS)
+#   - review-independence: solo self-merge → review (indeterminate)
+#   - two-party-review: single reviewer → review (OSS norm is 1 approver)
+#   - required-status-checks: CI may not exist → review (indeterminate)
+#   - issue-linkage: trivial fixes/docs skip issues → review
+#   - conventional-title: most OSS don't use conventional commits → review
+#   - ASPM posture: codeowners, secret-scanning, vuln-scanning → review
+#   - security-policy: strict (SECURITY.md is primary disclosure channel for OSS)
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -33,55 +36,45 @@ map := {"severity": "info", "decision": "pass"} if {
 	input.status == "not_applicable"
 }
 
-# source-authenticity violated -> review (unsigned commits are acceptable in OSS)
-map := {"severity": "warning", "decision": "review"} if {
-	input.control_id == "source-authenticity"
-	input.status == "violated"
-}
-
-# review-independence indeterminate -> review (solo maintainer self-merge)
-map := {"severity": "warning", "decision": "review"} if {
-	input.control_id == "review-independence"
-	input.status == "indeterminate"
-}
-
-# required-status-checks indeterminate -> review (CI may not be configured in personal repos)
-map := {"severity": "warning", "decision": "review"} if {
-	input.control_id == "required-status-checks"
-	input.status == "indeterminate"
-}
-
-# --- ASPM posture controls relaxed for OSS ---
-
-# codeowners-coverage: many OSS projects don't use CODEOWNERS
-# secret-scanning included: not available on GitHub Free/Pro plans
-oss_posture_review_controls := {
+# --- Controls relaxed for OSS (violated → review) ---
+# These are common in open-source workflows and should not block CI.
+oss_review_on_violated := {
+	"source-authenticity",
+	"two-party-review",
+	"issue-linkage",
+	"conventional-title",
 	"codeowners-coverage",
 	"vulnerability-scanning",
 	"secret-scanning",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
-	input.control_id in oss_posture_review_controls
 	input.status == "violated"
+	input.control_id in oss_review_on_violated
+}
+
+# --- Controls relaxed for OSS (indeterminate → review) ---
+oss_review_on_indeterminate := {
+	"review-independence",
+	"required-status-checks",
+	"codeowners-coverage",
+	"vulnerability-scanning",
+	"secret-scanning",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
-	input.control_id in oss_posture_review_controls
 	input.status == "indeterminate"
+	input.control_id in oss_review_on_indeterminate
 }
 
-# Generic indeterminate -> fail (except those handled above)
+# --- Generic fallbacks ---
+
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "indeterminate"
-	input.control_id != "review-independence"
-	input.control_id != "required-status-checks"
-	not input.control_id in oss_posture_review_controls
+	not input.control_id in oss_review_on_indeterminate
 }
 
-# Generic violated -> fail (except those handled above)
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "violated"
-	input.control_id != "source-authenticity"
-	not input.control_id in oss_posture_review_controls
+	not input.control_id in oss_review_on_violated
 }

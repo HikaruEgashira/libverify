@@ -66,10 +66,12 @@ fn evaluate_change(id: ControlId, cr: &GovernedChange) -> ControlFinding {
         }
     };
 
-    // Find the latest non-merge commit timestamp.
+    // Find the latest non-merge, non-bot commit timestamp.
+    // Bot-authored commits (bors, mergify, k8s-ci-robot, dependabot, etc.)
+    // are mechanical rebases/merges and should not invalidate prior reviews.
     let latest_commit_ts = revisions
         .iter()
-        .filter(|r| !r.merge)
+        .filter(|r| !r.merge && !is_bot_author(r.authored_by.as_deref()))
         .filter_map(|r| r.committed_at.as_deref())
         .max();
 
@@ -123,6 +125,35 @@ fn evaluate_change(id: ControlId, cr: &GovernedChange) -> ControlFinding {
             stale_approvals,
         )
     }
+}
+
+/// Known bot account patterns. These produce mechanical commits
+/// (rebases, merges, version bumps) that should not invalidate prior reviews.
+fn is_bot_author(author: Option<&str>) -> bool {
+    let Some(author) = author else {
+        return false;
+    };
+    let lower = author.to_ascii_lowercase();
+    // Exact matches for well-known merge bots
+    const BOT_NAMES: &[&str] = &[
+        "bors",
+        "bors[bot]",
+        "mergify[bot]",
+        "mergify",
+        "dependabot[bot]",
+        "dependabot",
+        "renovate[bot]",
+        "renovate",
+        "k8s-ci-robot",
+        "greenkeeper[bot]",
+        "github-actions[bot]",
+        "copybara-service[bot]",
+    ];
+    if BOT_NAMES.contains(&lower.as_str()) {
+        return true;
+    }
+    // Suffix heuristic: "[bot]" suffix is GitHub's convention for app accounts
+    lower.ends_with("[bot]")
 }
 
 #[cfg(test)]
@@ -234,5 +265,47 @@ mod tests {
         );
         let findings = StaleReviewControl.evaluate(&bundle(vec![cr]));
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
+    }
+
+    #[test]
+    fn ignores_bot_commits_for_latest_timestamp() {
+        // bors rebases after approval — the bot commit should not invalidate the review
+        let mut bot_rev = revision("bot-abc", "2026-03-15T14:00:00Z", false);
+        bot_rev.authored_by = Some("bors".to_string());
+        let cr = make_change(
+            EvidenceState::complete(vec![approval("reviewer", "2026-03-15T11:00:00Z")]),
+            EvidenceState::complete(vec![
+                revision("abc", "2026-03-15T10:00:00Z", false),
+                bot_rev,
+            ]),
+        );
+        let findings = StaleReviewControl.evaluate(&bundle(vec![cr]));
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+    }
+
+    #[test]
+    fn ignores_github_app_bot_commits() {
+        let mut bot_rev = revision("bot-abc", "2026-03-15T14:00:00Z", false);
+        bot_rev.authored_by = Some("dependabot[bot]".to_string());
+        let cr = make_change(
+            EvidenceState::complete(vec![approval("reviewer", "2026-03-15T11:00:00Z")]),
+            EvidenceState::complete(vec![
+                revision("abc", "2026-03-15T10:00:00Z", false),
+                bot_rev,
+            ]),
+        );
+        let findings = StaleReviewControl.evaluate(&bundle(vec![cr]));
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+    }
+
+    #[test]
+    fn bot_author_detection() {
+        assert!(is_bot_author(Some("bors")));
+        assert!(is_bot_author(Some("Bors")));
+        assert!(is_bot_author(Some("k8s-ci-robot")));
+        assert!(is_bot_author(Some("dependabot[bot]")));
+        assert!(is_bot_author(Some("custom-app[bot]")));
+        assert!(!is_bot_author(Some("developer")));
+        assert!(!is_bot_author(None));
     }
 }

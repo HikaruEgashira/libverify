@@ -30,6 +30,32 @@ pub const NON_CODE_EXTENSIONS: &[&str] = &[
 /// Known non-code path prefixes that should be excluded from scope analysis.
 pub const NON_CODE_PREFIXES: &[&str] = &[".github/", "docs/"];
 
+/// Known non-code filenames (no extension) that are infrastructure/metadata.
+/// These are common across many OSS ecosystems and should not trigger test-coverage requirements.
+pub const NON_CODE_FILENAMES: &[&str] = &[
+    "OWNERS",
+    "OWNERS_ALIASES",
+    "CODEOWNERS",
+    "LICENSE",
+    "LICENCE",
+    "AUTHORS",
+    "CONTRIBUTORS",
+    "CHANGELOG",
+    "CHANGES",
+    "NOTICE",
+    "PATENTS",
+    "Makefile",
+    "Dockerfile",
+    "Vagrantfile",
+    "Procfile",
+    "Gemfile",
+    "Rakefile",
+    "Justfile",
+    "Earthfile",
+    "Tiltfile",
+    "Brewfile",
+];
+
 /// Coarse role of a changed file for weak semantic connectivity.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FileRole {
@@ -45,9 +71,13 @@ pub fn is_non_code_file(filename: &str) -> bool {
             return true;
         }
     }
-    // Dotfiles (e.g. .gitignore, .prettierignore) are infrastructure, not code.
     let basename = filename.rsplit('/').next().unwrap_or(filename);
+    // Dotfiles (e.g. .gitignore, .prettierignore) are infrastructure, not code.
     if basename.starts_with('.') {
+        return true;
+    }
+    // Known non-code filenames (OWNERS, LICENSE, Makefile, Dockerfile, etc.)
+    if NON_CODE_FILENAMES.contains(&basename) {
         return true;
     }
     for ext in NON_CODE_EXTENSIONS {
