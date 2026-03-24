@@ -207,6 +207,32 @@ pub struct GovernedChange {
     pub work_item_refs: EvidenceState<Vec<WorkItemRef>>,
 }
 
+impl GovernedChange {
+    /// Returns true if this change was submitted by a known merge/rollup bot.
+    /// Bot-submitted PRs aggregate already-reviewed changes and should not
+    /// be individually evaluated for review controls.
+    pub fn is_bot_submitted(&self) -> bool {
+        let Some(author) = self.submitted_by.as_deref() else {
+            return false;
+        };
+        let lower = author.to_ascii_lowercase();
+        const BOT_SUBMITTERS: &[&str] = &[
+            "bors",
+            "bors[bot]",
+            "mergify[bot]",
+            "mergify",
+            "dependabot[bot]",
+            "dependabot",
+            "renovate[bot]",
+            "renovate",
+            "k8s-ci-robot",
+            "github-actions[bot]",
+            "copybara-service[bot]",
+        ];
+        BOT_SUBMITTERS.contains(&lower.as_str()) || lower.ends_with("[bot]")
+    }
+}
+
 /// A release or deployment batch that promotes one or more source revisions.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PromotionBatch {

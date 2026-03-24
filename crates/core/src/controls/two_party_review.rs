@@ -35,6 +35,16 @@ impl Control for TwoPartyReviewControl {
 
 fn evaluate_change(change: &GovernedChange) -> ControlFinding {
     let subject = change.id.to_string();
+
+    if change.is_bot_submitted() {
+        return ControlFinding::not_applicable(
+            builtin::id(builtin::TWO_PARTY_REVIEW),
+            format!(
+                "{subject}: bot-submitted change; review verified on constituent PRs"
+            ),
+        );
+    }
+
     let mut gaps = collect_gaps(&change.approval_decisions);
     gaps.extend(collect_gaps(&change.source_revisions));
 

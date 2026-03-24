@@ -547,6 +547,11 @@ fn has_test_marker(path: &str) -> bool {
         || path.contains("-test.")
         || path.contains("-spec.")
         || path.contains("test-d.ts")
+        // Exact filename matches for test modules (Rust `tests.rs`, `test.rs`)
+        || path.ends_with("/tests.rs")
+        || path.ends_with("/test.rs")
+        || path.ends_with("_tests.rs")
+        || path.ends_with("_spec.rb")
 }
 
 fn extend_split_tokens(input: &str, out: &mut Vec<String>) {

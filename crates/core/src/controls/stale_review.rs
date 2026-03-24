@@ -1,6 +1,68 @@
 use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{ApprovalDisposition, EvidenceBundle, EvidenceState, GovernedChange};
 
+/// Parse an RFC 3339 timestamp to epoch seconds for timezone-safe comparison.
+/// Supports both `Z` suffix and `+HH:MM` / `-HH:MM` offsets.
+/// Returns None if the format is unrecognized.
+fn rfc3339_to_epoch_secs(ts: &str) -> Option<i64> {
+    // Minimum: "YYYY-MM-DDTHH:MM:SSZ" = 20 chars
+    if ts.len() < 20 {
+        return None;
+    }
+    let year: i64 = ts[0..4].parse().ok()?;
+    let month: i64 = ts[5..7].parse().ok()?;
+    let day: i64 = ts[8..10].parse().ok()?;
+    let hour: i64 = ts[11..13].parse().ok()?;
+    let min: i64 = ts[14..16].parse().ok()?;
+    let sec: i64 = ts[17..19].parse().ok()?;
+
+    // Days from year 0 to start of this year (simplified, ignoring leap second)
+    let days = days_from_epoch(year, month, day);
+    let base_secs = days * 86400 + hour * 3600 + min * 60 + sec;
+
+    // Parse timezone offset
+    let tz_part = &ts[19..];
+    let offset_secs = if tz_part.starts_with('Z') || tz_part.starts_with('z') {
+        0
+    } else if tz_part.len() >= 6
+        && (tz_part.starts_with('+') || tz_part.starts_with('-'))
+    {
+        let sign = if tz_part.starts_with('+') { 1 } else { -1 };
+        let oh: i64 = tz_part[1..3].parse().ok()?;
+        let om: i64 = tz_part[4..6].parse().ok()?;
+        sign * (oh * 3600 + om * 60)
+    } else {
+        0 // Assume UTC if no recognizable offset
+    };
+
+    Some(base_secs - offset_secs)
+}
+
+/// Days from Unix epoch (1970-01-01) to a given date.
+fn days_from_epoch(year: i64, month: i64, day: i64) -> i64 {
+    // Adjust for months before March (Rata Die algorithm)
+    let (y, m) = if month <= 2 {
+        (year - 1, month + 9)
+    } else {
+        (year, month - 3)
+    };
+    let era = y / 400;
+    let yoe = y - era * 400;
+    let doy = (153 * m + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146097 + doe - 719468
+}
+
+/// Compare two RFC 3339 timestamps, handling timezone offsets correctly.
+/// Returns true if `a` is strictly before `b` in absolute (UTC) time.
+fn ts_is_before(a: &str, b: &str) -> bool {
+    match (rfc3339_to_epoch_secs(a), rfc3339_to_epoch_secs(b)) {
+        (Some(ea), Some(eb)) => ea < eb,
+        // Fallback to string comparison if parsing fails
+        _ => a < b,
+    }
+}
+
 /// Detects approval decisions that predate the latest non-merge source revision.
 ///
 /// Maps to SOC2 CC7.2: monitoring for anomalies in change governance.
@@ -66,14 +128,18 @@ fn evaluate_change(id: ControlId, cr: &GovernedChange) -> ControlFinding {
         }
     };
 
-    // Find the latest non-merge, non-bot commit timestamp.
+    // Find the latest non-merge, non-bot commit timestamp (UTC-normalized).
     // Bot-authored commits (bors, mergify, k8s-ci-robot, dependabot, etc.)
     // are mechanical rebases/merges and should not invalidate prior reviews.
     let latest_commit_ts = revisions
         .iter()
         .filter(|r| !r.merge && !is_bot_author(r.authored_by.as_deref()))
         .filter_map(|r| r.committed_at.as_deref())
-        .max();
+        .max_by(|a, b| {
+            let ea = rfc3339_to_epoch_secs(a).unwrap_or(0);
+            let eb = rfc3339_to_epoch_secs(b).unwrap_or(0);
+            ea.cmp(&eb)
+        });
 
     let latest_commit_ts = match latest_commit_ts {
         Some(ts) => ts,
@@ -85,14 +151,14 @@ fn evaluate_change(id: ControlId, cr: &GovernedChange) -> ControlFinding {
         }
     };
 
-    // Check each approval: if submitted_at < latest_commit_ts, it is stale.
+    // Check each approval: if submitted_at < latest_commit_ts (UTC-normalized), it is stale.
     let stale_approvals: Vec<String> = approvals
         .iter()
         .filter(|a| a.disposition == ApprovalDisposition::Approved)
         .filter(|a| {
             a.submitted_at
                 .as_deref()
-                .is_some_and(|ts| ts < latest_commit_ts)
+                .is_some_and(|ts| ts_is_before(ts, latest_commit_ts))
         })
         .map(|a| a.actor.clone())
         .collect();
@@ -307,5 +373,42 @@ mod tests {
         assert!(is_bot_author(Some("custom-app[bot]")));
         assert!(!is_bot_author(Some("developer")));
         assert!(!is_bot_author(None));
+    }
+
+    #[test]
+    fn timezone_aware_comparison_utc_vs_offset() {
+        // Approval at 02:54 UTC, commit at 10:34+08:00 = 02:34 UTC
+        // Approval is AFTER commit → not stale
+        assert!(!ts_is_before("2026-03-24T02:54:37Z", "2026-03-24T10:34:00+08:00"));
+        // Reverse: commit at 02:34 UTC is before approval at 02:54 UTC
+        assert!(ts_is_before("2026-03-24T10:34:00+08:00", "2026-03-24T02:54:37Z"));
+    }
+
+    #[test]
+    fn timezone_aware_same_tz() {
+        assert!(ts_is_before("2026-03-15T10:00:00Z", "2026-03-15T12:00:00Z"));
+        assert!(!ts_is_before("2026-03-15T12:00:00Z", "2026-03-15T10:00:00Z"));
+    }
+
+    #[test]
+    fn timezone_aware_negative_offset() {
+        // 10:00-05:00 = 15:00 UTC, which is after 14:00 UTC
+        assert!(!ts_is_before("2026-03-15T10:00:00-05:00", "2026-03-15T14:00:00Z"));
+        assert!(ts_is_before("2026-03-15T14:00:00Z", "2026-03-15T10:00:00-05:00"));
+    }
+
+    #[test]
+    fn satisfied_when_approval_after_offset_commit() {
+        // Real k8s scenario: approval at 02:54 UTC, commit at 10:34+08:00 (=02:34 UTC)
+        let cr = make_change(
+            EvidenceState::complete(vec![approval("reviewer", "2026-03-24T02:54:37Z")]),
+            EvidenceState::complete(vec![revision(
+                "abc",
+                "2026-03-24T10:34:00+08:00",
+                false,
+            )]),
+        );
+        let findings = StaleReviewControl.evaluate(&bundle(vec![cr]));
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 }

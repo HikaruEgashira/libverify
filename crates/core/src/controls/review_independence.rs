@@ -35,6 +35,20 @@ impl Control for ReviewIndependenceControl {
 fn evaluate_change(change: &GovernedChange) -> ControlFinding {
     let id = builtin::id(builtin::REVIEW_INDEPENDENCE);
     let subject = change.id.to_string();
+
+    // Bot-submitted PRs (bors rollups, mergify merges) aggregate
+    // already-reviewed changes. Review independence was verified
+    // on the constituent PRs, not on the merge PR itself.
+    if change.is_bot_submitted() {
+        return ControlFinding::not_applicable(
+            id,
+            format!(
+                "{subject}: bot-submitted change ({}); review verified on constituent PRs",
+                change.submitted_by.as_deref().unwrap_or("unknown")
+            ),
+        );
+    }
+
     let mut gaps = collect_gaps(&change.approval_decisions);
     gaps.extend(collect_gaps(&change.source_revisions));
 

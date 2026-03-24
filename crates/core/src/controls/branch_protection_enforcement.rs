@@ -47,6 +47,16 @@ fn evaluate_change(
     check_runs: &EvidenceState<Vec<crate::evidence::CheckRunEvidence>>,
 ) -> ControlFinding {
     let subject = change.id.to_string();
+
+    if change.is_bot_submitted() {
+        return ControlFinding::not_applicable(
+            id,
+            format!(
+                "{subject}: bot-submitted change; enforcement verified on constituent PRs"
+            ),
+        );
+    }
+
     let mut violations = Vec::new();
 
     // Check 1: CI checks all passed
