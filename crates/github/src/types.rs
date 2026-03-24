@@ -134,6 +134,10 @@ pub struct Review {
     pub user: PrUser,
     pub state: String,
     pub submitted_at: Option<String>,
+    /// Review body text. Used to detect bot-mediated approvals
+    /// (e.g., Prow `/lgtm`, `/approve` commands).
+    #[serde(default)]
+    pub body: Option<String>,
 }
 
 /// A commit on a PR (from the pulls/{number}/commits endpoint).

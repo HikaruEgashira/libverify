@@ -68,6 +68,7 @@ struct GqlReview {
     state: String,
     #[serde(rename = "submittedAt")]
     submitted_at: Option<String>,
+    body: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -154,7 +155,7 @@ fn pr_fields_fragment() -> &'static str {
     nodes { path additions deletions changeType }
   }
   reviews(first: 100) {
-    nodes { author { login } state submittedAt }
+    nodes { author { login } state submittedAt body }
   }
   commits(first: 250) {
     nodes {
@@ -290,6 +291,7 @@ fn convert_pr(pr: GqlPullRequest) -> PrData {
             },
             state: r.state,
             submitted_at: r.submitted_at,
+            body: r.body,
         })
         .collect();
 

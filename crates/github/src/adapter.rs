@@ -80,7 +80,10 @@ pub fn map_pull_request_evidence(
             .iter()
             .map(|review| ApprovalDecision {
                 actor: review.user.login.clone(),
-                disposition: map_review_state(&review.state),
+                disposition: map_review_disposition(
+                    &review.state,
+                    review.body.as_deref(),
+                ),
                 submitted_at: review.submitted_at.clone(),
             })
             .collect(),
@@ -258,36 +261,91 @@ fn map_changed_assets(pr_files: &[PrFile]) -> EvidenceState<Vec<ChangedAsset>> {
     }
 }
 
-fn map_review_state(state: &str) -> ApprovalDisposition {
+/// Maps a GitHub review state + body to an approval disposition.
+///
+/// Handles bot-mediated approvals (Prow, GitLab-style bots) where the review
+/// state is `COMMENTED` but the body contains approval commands like `/lgtm`
+/// or `/approve`. This is critical for Kubernetes, Istio, and other CNCF projects.
+fn map_review_disposition(state: &str, body: Option<&str>) -> ApprovalDisposition {
     match state {
         "APPROVED" => ApprovalDisposition::Approved,
         "CHANGES_REQUESTED" => ApprovalDisposition::Rejected,
-        "COMMENTED" => ApprovalDisposition::Commented,
+        "COMMENTED" => {
+            if is_bot_approval_command(body) {
+                ApprovalDisposition::Approved
+            } else {
+                ApprovalDisposition::Commented
+            }
+        }
         "DISMISSED" => ApprovalDisposition::Dismissed,
         _ => ApprovalDisposition::Unknown,
     }
 }
 
+/// Detects bot-mediated approval commands in review body text.
+/// Recognizes Prow (`/lgtm`, `/approve`), GitLab (`/merge`), and similar patterns.
+fn is_bot_approval_command(body: Option<&str>) -> bool {
+    let Some(body) = body else { return false };
+    // Check each line for approval commands (commands are line-start anchored)
+    body.lines().any(|line| {
+        let trimmed = line.trim();
+        trimmed == "/lgtm"
+            || trimmed == "/approve"
+            || trimmed.starts_with("/lgtm ")
+            || trimmed.starts_with("/approve ")
+    })
+}
+
+/// Known hosted CI platforms and their isolation characteristics.
+/// (hosted, ephemeral, isolated, signing_key_isolated)
+fn classify_ci_platform(slug: &str) -> (bool, bool, bool, bool) {
+    match slug {
+        // Fully hosted + isolated platforms
+        "github-actions" => (true, true, true, true),
+        "cirrus-ci" => (true, true, true, false),
+        "travis-ci" => (true, true, true, false),
+        "azure-pipelines" => (true, true, true, false),
+        "google-cloud-build" => (true, true, true, true),
+        "aws-codebuild" => (true, true, true, false),
+        "buildkite" => (true, true, true, false),
+
+        // Hosted but not fully isolated (preview deploys, shared runners)
+        "netlify" => (true, false, false, false),
+        "vercel" => (true, false, false, false),
+        "render" => (true, false, false, false),
+
+        // Bot/meta platforms (not build platforms — treat as hosted to avoid FP)
+        "prow" | "tide" => (true, true, true, false),
+        "codecov" | "codspeed-hq" | "codecov-commenter" => (true, false, false, false),
+        "sonarcloud" | "snyk" => (true, false, false, false),
+        "dependabot" | "renovate" => (true, false, false, false),
+        "buildomat" => (true, true, true, false),
+
+        // Unknown — conservative default
+        _ => (false, false, false, false),
+    }
+}
+
 /// Maps check run evidence into build platform evidence.
 ///
-/// Uses `app_slug` to distinguish GitHub Actions from external CI systems.
-/// GitHub Actions hosted runners are treated as hosted, ephemeral, and isolated.
-/// External CI systems are marked as unknown (not assumed hosted).
+/// Recognizes a wide range of hosted CI platforms beyond GitHub Actions,
+/// including Cirrus CI, Buildkite, Netlify, Prow, Codecov, etc.
 pub fn map_build_platform_evidence(check_runs: &[CheckRunEvidence]) -> Vec<BuildPlatformEvidence> {
     check_runs
         .iter()
         .filter(|cr| cr.conclusion != CheckConclusion::Pending)
         .map(|cr| {
             let slug = cr.app_slug.as_deref().unwrap_or("unknown");
-            let is_github_actions = slug == "github-actions";
+            let (hosted, ephemeral, isolated, signing_key_isolated) =
+                classify_ci_platform(slug);
 
             BuildPlatformEvidence {
                 platform: slug.to_string(),
-                hosted: is_github_actions,
-                ephemeral: is_github_actions,
-                isolated: is_github_actions,
+                hosted,
+                ephemeral,
+                isolated,
                 runner_labels: vec![slug.to_string()],
-                signing_key_isolated: is_github_actions,
+                signing_key_isolated,
             }
         })
         .collect()
@@ -341,6 +399,7 @@ mod tests {
                 },
                 state: "APPROVED".to_string(),
                 submitted_at: Some("2026-03-15T00:00:00Z".to_string()),
+                body: None,
             }],
             &[PrCommit {
                 sha: "abc123".to_string(),
@@ -610,5 +669,36 @@ mod tests {
             bundle.artifact_attestations,
             EvidenceState::NotApplicable
         ));
+    }
+
+    #[test]
+    fn prow_lgtm_comment_treated_as_approval() {
+        let disposition = map_review_disposition("COMMENTED", Some("/lgtm\n/approve"));
+        assert_eq!(disposition, ApprovalDisposition::Approved);
+    }
+
+    #[test]
+    fn prow_lgtm_with_text_treated_as_approval() {
+        let disposition = map_review_disposition("COMMENTED", Some("/lgtm looks good"));
+        assert_eq!(disposition, ApprovalDisposition::Approved);
+    }
+
+    #[test]
+    fn plain_comment_stays_commented() {
+        let disposition =
+            map_review_disposition("COMMENTED", Some("this looks good, but needs a fix"));
+        assert_eq!(disposition, ApprovalDisposition::Commented);
+    }
+
+    #[test]
+    fn approved_state_unchanged() {
+        let disposition = map_review_disposition("APPROVED", None);
+        assert_eq!(disposition, ApprovalDisposition::Approved);
+    }
+
+    #[test]
+    fn empty_body_stays_commented() {
+        let disposition = map_review_disposition("COMMENTED", None);
+        assert_eq!(disposition, ApprovalDisposition::Commented);
     }
 }

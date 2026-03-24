@@ -80,6 +80,7 @@ soc2_advisory_controls := {
 	"description-quality",
 	"merge-commit-policy",
 	"conventional-title",
+	"issue-linkage",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
