@@ -6,6 +6,7 @@ pub mod dependency;
 pub mod graphql;
 pub mod npm_attestation;
 pub mod ossinsight;
+pub mod pypi_attestation;
 pub mod pr_api;
 pub mod range;
 pub mod release_api;

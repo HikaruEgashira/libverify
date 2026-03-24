@@ -298,29 +298,41 @@ pub fn exit_if_assessment_fails(result: &VerificationResult) {
     }
 }
 
-/// Enrich npm dependencies in an EvidenceState with provenance from the
-/// npm attestation API. Non-npm deps and failures are left unchanged.
+/// Enrich dependencies with provenance from registry attestation APIs.
+/// Supports npm (Sigstore) and PyPI (PEP 740).
 fn enrich_npm_attestations(
     state: EvidenceState<Vec<libverify_core::evidence::DependencySignatureEvidence>>,
 ) -> EvidenceState<Vec<libverify_core::evidence::DependencySignatureEvidence>> {
     use crate::npm_attestation::NpmAttestationClient;
+    use crate::pypi_attestation::PypiAttestationClient;
 
-    let has_npm = |deps: &[libverify_core::evidence::DependencySignatureEvidence]| {
-        deps.iter()
-            .any(|d| d.registry.as_deref() == Some("registry.npmjs.org"))
-    };
+    fn enrich(deps: &mut Vec<libverify_core::evidence::DependencySignatureEvidence>) {
+        let has_npm = deps
+            .iter()
+            .any(|d| d.registry.as_deref() == Some("registry.npmjs.org"));
+        let has_pypi = deps
+            .iter()
+            .any(|d| d.registry.as_deref() == Some("pypi.org"));
+
+        if has_npm {
+            if let Ok(client) = NpmAttestationClient::new() {
+                client.enrich_npm_deps(deps);
+            }
+        }
+        if has_pypi {
+            if let Ok(client) = PypiAttestationClient::new() {
+                client.enrich_pypi_deps(deps);
+            }
+        }
+    }
 
     match state {
-        EvidenceState::Complete { mut value } if has_npm(&value) => {
-            if let Ok(client) = NpmAttestationClient::new() {
-                client.enrich_npm_deps(&mut value);
-            }
+        EvidenceState::Complete { mut value } => {
+            enrich(&mut value);
             EvidenceState::Complete { value }
         }
-        EvidenceState::Partial { mut value, gaps } if has_npm(&value) => {
-            if let Ok(client) = NpmAttestationClient::new() {
-                client.enrich_npm_deps(&mut value);
-            }
+        EvidenceState::Partial { mut value, gaps } => {
+            enrich(&mut value);
             EvidenceState::Partial { value, gaps }
         }
         other => other,
