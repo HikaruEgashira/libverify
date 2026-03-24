@@ -1,7 +1,7 @@
 # libverify — Platform-agnostic SDLC Verification Engine
 
 Shared verification library. Think libghostty for SDLC verification.
-gh-verify and atlassian-verify are thin platform-specific shells consuming this library.
+Platform-specific shells (CLI extensions, IDE plugins, etc.) consume this library.
 
 ## Commands
 
@@ -18,7 +18,7 @@ Five-crate workspace:
 - `libverify-core` — evidence model, Control trait, 24 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks). Pure logic, serde only.
 - `libverify-policy` — OPA Rego policy engine (regorus). 9 presets: default, oss, aiops, soc1, soc2, slsa-l1, slsa-l2, slsa-l3, slsa-l4.
 - `libverify-output` — SARIF/JSON output formatters. Tool name/version configurable per consumer.
-- `libverify-github` — GitHub API client, evidence adapter, verification orchestration. Used by [gh-verify](https://github.com/HikaruEgashira/gh-verify).
+- `libverify-github` — GitHub API client, evidence adapter, verification orchestration.
 - `libverify-verif` — Creusot formal verification targets.
 
 ## Key types
@@ -52,7 +52,3 @@ Five-crate workspace:
 4. If SLSA-mapped, add to `crates/core/src/slsa.rs::control_slsa_mapping()` and `ALL_SLSA_CONTROLS`. If compliance-only, no changes needed in slsa.rs.
 5. Add SARIF rule description to `crates/output/src/sarif.rs::builtin_rule_description()`
 6. Add Creusot spec if the predicate is verifiable
-
-## Releasing gh-verify
-
-gh-verify側でバージョンバンプ + タグpushすると GitHub Actions release workflow が自動でマルチプラットフォームビルド + GitHub Release を作成する。`gh run watch` で完了を確認。
