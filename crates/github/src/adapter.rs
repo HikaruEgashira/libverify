@@ -339,16 +339,42 @@ pub fn map_build_platform_evidence(check_runs: &[CheckRunEvidence]) -> Vec<Build
             let (hosted, ephemeral, isolated, signing_key_isolated) =
                 classify_ci_platform(slug);
 
+            // Fallback: if app_slug is unknown, try to infer from check run name.
+            // Prow check runs (pull-kubernetes-*, tide) have no app_slug.
+            let (platform, hosted, ephemeral, isolated, signing_key_isolated) = if slug
+                == "unknown"
+            {
+                let inferred = infer_platform_from_name(&cr.name);
+                let (h, e, i, s) = classify_ci_platform(inferred);
+                (inferred.to_string(), h, e, i, s)
+            } else {
+                (slug.to_string(), hosted, ephemeral, isolated, signing_key_isolated)
+            };
+
             BuildPlatformEvidence {
-                platform: slug.to_string(),
+                platform,
                 hosted,
                 ephemeral,
                 isolated,
-                runner_labels: vec![slug.to_string()],
+                runner_labels: vec![cr.app_slug.as_deref().unwrap_or("unknown").to_string()],
                 signing_key_isolated,
             }
         })
         .collect()
+}
+
+/// Infer CI platform from check run name when app_slug is missing.
+/// Common patterns: Prow jobs start with "pull-" or "ci-", Tide is k8s merge bot,
+/// EasyCLA is a compliance check.
+fn infer_platform_from_name(name: &str) -> &'static str {
+    let lower = name.to_ascii_lowercase();
+    if lower.starts_with("pull-") || lower.starts_with("ci-") || lower == "tide" {
+        "prow"
+    } else if lower.contains("easycla") || lower.contains("cla") {
+        "github-actions" // CLA checks typically run on GitHub
+    } else {
+        "unknown"
+    }
 }
 
 fn map_issue_ref_kind(kind: &libverify_core::linkage::IssueRefKind) -> &'static str {
