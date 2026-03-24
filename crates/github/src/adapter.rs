@@ -333,8 +333,12 @@ fn classify_ci_platform(slug: &str) -> (bool, bool, bool, bool) {
         // ReadTheDocs (documentation build)
         "readthedocs" => (true, false, false, false),
 
-        // Unknown — conservative default
-        _ => (false, false, false, false),
+        // Enterprise GitHub Apps (Microsoft, etc.)
+        "vs-code-engineering" | "microsoft-github-policy-service" => (true, false, false, false),
+
+        // Unknown — if a check run was reported to GitHub, *something* hosted
+        // ran it. Mark as hosted but not isolated (we cannot verify isolation).
+        _ => (true, false, false, false),
     }
 }
 
