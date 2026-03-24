@@ -60,8 +60,11 @@ pub mod builtin {
     pub const PROVENANCE_AUTHENTICITY: &str = "provenance-authenticity";
     pub const BUILD_ISOLATION: &str = "build-isolation";
 
-    // Dependencies
+    // Dependencies Track
     pub const DEPENDENCY_SIGNATURE: &str = "dependency-signature";
+    pub const DEPENDENCY_PROVENANCE_CHECK: &str = "dependency-provenance";
+    pub const DEPENDENCY_SIGNER_VERIFIED: &str = "dependency-signer-verified";
+    pub const DEPENDENCY_COMPLETENESS: &str = "dependency-completeness";
 
     // Compliance (platform-neutral naming)
     pub const CHANGE_REQUEST_SIZE: &str = "change-request-size";
@@ -75,7 +78,7 @@ pub mod builtin {
     pub const SECURITY_FILE_CHANGE: &str = "security-file-change";
     pub const RELEASE_TRACEABILITY: &str = "release-traceability";
 
-    /// All 21 built-in control IDs.
+    /// All 24 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -88,6 +91,9 @@ pub mod builtin {
         PROVENANCE_AUTHENTICITY,
         BUILD_ISOLATION,
         DEPENDENCY_SIGNATURE,
+        DEPENDENCY_PROVENANCE_CHECK,
+        DEPENDENCY_SIGNER_VERIFIED,
+        DEPENDENCY_COMPLETENESS,
         CHANGE_REQUEST_SIZE,
         TEST_COVERAGE,
         SCOPED_CHANGE,
@@ -237,8 +243,8 @@ mod tests {
     }
 
     #[test]
-    fn builtin_ids_are_21() {
-        assert_eq!(builtin::ALL.len(), 21);
+    fn builtin_ids_are_24() {
+        assert_eq!(builtin::ALL.len(), 24);
     }
 
     #[test]

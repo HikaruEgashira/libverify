@@ -42,7 +42,7 @@ impl SlsaLevel {
         match track {
             SlsaTrack::Source => true,
             SlsaTrack::Build => self <= SlsaLevel::L3,
-            SlsaTrack::Dependencies => self <= SlsaLevel::L1,
+            SlsaTrack::Dependencies => true,
         }
     }
 }
@@ -120,6 +120,18 @@ pub fn control_slsa_mapping(id: &ControlId) -> Option<SlsaMapping> {
             track: SlsaTrack::Dependencies,
             level: SlsaLevel::L1,
         }),
+        builtin::DEPENDENCY_PROVENANCE_CHECK => Some(SlsaMapping {
+            track: SlsaTrack::Dependencies,
+            level: SlsaLevel::L2,
+        }),
+        builtin::DEPENDENCY_SIGNER_VERIFIED => Some(SlsaMapping {
+            track: SlsaTrack::Dependencies,
+            level: SlsaLevel::L3,
+        }),
+        builtin::DEPENDENCY_COMPLETENESS => Some(SlsaMapping {
+            track: SlsaTrack::Dependencies,
+            level: SlsaLevel::L4,
+        }),
 
         // Compliance and platform-specific controls have no SLSA mapping
         _ => None,
@@ -147,6 +159,9 @@ const ALL_SLSA_CONTROLS: &[&str] = &[
     builtin::PROVENANCE_AUTHENTICITY,
     builtin::BUILD_ISOLATION,
     builtin::DEPENDENCY_SIGNATURE,
+    builtin::DEPENDENCY_PROVENANCE_CHECK,
+    builtin::DEPENDENCY_SIGNER_VERIFIED,
+    builtin::DEPENDENCY_COMPLETENESS,
 ];
 
 #[cfg(test)]
@@ -187,7 +202,7 @@ mod tests {
     }
 
     #[test]
-    fn dependencies_track_l1_includes_dependency_signature() {
+    fn dependencies_l1_includes_signature_only() {
         let controls = controls_for_level(SlsaTrack::Dependencies, SlsaLevel::L1);
         let ids: Vec<&str> = controls.iter().map(|c| c.as_str()).collect();
         assert!(ids.contains(&builtin::DEPENDENCY_SIGNATURE));
@@ -195,16 +210,40 @@ mod tests {
     }
 
     #[test]
-    fn dependency_signature_has_slsa_mapping() {
-        let mapping =
-            control_slsa_mapping(&ControlId::new(builtin::DEPENDENCY_SIGNATURE)).unwrap();
-        assert_eq!(mapping.track, SlsaTrack::Dependencies);
-        assert_eq!(mapping.level, SlsaLevel::L1);
+    fn dependencies_l2_includes_provenance() {
+        let controls = controls_for_level(SlsaTrack::Dependencies, SlsaLevel::L2);
+        let ids: Vec<&str> = controls.iter().map(|c| c.as_str()).collect();
+        assert!(ids.contains(&builtin::DEPENDENCY_SIGNATURE));
+        assert!(ids.contains(&builtin::DEPENDENCY_PROVENANCE_CHECK));
+        assert_eq!(controls.len(), 2);
     }
 
     #[test]
-    fn l2_not_valid_for_dependencies_track() {
-        assert!(SlsaLevel::L1.is_valid_for_track(SlsaTrack::Dependencies));
-        assert!(!SlsaLevel::L2.is_valid_for_track(SlsaTrack::Dependencies));
+    fn dependencies_l3_includes_signer_verified() {
+        let controls = controls_for_level(SlsaTrack::Dependencies, SlsaLevel::L3);
+        assert_eq!(controls.len(), 3);
+    }
+
+    #[test]
+    fn dependencies_l4_includes_all_4_controls() {
+        let controls = controls_for_level(SlsaTrack::Dependencies, SlsaLevel::L4);
+        let ids: Vec<&str> = controls.iter().map(|c| c.as_str()).collect();
+        assert!(ids.contains(&builtin::DEPENDENCY_COMPLETENESS));
+        assert_eq!(controls.len(), 4);
+    }
+
+    #[test]
+    fn dependency_controls_have_slsa_mapping() {
+        for &id in &[
+            builtin::DEPENDENCY_SIGNATURE,
+            builtin::DEPENDENCY_PROVENANCE_CHECK,
+            builtin::DEPENDENCY_SIGNER_VERIFIED,
+            builtin::DEPENDENCY_COMPLETENESS,
+        ] {
+            assert!(
+                control_slsa_mapping(&ControlId::new(id)).is_some(),
+                "{id} should have SLSA mapping"
+            );
+        }
     }
 }

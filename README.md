@@ -38,7 +38,7 @@ use libverify_output::{OutputOptions, Format, render};
 // 1. Collect evidence from your platform
 let evidence = EvidenceBundle { /* ... */ };
 
-// 2. Run all 21 built-in controls with an OPA policy
+// 2. Run all 24 built-in controls with an OPA policy
 let registry = ControlRegistry::builtin();
 let profile = OpaProfile::from_preset_or_file("soc2")?;
 let report = assess_with_registry(&evidence, &registry, &profile);
@@ -68,7 +68,7 @@ let sarif = render(&opts, &report.into())?;
 
 ## Controls
 
-21 built-in controls covering SLSA v1.2 and SOC2 CC7/CC8.
+24 built-in controls covering SLSA v1.2 and SOC2 CC7/CC8.
 
 ### SLSA v1.2
 
@@ -82,6 +82,9 @@ let sarif = render(&opts, &report.into())?;
 | Build | L2 | `hosted-build-platform`, `provenance-authenticity` |
 | Build | L3 | `build-isolation` |
 | Dependencies | L1 | `dependency-signature` |
+| Dependencies | L2 | `dependency-provenance` |
+| Dependencies | L3 | `dependency-signer-verified` |
+| Dependencies | L4 | `dependency-completeness` |
 
 ### SOC2 CC7/CC8
 

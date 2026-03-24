@@ -15,7 +15,7 @@ cargo clippy --workspace --exclude libverify-verif  # Lint
 
 Five-crate workspace:
 
-- `libverify-core` — evidence model, Control trait, 21 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks). Pure logic, serde only.
+- `libverify-core` — evidence model, Control trait, 24 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks). Pure logic, serde only.
 - `libverify-policy` — OPA Rego policy engine (regorus). 9 presets: default, oss, aiops, soc1, soc2, slsa-l1, slsa-l2, slsa-l3, slsa-l4.
 - `libverify-output` — SARIF/JSON output formatters. Tool name/version configurable per consumer.
 - `libverify-github` — GitHub API client, evidence adapter, verification orchestration. Used by [gh-verify](https://github.com/HikaruEgashira/gh-verify).
@@ -28,8 +28,8 @@ Five-crate workspace:
 | `EvidenceBundle` | core | Platform-normalized evidence container |
 | `GovernedChange` | core | A change request (PR, MR, etc.) |
 | `Control` trait | core | Evaluates evidence → findings |
-| `ControlId` | core | String-based open ID (`builtin::` constants for 21 built-in) |
-| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 21 |
+| `ControlId` | core | String-based open ID (`builtin::` constants for 24 built-in) |
+| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 24 |
 | `DependencySignatureEvidence` | core | Per-dependency verification evidence with provenance fields |
 | `VerificationOutcome` | core | `Verified` / `ChecksumMatch` / failure variants (7 total) |
 | `ControlProfile` trait | core | Maps findings → severity + gate decision. All profiles (including SLSA) are OPA policy presets. |

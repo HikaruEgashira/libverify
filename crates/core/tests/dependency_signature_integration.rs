@@ -153,11 +153,11 @@ fn scenario_c_builtin_registry_contains_dependency_signature() {
         id_strings
     );
 
-    // Also verify the total count matches the documented 21.
+    // Also verify the total count matches the documented 24.
     assert_eq!(
         registry.len(),
-        21,
-        "builtin registry should have 21 controls"
+        24,
+        "builtin registry should have 24 controls"
     );
 }
 

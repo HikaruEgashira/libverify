@@ -4,7 +4,10 @@ pub mod build_isolation;
 pub mod build_provenance;
 pub mod change_request_size;
 pub mod conventional_title;
+pub mod dependency_completeness;
+pub mod dependency_provenance;
 pub mod dependency_signature;
+pub mod dependency_signer_verified;
 pub mod description_quality;
 pub mod hosted_build_platform;
 pub mod issue_linkage;
@@ -29,7 +32,10 @@ use self::build_isolation::BuildIsolationControl;
 use self::build_provenance::BuildProvenanceControl;
 use self::change_request_size::ChangeRequestSizeControl;
 use self::conventional_title::ConventionalTitleControl;
+use self::dependency_completeness::DependencyCompletenessControl;
+use self::dependency_provenance::DependencyProvenanceControl;
 use self::dependency_signature::DependencySignatureControl;
+use self::dependency_signer_verified::DependencySignerVerifiedControl;
 use self::description_quality::DescriptionQualityControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
@@ -61,6 +67,9 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::PROVENANCE_AUTHENTICITY => Some(Box::new(ProvenanceAuthenticityControl)),
         builtin::BUILD_ISOLATION => Some(Box::new(BuildIsolationControl)),
         builtin::DEPENDENCY_SIGNATURE => Some(Box::new(DependencySignatureControl)),
+        builtin::DEPENDENCY_PROVENANCE_CHECK => Some(Box::new(DependencyProvenanceControl)),
+        builtin::DEPENDENCY_SIGNER_VERIFIED => Some(Box::new(DependencySignerVerifiedControl)),
+        builtin::DEPENDENCY_COMPLETENESS => Some(Box::new(DependencyCompletenessControl)),
         builtin::CHANGE_REQUEST_SIZE => Some(Box::new(ChangeRequestSizeControl)),
         builtin::TEST_COVERAGE => Some(Box::new(TestCoverageControl)),
         builtin::SCOPED_CHANGE => Some(Box::new(ScopedChangeControl)),
@@ -90,12 +99,12 @@ pub fn slsa_controls(source_level: SlsaLevel, build_level: SlsaLevel) -> Vec<Box
     controls
 }
 
-/// Returns all SLSA controls (Source L4 + Build L3 + Dependencies L1).
+/// Returns all SLSA controls (Source L4 + Build L3 + Dependencies L4).
 pub fn all_slsa_controls() -> Vec<Box<dyn Control>> {
     let mut controls = slsa_controls(SlsaLevel::L4, SlsaLevel::L3);
     controls.extend(slsa_controls_for_level(
         SlsaTrack::Dependencies,
-        SlsaLevel::L1,
+        SlsaLevel::L4,
     ));
     controls
 }

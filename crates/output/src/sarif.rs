@@ -31,7 +31,16 @@ fn builtin_rule_description(id: &str) -> &'static str {
         "security-file-change" => "Changes to security-sensitive files require heightened scrutiny",
         "release-traceability" => "Release batches must trace to governed change requests",
         "dependency-signature" => {
-            "All dependencies must have verified cryptographic signatures or provenance"
+            "All dependencies must have verified integrity (checksum or signature)"
+        }
+        "dependency-provenance" => {
+            "All dependencies must have cryptographic signatures with source provenance"
+        }
+        "dependency-signer-verified" => {
+            "All dependencies must have verified signer identity and transparency log"
+        }
+        "dependency-completeness" => {
+            "All dependencies (direct and transitive) must be fully provenance-verified"
         }
         _ => "Custom control",
     }

@@ -237,10 +237,19 @@ pub fn verify_repo(
         ..Default::default()
     };
 
-    // Use only dependency-scoped controls to avoid NotApplicable noise
+    // Use only dependency-scoped controls (L1-L4) to avoid NotApplicable noise
     let mut registry = ControlRegistry::new();
     registry.register(Box::new(
         libverify_core::controls::dependency_signature::DependencySignatureControl,
+    ));
+    registry.register(Box::new(
+        libverify_core::controls::dependency_provenance::DependencyProvenanceControl,
+    ));
+    registry.register(Box::new(
+        libverify_core::controls::dependency_signer_verified::DependencySignerVerifiedControl,
+    ));
+    registry.register(Box::new(
+        libverify_core::controls::dependency_completeness::DependencyCompletenessControl,
     ));
     let profile = OpaProfile::from_preset_or_file(policy.unwrap_or("default"))?;
     let report = libverify_core::assessment::assess(&bundle, registry.controls(), &profile);
