@@ -49,6 +49,10 @@ impl Control for SecurityFileChangeControl {
         builtin::id(builtin::SECURITY_FILE_CHANGE)
     }
 
+    fn description(&self) -> &'static str {
+        "Changes to security-sensitive files require heightened scrutiny"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

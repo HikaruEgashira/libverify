@@ -11,6 +11,10 @@ impl Control for TestCoverageControl {
         builtin::id(builtin::TEST_COVERAGE)
     }
 
+    fn description(&self) -> &'static str {
+        "Source changes must include matching test updates"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

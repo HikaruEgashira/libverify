@@ -18,6 +18,10 @@ impl Control for ConventionalTitleControl {
         builtin::id(builtin::CONVENTIONAL_TITLE)
     }
 
+    fn description(&self) -> &'static str {
+        "Titles must follow Conventional Commits format"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

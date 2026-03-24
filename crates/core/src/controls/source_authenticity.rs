@@ -13,6 +13,10 @@ impl Control for SourceAuthenticityControl {
         builtin::id(builtin::SOURCE_AUTHENTICITY)
     }
 
+    fn description(&self) -> &'static str {
+        "All commits must carry verified signatures"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let mut findings = Vec::new();
 

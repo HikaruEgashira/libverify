@@ -15,6 +15,10 @@ impl Control for DependencyProvenanceControl {
         builtin::id(builtin::DEPENDENCY_PROVENANCE_CHECK)
     }
 
+    fn description(&self) -> &'static str {
+        "All dependencies must have cryptographic signatures with source provenance"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

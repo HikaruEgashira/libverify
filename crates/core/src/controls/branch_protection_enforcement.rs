@@ -19,6 +19,10 @@ impl Control for BranchProtectionEnforcementControl {
         builtin::id(builtin::BRANCH_PROTECTION_ENFORCEMENT)
     }
 
+    fn description(&self) -> &'static str {
+        "Branch protection rules must be continuously enforced"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

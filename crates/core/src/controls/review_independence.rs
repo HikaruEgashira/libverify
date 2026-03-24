@@ -12,6 +12,10 @@ impl Control for ReviewIndependenceControl {
         builtin::id(builtin::REVIEW_INDEPENDENCE)
     }
 
+    fn description(&self) -> &'static str {
+        "Four-eyes: approver must differ from author"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

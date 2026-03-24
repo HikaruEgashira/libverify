@@ -12,6 +12,10 @@ impl Control for ProvenanceAuthenticityControl {
         builtin::id(builtin::PROVENANCE_AUTHENTICITY)
     }
 
+    fn description(&self) -> &'static str {
+        "Provenance attestation must be cryptographically signed"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

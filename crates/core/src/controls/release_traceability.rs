@@ -13,6 +13,10 @@ impl Control for ReleaseTraceabilityControl {
         builtin::id(builtin::RELEASE_TRACEABILITY)
     }
 
+    fn description(&self) -> &'static str {
+        "Release batches must trace to governed change requests"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.promotion_batches.is_empty() {
             return vec![ControlFinding::not_applicable(

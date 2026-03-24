@@ -3,6 +3,7 @@ pub mod branch_protection_enforcement;
 pub mod build_isolation;
 pub mod build_provenance;
 pub mod change_request_size;
+pub mod codeowners_coverage;
 pub mod conventional_title;
 pub mod dependency_completeness;
 pub mod dependency_provenance;
@@ -17,11 +18,14 @@ pub mod release_traceability;
 pub mod required_status_checks;
 pub mod review_independence;
 pub mod scoped_change;
+pub mod secret_scanning;
 pub mod security_file_change;
+pub mod security_policy;
 pub mod source_authenticity;
 pub mod stale_review;
 pub mod test_coverage;
 pub mod two_party_review;
+pub mod vulnerability_scanning;
 
 use crate::control::{Control, builtin};
 use crate::slsa::{SlsaLevel, SlsaTrack};
@@ -31,6 +35,7 @@ use self::branch_protection_enforcement::BranchProtectionEnforcementControl;
 use self::build_isolation::BuildIsolationControl;
 use self::build_provenance::BuildProvenanceControl;
 use self::change_request_size::ChangeRequestSizeControl;
+use self::codeowners_coverage::CodeownersCoverageControl;
 use self::conventional_title::ConventionalTitleControl;
 use self::dependency_completeness::DependencyCompletenessControl;
 use self::dependency_provenance::DependencyProvenanceControl;
@@ -45,11 +50,14 @@ use self::release_traceability::ReleaseTraceabilityControl;
 use self::required_status_checks::RequiredStatusChecksControl;
 use self::review_independence::ReviewIndependenceControl;
 use self::scoped_change::ScopedChangeControl;
+use self::secret_scanning::SecretScanningControl;
 use self::security_file_change::SecurityFileChangeControl;
+use self::security_policy::SecurityPolicyControl;
 use self::source_authenticity::SourceAuthenticityControl;
 use self::stale_review::StaleReviewControl;
 use self::test_coverage::TestCoverageControl;
 use self::two_party_review::TwoPartyReviewControl;
+use self::vulnerability_scanning::VulnerabilityScanningControl;
 
 /// Instantiates a control by its string ID.
 fn instantiate(id: &str) -> Option<Box<dyn Control>> {
@@ -80,7 +88,20 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::CONVENTIONAL_TITLE => Some(Box::new(ConventionalTitleControl)),
         builtin::SECURITY_FILE_CHANGE => Some(Box::new(SecurityFileChangeControl)),
         builtin::RELEASE_TRACEABILITY => Some(Box::new(ReleaseTraceabilityControl)),
+        builtin::CODEOWNERS_COVERAGE => Some(Box::new(CodeownersCoverageControl)),
+        builtin::SECRET_SCANNING => Some(Box::new(SecretScanningControl)),
+        builtin::VULNERABILITY_SCANNING => Some(Box::new(VulnerabilityScanningControl)),
+        builtin::SECURITY_POLICY => Some(Box::new(SecurityPolicyControl)),
         _ => None,
+    }
+}
+
+/// Returns the SARIF-friendly description for a built-in control ID.
+/// Falls back to "Custom control" for unknown IDs.
+pub fn control_description(id: &str) -> &'static str {
+    match instantiate(id) {
+        Some(c) => c.description(),
+        None => "Custom control",
     }
 }
 
@@ -109,7 +130,7 @@ pub fn all_slsa_controls() -> Vec<Box<dyn Control>> {
     controls
 }
 
-/// Returns compliance controls (non-SLSA, SOC2 CC7/CC8 mapped).
+/// Returns compliance controls (non-SLSA, SOC2/ASPM mapped).
 pub fn compliance_controls() -> Vec<Box<dyn Control>> {
     vec![
         Box::new(ChangeRequestSizeControl),
@@ -122,6 +143,10 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(ConventionalTitleControl),
         Box::new(SecurityFileChangeControl),
         Box::new(ReleaseTraceabilityControl),
+        Box::new(CodeownersCoverageControl),
+        Box::new(SecretScanningControl),
+        Box::new(VulnerabilityScanningControl),
+        Box::new(SecurityPolicyControl),
     ]
 }
 
@@ -175,12 +200,14 @@ mod tests {
     }
 
     #[test]
-    fn compliance_controls_count() {
-        let controls = compliance_controls();
+    fn compliance_plus_slsa_equals_all() {
+        use crate::control::builtin;
+        let compliance = compliance_controls();
+        let slsa = all_slsa_controls();
         assert_eq!(
-            controls.len(),
-            10,
-            "compliance_controls() should return exactly 10 controls"
+            compliance.len() + slsa.len(),
+            builtin::ALL.len(),
+            "compliance + SLSA controls must cover all built-in controls"
         );
     }
 

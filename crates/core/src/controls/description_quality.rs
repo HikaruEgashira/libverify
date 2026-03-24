@@ -16,6 +16,10 @@ impl Control for DescriptionQualityControl {
         builtin::id(builtin::DESCRIPTION_QUALITY)
     }
 
+    fn description(&self) -> &'static str {
+        "Change requests must include a meaningful description"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

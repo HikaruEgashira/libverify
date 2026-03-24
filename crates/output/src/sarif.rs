@@ -38,47 +38,8 @@ fn days_to_ymd(days: u64) -> (u64, u64, u64) {
     (y, m, d)
 }
 
-/// Built-in rule descriptions, keyed by control ID string.
 fn builtin_rule_description(id: &str) -> &'static str {
-    match id {
-        "source-authenticity" => "All commits must carry verified signatures",
-        "review-independence" => "Four-eyes: approver must differ from author",
-        "branch-history-integrity" => {
-            "Branch history must be continuous and protected from force-push"
-        }
-        "branch-protection-enforcement" => "Branch protection rules must be continuously enforced",
-        "two-party-review" => "At least two independent reviewers must approve changes",
-        "build-provenance" => "Artifacts must have verified SLSA provenance",
-        "required-status-checks" => "At least one required status check must be configured",
-        "hosted-build-platform" => {
-            "Build must run on a hosted platform, not a developer workstation"
-        }
-        "provenance-authenticity" => "Provenance attestation must be cryptographically signed",
-        "build-isolation" => "Build must run in an isolated, ephemeral environment",
-        "change-request-size" => "Change request size must be within acceptable limits",
-        "test-coverage" => "Source changes must include matching test updates",
-        "scoped-change" => "Changes must be well-scoped (single logical unit)",
-        "issue-linkage" => "Change request must reference at least one issue or ticket",
-        "stale-review" => "Approvals must postdate the latest source revision",
-        "description-quality" => "Change requests must include a meaningful description",
-        "merge-commit-policy" => "Source revisions must follow linear history (no merge commits)",
-        "conventional-title" => "Titles must follow Conventional Commits format",
-        "security-file-change" => "Changes to security-sensitive files require heightened scrutiny",
-        "release-traceability" => "Release batches must trace to governed change requests",
-        "dependency-signature" => {
-            "All dependencies must have verified integrity (checksum or signature)"
-        }
-        "dependency-provenance" => {
-            "All dependencies must have cryptographic signatures with source provenance"
-        }
-        "dependency-signer-verified" => {
-            "All dependencies must have verified signer identity and transparency log"
-        }
-        "dependency-completeness" => {
-            "All dependencies (direct and transitive) must be fully provenance-verified"
-        }
-        _ => "Custom control",
-    }
+    libverify_core::controls::control_description(id)
 }
 
 pub fn render(

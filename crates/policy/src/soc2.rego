@@ -2,15 +2,18 @@
 # Enforces all five Trust Services Categories relevant to SDLC:
 #   Security, Availability, Processing Integrity, Confidentiality, Privacy.
 #
-# All controls are strict by default. SOC2 CC7 (System Operations) and
-# CC8 (Change Management) controls are treated as hard gates.
-# Indeterminate findings on build-track controls are escalated to review
-# (evidence may require attestation infrastructure not yet in place).
+# Controls are tiered:
+#   - Security-critical controls (CC6/CC7/CC8/PI core) → hard fail on violated
+#   - Advisory controls (dev-quality, style) → review on violated
+#   - OSS-origin controls → review on violated (enterprises use alternative evidence)
+#   - Build-track indeterminate → review (attestation infra may be absent)
 #
 # SOC2 criteria mapping:
-#   CC6 (Logical Access):     source-authenticity, branch-protection-enforcement
+#   CC6 (Logical Access):     source-authenticity, branch-protection-enforcement,
+#                             codeowners-coverage, secret-scanning
 #   CC7 (System Operations):  issue-linkage, stale-review, security-file-change,
-#                             release-traceability, required-status-checks
+#                             release-traceability, required-status-checks,
+#                             vulnerability-scanning, security-policy
 #   CC8 (Change Management):  review-independence, two-party-review, change-request-size,
 #                             test-coverage, scoped-change, description-quality,
 #                             merge-commit-policy, conventional-title,
@@ -55,13 +58,56 @@ map := {"severity": "warning", "decision": "review"} if {
 	input.control_id in soc2_build_controls
 }
 
+# --- Advisory controls (dev quality / style, not SOC2-critical) ---
+# These improve hygiene but no SOC2 auditor will issue an exception for
+# non-conventional commit titles or large PRs.
+soc2_advisory_controls := {
+	"change-request-size",
+	"scoped-change",
+	"description-quality",
+	"merge-commit-policy",
+	"conventional-title",
+}
+
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "violated"
+	input.control_id in soc2_advisory_controls
+}
+
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "indeterminate"
+	input.control_id in soc2_advisory_controls
+}
+
+# --- OSS-origin controls → review in enterprise (alternative evidence accepted) ---
+# security-policy checks for SECURITY.md which is an OSS convention.
+# Enterprises typically maintain disclosure processes in internal portals,
+# so a missing repo-level file is not a hard failure for SOC2.
+soc2_oss_origin_controls := {
+	"security-policy",
+}
+
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "violated"
+	input.control_id in soc2_oss_origin_controls
+}
+
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "indeterminate"
+	input.control_id in soc2_oss_origin_controls
+}
+
 # --- All other indeterminate → fail (strict SOC2 posture) ---
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "indeterminate"
 	not input.control_id in soc2_build_controls
+	not input.control_id in soc2_advisory_controls
+	not input.control_id in soc2_oss_origin_controls
 }
 
-# --- All violated → fail (no exceptions in SOC2) ---
+# --- All other violated → fail (SOC2-critical controls) ---
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "violated"
+	not input.control_id in soc2_advisory_controls
+	not input.control_id in soc2_oss_origin_controls
 }

@@ -153,11 +153,11 @@ fn scenario_c_builtin_registry_contains_dependency_signature() {
         id_strings
     );
 
-    // Also verify the total count matches the documented 24.
+    // Verify the registry covers all builtin IDs.
     assert_eq!(
         registry.len(),
-        24,
-        "builtin registry should have 24 controls"
+        libverify_core::control::builtin::ALL.len(),
+        "builtin registry should have one control per builtin::ALL entry"
     );
 }
 

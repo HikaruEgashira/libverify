@@ -9,6 +9,10 @@ impl Control for IssueLinkageControl {
         builtin::id(builtin::ISSUE_LINKAGE)
     }
 
+    fn description(&self) -> &'static str {
+        "Change request must reference at least one issue or ticket"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

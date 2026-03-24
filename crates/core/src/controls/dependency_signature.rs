@@ -22,6 +22,10 @@ impl Control for DependencySignatureControl {
         builtin::id(builtin::DEPENDENCY_SIGNATURE)
     }
 
+    fn description(&self) -> &'static str {
+        "All dependencies must have verified integrity (checksum or signature)"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

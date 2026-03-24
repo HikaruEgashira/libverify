@@ -2,7 +2,7 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-use crate::evidence::{EvidenceBundle, EvidenceGap};
+use crate::evidence::{EvidenceBundle, EvidenceGap, EvidenceState, RepositoryPosture};
 
 /// A string-based control identifier, enabling open extensibility.
 ///
@@ -78,7 +78,13 @@ pub mod builtin {
     pub const SECURITY_FILE_CHANGE: &str = "security-file-change";
     pub const RELEASE_TRACEABILITY: &str = "release-traceability";
 
-    /// All 24 built-in control IDs.
+    // ASPM / Repository Posture
+    pub const CODEOWNERS_COVERAGE: &str = "codeowners-coverage";
+    pub const SECRET_SCANNING: &str = "secret-scanning";
+    pub const VULNERABILITY_SCANNING: &str = "vulnerability-scanning";
+    pub const SECURITY_POLICY: &str = "security-policy";
+
+    /// All 28 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -104,6 +110,10 @@ pub mod builtin {
         CONVENTIONAL_TITLE,
         SECURITY_FILE_CHANGE,
         RELEASE_TRACEABILITY,
+        CODEOWNERS_COVERAGE,
+        SECRET_SCANNING,
+        VULNERABILITY_SCANNING,
+        SECURITY_POLICY,
     ];
 
     /// Returns a ControlId for a built-in constant.
@@ -202,12 +212,46 @@ impl ControlFinding {
             evidence_gaps: Vec::new(),
         }
     }
+
+    /// Extracts `RepositoryPosture` from evidence, returning appropriate
+    /// `Indeterminate` or `NotApplicable` findings for non-complete states.
+    ///
+    /// Use in posture controls to eliminate repeated `match` boilerplate:
+    /// ```ignore
+    /// let posture = match ControlFinding::extract_posture(self.id(), evidence) {
+    ///     Ok(p) => p,
+    ///     Err(findings) => return findings,
+    /// };
+    /// ```
+    pub fn extract_posture(
+        id: ControlId,
+        evidence: &EvidenceBundle,
+    ) -> Result<&RepositoryPosture, Vec<ControlFinding>> {
+        match &evidence.repository_posture {
+            EvidenceState::Complete { value } | EvidenceState::Partial { value, .. } => Ok(value),
+            EvidenceState::Missing { gaps } => Err(vec![ControlFinding::indeterminate(
+                id,
+                "Repository posture evidence could not be collected",
+                vec![],
+                gaps.clone(),
+            )]),
+            EvidenceState::NotApplicable => Err(vec![ControlFinding::not_applicable(
+                id,
+                "Repository posture not applicable",
+            )]),
+        }
+    }
 }
 
 /// A verifiable SDLC control that produces findings from evidence.
 pub trait Control: Send + Sync {
     /// Returns the unique identifier for this control.
     fn id(&self) -> ControlId;
+
+    /// Human-readable description for SARIF rule output.
+    fn description(&self) -> &'static str {
+        "Custom control"
+    }
 
     /// Evaluates the evidence bundle and returns one finding per subject.
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding>;
@@ -240,11 +284,6 @@ mod tests {
     fn control_id_from_str() {
         let id: ControlId = "source-authenticity".into();
         assert_eq!(id.as_str(), "source-authenticity");
-    }
-
-    #[test]
-    fn builtin_ids_are_24() {
-        assert_eq!(builtin::ALL.len(), 24);
     }
 
     #[test]

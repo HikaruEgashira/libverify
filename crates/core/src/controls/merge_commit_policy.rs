@@ -14,6 +14,10 @@ impl Control for MergeCommitPolicyControl {
         builtin::id(builtin::MERGE_COMMIT_POLICY)
     }
 
+    fn description(&self) -> &'static str {
+        "Source revisions must follow linear history (no merge commits)"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

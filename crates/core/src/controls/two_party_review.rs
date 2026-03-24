@@ -13,6 +13,10 @@ impl Control for TwoPartyReviewControl {
         builtin::id(builtin::TWO_PARTY_REVIEW)
     }
 
+    fn description(&self) -> &'static str {
+        "At least two independent reviewers must approve changes"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

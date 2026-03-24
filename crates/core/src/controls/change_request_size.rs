@@ -16,6 +16,10 @@ impl Control for ChangeRequestSizeControl {
         builtin::id(builtin::CHANGE_REQUEST_SIZE)
     }
 
+    fn description(&self) -> &'static str {
+        "Change request size must be within acceptable limits"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

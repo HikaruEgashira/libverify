@@ -11,6 +11,10 @@ impl Control for BuildIsolationControl {
         builtin::id(builtin::BUILD_ISOLATION)
     }
 
+    fn description(&self) -> &'static str {
+        "Build must run in an isolated, ephemeral environment"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

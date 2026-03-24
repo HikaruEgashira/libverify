@@ -374,6 +374,51 @@ fn default_true() -> bool {
     true
 }
 
+/// A single CODEOWNERS entry mapping a file pattern to its designated owners.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CodeownersEntry {
+    /// File pattern (e.g. "*.rs", "/src/auth/", "*").
+    pub pattern: String,
+    /// Designated owners (e.g. "@org/security-team", "alice@example.com").
+    pub owners: Vec<String>,
+}
+
+/// Repository-level security posture evidence for ASPM controls.
+///
+/// Captures configuration-level signals that are independent of any single
+/// change request: code ownership, scanning settings, and security policy.
+/// Designed to be populated from GitHub REST API, GitLab API, or other platform adapters.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RepositoryPosture {
+    /// Parsed CODEOWNERS entries. Empty vec means no CODEOWNERS file found.
+    pub codeowners_entries: Vec<CodeownersEntry>,
+
+    // --- Secret scanning (CC6.1 / CC6.6) ---
+    /// Whether secret scanning is enabled (detection).
+    pub secret_scanning_enabled: bool,
+    /// Whether push protection is enabled (prevention). Requires GHAS on private repos.
+    #[serde(default)]
+    pub secret_push_protection_enabled: bool,
+
+    // --- Vulnerability scanning (CC7.1) ---
+    /// Whether dependency vulnerability scanning (Dependabot, Snyk, etc.) is enabled.
+    pub vulnerability_scanning_enabled: bool,
+    /// Whether code scanning / SAST (CodeQL, Semgrep, etc.) is enabled.
+    #[serde(default)]
+    pub code_scanning_enabled: bool,
+
+    // --- Security policy (CC7.3 / CC7.4) ---
+    /// Whether a SECURITY.md or equivalent security policy file exists.
+    pub security_policy_present: bool,
+    /// Whether the security policy describes a responsible disclosure process.
+    pub security_policy_has_disclosure: bool,
+
+    // --- Branch protection (CC6.1 / CC8.1) ---
+    /// Whether the default branch has protection rules configured.
+    #[serde(default)]
+    pub default_branch_protected: bool,
+}
+
 /// Build platform evidence for Build Track L2+.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BuildPlatformEvidence {
@@ -394,4 +439,6 @@ pub struct EvidenceBundle {
     pub check_runs: EvidenceState<Vec<CheckRunEvidence>>,
     pub build_platform: EvidenceState<Vec<BuildPlatformEvidence>>,
     pub dependency_signatures: EvidenceState<Vec<DependencySignatureEvidence>>,
+    #[serde(default)]
+    pub repository_posture: EvidenceState<RepositoryPosture>,
 }

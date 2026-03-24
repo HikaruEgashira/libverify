@@ -16,6 +16,10 @@ impl Control for BranchHistoryIntegrityControl {
         builtin::id(builtin::BRANCH_HISTORY_INTEGRITY)
     }
 
+    fn description(&self) -> &'static str {
+        "Branch history must be continuous and protected from force-push"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

@@ -16,7 +16,7 @@ impl ControlRegistry {
         }
     }
 
-    /// Creates a registry with all built-in controls (14 SLSA + 10 compliance).
+    /// Creates a registry with all built-in controls (14 SLSA + 14 compliance).
     pub fn builtin() -> Self {
         let mut registry = Self::new();
         registry.register_builtins();
@@ -66,9 +66,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn builtin_registry_has_24_controls() {
+    fn builtin_registry_matches_all_count() {
+        use crate::control::builtin;
         let registry = ControlRegistry::builtin();
-        assert_eq!(registry.len(), 24);
+        assert_eq!(
+            registry.len(),
+            builtin::ALL.len(),
+            "registry must contain exactly one control per builtin::ALL entry"
+        );
     }
 
     #[test]

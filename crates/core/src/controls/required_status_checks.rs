@@ -9,6 +9,10 @@ impl Control for RequiredStatusChecksControl {
         builtin::id(builtin::REQUIRED_STATUS_CHECKS)
     }
 
+    fn description(&self) -> &'static str {
+        "At least one required status check must be configured"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

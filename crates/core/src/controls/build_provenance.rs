@@ -11,6 +11,10 @@ impl Control for BuildProvenanceControl {
         builtin::id(builtin::BUILD_PROVENANCE)
     }
 
+    fn description(&self) -> &'static str {
+        "Artifacts must have verified SLSA provenance"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

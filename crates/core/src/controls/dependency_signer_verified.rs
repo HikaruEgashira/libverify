@@ -17,6 +17,10 @@ impl Control for DependencySignerVerifiedControl {
         builtin::id(builtin::DEPENDENCY_SIGNER_VERIFIED)
     }
 
+    fn description(&self) -> &'static str {
+        "All dependencies must have verified signer identity and transparency log"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

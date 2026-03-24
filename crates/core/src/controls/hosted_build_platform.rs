@@ -11,6 +11,10 @@ impl Control for HostedBuildPlatformControl {
         builtin::id(builtin::HOSTED_BUILD_PLATFORM)
     }
 
+    fn description(&self) -> &'static str {
+        "Build must run on a hosted platform, not a developer workstation"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

@@ -16,6 +16,10 @@ impl Control for ScopedChangeControl {
         builtin::id(builtin::SCOPED_CHANGE)
     }
 
+    fn description(&self) -> &'static str {
+        "Changes must be well-scoped (single logical unit)"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(

@@ -17,6 +17,10 @@ impl Control for DependencyCompletenessControl {
         builtin::id(builtin::DEPENDENCY_COMPLETENESS)
     }
 
+    fn description(&self) -> &'static str {
+        "All dependencies (direct and transitive) must be fully provenance-verified"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         let id = self.id();
 

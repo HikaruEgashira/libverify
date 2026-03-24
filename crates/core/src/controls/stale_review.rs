@@ -13,6 +13,10 @@ impl Control for StaleReviewControl {
         builtin::id(builtin::STALE_REVIEW)
     }
 
+    fn description(&self) -> &'static str {
+        "Approvals must postdate the latest source revision"
+    }
+
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
         if evidence.change_requests.is_empty() {
             return vec![ControlFinding::not_applicable(
