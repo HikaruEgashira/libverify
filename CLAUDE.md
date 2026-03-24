@@ -13,11 +13,12 @@ cargo clippy --workspace --exclude libverify-verif  # Lint
 
 ## Architecture
 
-Four-crate workspace:
+Five-crate workspace:
 
 - `libverify-core` — evidence model, Control trait, 20 built-in controls, assessment engine, SLSA v1.2 mapping, profile system. Pure logic, serde only.
 - `libverify-policy` — OPA Rego policy engine (regorus). 5 presets: default, oss, aiops, soc1, soc2.
 - `libverify-output` — SARIF/JSON output formatters. Tool name/version configurable per consumer.
+- `libverify-github` — GitHub API client, evidence adapter, verification orchestration. Used by [gh-verify](https://github.com/HikaruEgashira/gh-verify).
 - `libverify-verif` — Creusot formal verification targets.
 
 ## Key types
@@ -33,6 +34,10 @@ Four-crate workspace:
 | `OpaProfile` | policy | Rego-based profile implementation |
 | `VerificationResult` | core | Assessment report + optional evidence |
 | `BatchReport` | core | Multiple verification results |
+| `GitHubConfig` | github | GitHub API token/host/repo resolution |
+| `GitHubClient` | github | REST + GraphQL client with retry/pagination |
+| `verify_pr` | github | Single PR verification orchestration |
+| `verify_release` | github | Release verification orchestration |
 
 ## Adding a new control
 
