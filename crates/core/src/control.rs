@@ -253,8 +253,54 @@ pub trait Control: Send + Sync {
         "Custom control"
     }
 
+    /// SOC2 Trust Services Criteria this control maps to (e.g., &["CC6.1", "CC8.1"]).
+    /// Returns empty slice for controls not mapped to SOC2.
+    fn tsc_criteria(&self) -> &'static [&'static str] {
+        builtin_tsc_mapping(self.id().as_str())
+    }
+
     /// Evaluates the evidence bundle and returns one finding per subject.
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding>;
+}
+
+/// Returns SOC2 Trust Services Criteria for a built-in control ID.
+pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
+    match id {
+        // CC6: Logical and Physical Access Controls
+        builtin::SOURCE_AUTHENTICITY => &["CC6.1"],
+        builtin::BRANCH_PROTECTION_ENFORCEMENT => &["CC6.1", "CC8.1"],
+        builtin::CODEOWNERS_COVERAGE => &["CC6.1"],
+        builtin::SECRET_SCANNING => &["CC6.1", "CC6.6"],
+        // CC7: System Operations
+        builtin::ISSUE_LINKAGE => &["CC7.2"],
+        builtin::STALE_REVIEW => &["CC7.2"],
+        builtin::SECURITY_FILE_CHANGE => &["CC7.2"],
+        builtin::RELEASE_TRACEABILITY => &["CC7.2"],
+        builtin::REQUIRED_STATUS_CHECKS => &["CC7.1"],
+        builtin::VULNERABILITY_SCANNING => &["CC7.1"],
+        builtin::SECURITY_POLICY => &["CC7.3", "CC7.4"],
+        // CC8: Change Management
+        builtin::REVIEW_INDEPENDENCE => &["CC8.1"],
+        builtin::TWO_PARTY_REVIEW => &["CC8.1"],
+        builtin::CHANGE_REQUEST_SIZE => &["CC8.1"],
+        builtin::TEST_COVERAGE => &["CC8.1"],
+        builtin::SCOPED_CHANGE => &["CC8.1"],
+        builtin::DESCRIPTION_QUALITY => &["CC8.1"],
+        builtin::MERGE_COMMIT_POLICY => &["CC8.1"],
+        builtin::CONVENTIONAL_TITLE => &["CC8.1"],
+        builtin::BRANCH_HISTORY_INTEGRITY => &["CC8.1"],
+        // PI: Processing Integrity
+        builtin::BUILD_PROVENANCE => &["PI1.4"],
+        builtin::HOSTED_BUILD_PLATFORM => &["PI1.4"],
+        builtin::PROVENANCE_AUTHENTICITY => &["PI1.4"],
+        builtin::BUILD_ISOLATION => &["PI1.4"],
+        // Dependencies (CC7.1 + PI)
+        builtin::DEPENDENCY_SIGNATURE => &["CC7.1", "PI1.4"],
+        builtin::DEPENDENCY_PROVENANCE_CHECK => &["CC7.1", "PI1.4"],
+        builtin::DEPENDENCY_SIGNER_VERIFIED => &["CC7.1", "PI1.4"],
+        builtin::DEPENDENCY_COMPLETENESS => &["CC7.1", "PI1.4"],
+        _ => &[],
+    }
 }
 
 /// Runs every control against the evidence bundle and collects all findings.
