@@ -169,40 +169,123 @@ impl NpmAttestationClient {
 
     /// Enrich npm dependencies in-place with provenance data from the attestation API.
     /// Non-npm dependencies and dependencies that lack attestations are left unchanged.
+    ///
+    /// Uses a bounded worker pool (`CONCURRENCY` threads) to handle large
+    /// dependency trees efficiently. Progress is reported to stderr.
     pub fn enrich_npm_deps(&self, deps: &mut [DependencySignatureEvidence]) {
-        for dep in deps.iter_mut() {
-            if dep.registry.as_deref() != Some("registry.npmjs.org") {
-                continue;
+        const CONCURRENCY: usize = 16;
+
+        // Collect indices of npm deps to enrich
+        let npm_indices: Vec<usize> = deps
+            .iter()
+            .enumerate()
+            .filter(|(_, d)| d.registry.as_deref() == Some("registry.npmjs.org"))
+            .map(|(i, _)| i)
+            .collect();
+
+        if npm_indices.is_empty() {
+            return;
+        }
+
+        let total = npm_indices.len();
+        eprintln!("Fetching npm provenance for {total} packages ({CONCURRENCY} concurrent)...");
+
+        // Collect (index, name, version) for the work queue
+        let queries: Vec<(usize, String, String)> = npm_indices
+            .iter()
+            .map(|&i| (i, deps[i].name.clone(), deps[i].version.clone()))
+            .collect();
+
+        // Worker pool: CONCURRENCY threads pull from a shared work queue
+        let results: Vec<(usize, Option<NpmProvenance>)> = std::thread::scope(|scope| {
+            let (tx, rx) = std::sync::mpsc::channel::<(usize, String, String)>();
+            let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
+            let result_tx_orig = std::sync::mpsc::channel::<(usize, Option<NpmProvenance>)>();
+            let result_tx = result_tx_orig.0;
+            let result_rx = result_tx_orig.1;
+            let done = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+
+            // Spawn worker threads
+            let workers: Vec<_> = (0..CONCURRENCY.min(total))
+                .map(|_| {
+                    let rx = rx.clone();
+                    let result_tx = result_tx.clone();
+                    let done = done.clone();
+                    let client = &self;
+                    scope.spawn(move || {
+                        loop {
+                            let work = {
+                                let guard = rx.lock().unwrap();
+                                guard.recv().ok()
+                            };
+                            match work {
+                                Some((idx, name, version)) => {
+                                    let prov = match client.fetch_provenance(&name, &version) {
+                                        Ok(p) => p,
+                                        Err(e) => {
+                                            eprintln!(
+                                                "Warning: npm attestation for {name}@{version}: {e:#}"
+                                            );
+                                            None
+                                        }
+                                    };
+                                    let count = done.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                                    if count % 50 == 0 || count == total {
+                                        eprint!("\r  [{count}/{total}]");
+                                    }
+                                    let _ = result_tx.send((idx, prov));
+                                }
+                                None => break, // Channel closed, no more work
+                            }
+                        }
+                    })
+                })
+                .collect();
+
+            // Drop our copy of result_tx so result_rx closes when workers finish
+            drop(result_tx);
+
+            // Enqueue all work
+            for q in queries {
+                let _ = tx.send(q);
+            }
+            drop(tx); // Signal no more work
+
+            // Collect results
+            let results: Vec<_> = result_rx.iter().collect();
+
+            // Wait for workers to finish
+            for w in workers {
+                let _ = w.join();
             }
 
-            match self.fetch_provenance(&dep.name, &dep.version) {
-                Ok(Some(prov)) => {
-                    dep.source_repo = prov.source_repo;
-                    dep.source_commit = prov.source_commit;
-                    dep.signer_identity = prov.signer_identity;
-                    if let Some(log_index) = prov.transparency_log_index {
-                        dep.transparency_log_uri = Some(format!(
-                            "https://search.sigstore.dev/?logIndex={log_index}"
-                        ));
-                    }
-                    // Upgrade verification from ChecksumMatch to Verified
-                    // if we found a valid SLSA provenance attestation
-                    if dep.verification == VerificationOutcome::ChecksumMatch {
-                        dep.verification = VerificationOutcome::Verified;
-                        dep.signature_mechanism = Some("sigstore".to_string());
-                    }
+            results
+        });
+
+        eprintln!();
+
+        // Apply results
+        let mut enriched = 0usize;
+        for (idx, prov) in results {
+            if let Some(prov) = prov {
+                let dep = &mut deps[idx];
+                dep.source_repo = prov.source_repo;
+                dep.source_commit = prov.source_commit;
+                dep.signer_identity = prov.signer_identity;
+                if let Some(log_index) = prov.transparency_log_index {
+                    dep.transparency_log_uri = Some(format!(
+                        "https://search.sigstore.dev/?logIndex={log_index}"
+                    ));
                 }
-                Ok(None) => {
-                    // No attestation — leave as-is (checksum only)
+                if dep.verification == VerificationOutcome::ChecksumMatch {
+                    dep.verification = VerificationOutcome::Verified;
+                    dep.signature_mechanism = Some("sigstore".to_string());
                 }
-                Err(e) => {
-                    eprintln!(
-                        "Warning: failed to fetch npm attestation for {}@{}: {e:#}",
-                        dep.name, dep.version
-                    );
-                }
+                enriched += 1;
             }
         }
+
+        eprintln!("  {enriched}/{total} npm packages have provenance attestations");
     }
 }
 
