@@ -708,8 +708,6 @@ fn collect_rules(root: &Path) -> BTreeMap<String, RuleInfo> {
                     Some("required-reviewers")
                 } else if name.contains("coverage") || name.contains("uncovered") {
                     Some("source-authenticity")
-                } else if name.contains("scope") || name.contains("classify") {
-                    None
                 } else {
                     None
                 };
