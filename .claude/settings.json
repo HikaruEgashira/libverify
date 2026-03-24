@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command' | { read -r cmd; if echo \"$cmd\" | rg -q '^git\\s+commit'; then cargo fmt --all -- --check 2>&1 || { cargo fmt --all && git add -u && echo 'Auto-formatted and re-staged'; }; fi; }",
+            "timeout": 30,
+            "statusMessage": "Checking cargo fmt..."
+          }
+        ]
+      }
+    ]
+  }
+}
