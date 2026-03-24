@@ -39,9 +39,7 @@ fn evaluate_change(change: &GovernedChange) -> ControlFinding {
     if change.is_bot_submitted() {
         return ControlFinding::not_applicable(
             builtin::id(builtin::TWO_PARTY_REVIEW),
-            format!(
-                "{subject}: bot-submitted change; review verified on constituent PRs"
-            ),
+            format!("{subject}: bot-submitted change; review verified on constituent PRs"),
         );
     }
 

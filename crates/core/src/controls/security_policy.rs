@@ -99,24 +99,28 @@ mod tests {
 
     #[test]
     fn violated_when_no_policy() {
-        let findings = SecurityPolicyControl
-            .evaluate(&bundle(EvidenceState::complete(posture(false, false))));
+        let findings =
+            SecurityPolicyControl.evaluate(&bundle(EvidenceState::complete(posture(false, false))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("No SECURITY.md"));
     }
 
     #[test]
     fn violated_when_policy_without_disclosure() {
-        let findings = SecurityPolicyControl
-            .evaluate(&bundle(EvidenceState::complete(posture(true, false))));
+        let findings =
+            SecurityPolicyControl.evaluate(&bundle(EvidenceState::complete(posture(true, false))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0].rationale.contains("lacks a responsible disclosure"));
+        assert!(
+            findings[0]
+                .rationale
+                .contains("lacks a responsible disclosure")
+        );
     }
 
     #[test]
     fn satisfied_when_policy_with_disclosure() {
-        let findings = SecurityPolicyControl
-            .evaluate(&bundle(EvidenceState::complete(posture(true, true))));
+        let findings =
+            SecurityPolicyControl.evaluate(&bundle(EvidenceState::complete(posture(true, true))));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 }

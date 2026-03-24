@@ -49,8 +49,9 @@ fn build_evidence() -> EvidenceBundle {
                 additions: 45,
                 deletions: 0,
                 status: "added".to_string(),
-                diff: Some("@@ -0,0 +1,45 @@\n+#[test]\n+fn streaming_large_input() { ... }"
-                    .to_string()),
+                diff: Some(
+                    "@@ -0,0 +1,45 @@\n+#[test]\n+fn streaming_large_input() { ... }".to_string(),
+                ),
             },
         ]),
         approval_decisions: EvidenceState::complete(vec![ApprovalDecision {

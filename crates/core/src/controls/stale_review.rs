@@ -24,9 +24,7 @@ fn rfc3339_to_epoch_secs(ts: &str) -> Option<i64> {
     let tz_part = &ts[19..];
     let offset_secs = if tz_part.starts_with('Z') || tz_part.starts_with('z') {
         0
-    } else if tz_part.len() >= 6
-        && (tz_part.starts_with('+') || tz_part.starts_with('-'))
-    {
+    } else if tz_part.len() >= 6 && (tz_part.starts_with('+') || tz_part.starts_with('-')) {
         let sign = if tz_part.starts_with('+') { 1 } else { -1 };
         let oh: i64 = tz_part[1..3].parse().ok()?;
         let om: i64 = tz_part[4..6].parse().ok()?;
@@ -379,22 +377,37 @@ mod tests {
     fn timezone_aware_comparison_utc_vs_offset() {
         // Approval at 02:54 UTC, commit at 10:34+08:00 = 02:34 UTC
         // Approval is AFTER commit → not stale
-        assert!(!ts_is_before("2026-03-24T02:54:37Z", "2026-03-24T10:34:00+08:00"));
+        assert!(!ts_is_before(
+            "2026-03-24T02:54:37Z",
+            "2026-03-24T10:34:00+08:00"
+        ));
         // Reverse: commit at 02:34 UTC is before approval at 02:54 UTC
-        assert!(ts_is_before("2026-03-24T10:34:00+08:00", "2026-03-24T02:54:37Z"));
+        assert!(ts_is_before(
+            "2026-03-24T10:34:00+08:00",
+            "2026-03-24T02:54:37Z"
+        ));
     }
 
     #[test]
     fn timezone_aware_same_tz() {
         assert!(ts_is_before("2026-03-15T10:00:00Z", "2026-03-15T12:00:00Z"));
-        assert!(!ts_is_before("2026-03-15T12:00:00Z", "2026-03-15T10:00:00Z"));
+        assert!(!ts_is_before(
+            "2026-03-15T12:00:00Z",
+            "2026-03-15T10:00:00Z"
+        ));
     }
 
     #[test]
     fn timezone_aware_negative_offset() {
         // 10:00-05:00 = 15:00 UTC, which is after 14:00 UTC
-        assert!(!ts_is_before("2026-03-15T10:00:00-05:00", "2026-03-15T14:00:00Z"));
-        assert!(ts_is_before("2026-03-15T14:00:00Z", "2026-03-15T10:00:00-05:00"));
+        assert!(!ts_is_before(
+            "2026-03-15T10:00:00-05:00",
+            "2026-03-15T14:00:00Z"
+        ));
+        assert!(ts_is_before(
+            "2026-03-15T14:00:00Z",
+            "2026-03-15T10:00:00-05:00"
+        ));
     }
 
     #[test]
@@ -402,11 +415,7 @@ mod tests {
         // Real k8s scenario: approval at 02:54 UTC, commit at 10:34+08:00 (=02:34 UTC)
         let cr = make_change(
             EvidenceState::complete(vec![approval("reviewer", "2026-03-24T02:54:37Z")]),
-            EvidenceState::complete(vec![revision(
-                "abc",
-                "2026-03-24T10:34:00+08:00",
-                false,
-            )]),
+            EvidenceState::complete(vec![revision("abc", "2026-03-24T10:34:00+08:00", false)]),
         );
         let findings = StaleReviewControl.evaluate(&bundle(vec![cr]));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);

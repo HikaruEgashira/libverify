@@ -80,10 +80,7 @@ pub fn map_pull_request_evidence(
             .iter()
             .map(|review| ApprovalDecision {
                 actor: review.user.login.clone(),
-                disposition: map_review_disposition(
-                    &review.state,
-                    review.body.as_deref(),
-                ),
+                disposition: map_review_disposition(&review.state, review.body.as_deref()),
                 submitted_at: review.submitted_at.clone(),
             })
             .collect(),
@@ -352,19 +349,23 @@ pub fn map_build_platform_evidence(check_runs: &[CheckRunEvidence]) -> Vec<Build
         .filter(|cr| cr.conclusion != CheckConclusion::Pending)
         .map(|cr| {
             let slug = cr.app_slug.as_deref().unwrap_or("unknown");
-            let (hosted, ephemeral, isolated, signing_key_isolated) =
-                classify_ci_platform(slug);
+            let (hosted, ephemeral, isolated, signing_key_isolated) = classify_ci_platform(slug);
 
             // Fallback: if app_slug is unknown, try to infer from check run name.
             // Prow check runs (pull-kubernetes-*, tide) have no app_slug.
-            let (platform, hosted, ephemeral, isolated, signing_key_isolated) = if slug
-                == "unknown"
+            let (platform, hosted, ephemeral, isolated, signing_key_isolated) = if slug == "unknown"
             {
                 let inferred = infer_platform_from_name(&cr.name);
                 let (h, e, i, s) = classify_ci_platform(inferred);
                 (inferred.to_string(), h, e, i, s)
             } else {
-                (slug.to_string(), hosted, ephemeral, isolated, signing_key_isolated)
+                (
+                    slug.to_string(),
+                    hosted,
+                    ephemeral,
+                    isolated,
+                    signing_key_isolated,
+                )
             };
 
             BuildPlatformEvidence {

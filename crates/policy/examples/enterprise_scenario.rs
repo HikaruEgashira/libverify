@@ -43,8 +43,7 @@ fn build_evidence() -> EvidenceBundle {
                 deletions: 4,
                 status: "modified".to_string(),
                 diff: Some(
-                    "@@ -1,4 +1,12 @@\n-FROM node:20\n+FROM node:20@sha256:abc123..."
-                        .to_string(),
+                    "@@ -1,4 +1,12 @@\n-FROM node:20\n+FROM node:20@sha256:abc123...".to_string(),
                 ),
             },
             ChangedAsset {

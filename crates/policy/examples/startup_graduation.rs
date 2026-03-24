@@ -70,14 +70,14 @@ fn startup_evidence() -> EvidenceBundle {
 
     // Repository posture: typical early startup
     let posture = RepositoryPosture {
-        codeowners_entries: vec![],                // no CODEOWNERS
-        secret_scanning_enabled: false,            // not enabled
-        secret_push_protection_enabled: false,     // not enabled
-        vulnerability_scanning_enabled: true,      // Dependabot on
-        code_scanning_enabled: false,              // no CodeQL
-        security_policy_present: true,             // basic SECURITY.md
-        security_policy_has_disclosure: false,      // no disclosure process
-        default_branch_protected: false,           // no branch protection
+        codeowners_entries: vec![],            // no CODEOWNERS
+        secret_scanning_enabled: false,        // not enabled
+        secret_push_protection_enabled: false, // not enabled
+        vulnerability_scanning_enabled: true,  // Dependabot on
+        code_scanning_enabled: false,          // no CodeQL
+        security_policy_present: true,         // basic SECURITY.md
+        security_policy_has_disclosure: false, // no disclosure process
+        default_branch_protected: false,       // no branch protection
     };
 
     EvidenceBundle {

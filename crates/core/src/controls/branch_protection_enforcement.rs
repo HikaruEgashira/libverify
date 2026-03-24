@@ -51,9 +51,7 @@ fn evaluate_change(
     if change.is_bot_submitted() {
         return ControlFinding::not_applicable(
             id,
-            format!(
-                "{subject}: bot-submitted change; enforcement verified on constituent PRs"
-            ),
+            format!("{subject}: bot-submitted change; enforcement verified on constituent PRs"),
         );
     }
 

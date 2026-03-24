@@ -28,7 +28,8 @@ pub const NON_CODE_EXTENSIONS: &[&str] = &[
 ];
 
 /// Known non-code path prefixes that should be excluded from scope analysis.
-pub const NON_CODE_PREFIXES: &[&str] = &[".github/", "docs/", "benches/", "benchmarks/", "examples/"];
+pub const NON_CODE_PREFIXES: &[&str] =
+    &[".github/", "docs/", "benches/", "benchmarks/", "examples/"];
 
 /// Known non-code filenames (no extension) that are infrastructure/metadata.
 /// These are common across many OSS ecosystems and should not trigger test-coverage requirements.

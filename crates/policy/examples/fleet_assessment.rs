@@ -6,14 +6,12 @@
 //!
 //! Run: cargo run -p libverify-policy --example fleet_assessment
 
-use libverify_core::control::{evaluate_all, Control, ControlFinding, builtin};
+use libverify_core::control::{Control, ControlFinding, builtin, evaluate_all};
 use libverify_core::controls::codeowners_coverage::CodeownersCoverageControl;
 use libverify_core::controls::secret_scanning::SecretScanningControl;
 use libverify_core::controls::security_policy::SecurityPolicyControl;
 use libverify_core::controls::vulnerability_scanning::VulnerabilityScanningControl;
-use libverify_core::evidence::{
-    CodeownersEntry, EvidenceBundle, EvidenceState, RepositoryPosture,
-};
+use libverify_core::evidence::{CodeownersEntry, EvidenceBundle, EvidenceState, RepositoryPosture};
 use libverify_core::profile::{GateDecision, apply_profile};
 use libverify_policy::OpaProfile;
 
@@ -66,8 +64,8 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 ],
                 secret_scanning_enabled: true,
                 secret_push_protection_enabled: true,
-                vulnerability_scanning_enabled: true,  // Dependabot
-                code_scanning_enabled: true,           // CodeQL
+                vulnerability_scanning_enabled: true, // Dependabot
+                code_scanning_enabled: true,          // CodeQL
                 security_policy_present: true,
                 security_policy_has_disclosure: true,
                 default_branch_protected: true,
@@ -235,10 +233,8 @@ fn main() {
     let soc2 = OpaProfile::soc2_preset().expect("SOC2 preset should load");
     let profiles = repo_profiles();
 
-    let mut assessments: Vec<RepoAssessment> = profiles
-        .iter()
-        .map(|p| assess_repo(p, &soc2))
-        .collect();
+    let mut assessments: Vec<RepoAssessment> =
+        profiles.iter().map(|p| assess_repo(p, &soc2)).collect();
 
     // Sort by risk score descending (worst first)
     assessments.sort_by(|a, b| risk_score(b).cmp(&risk_score(a)));
@@ -252,7 +248,10 @@ fn main() {
         "  {:<20} {:>4}  {:>6}  {:>4}  {:>5}  {:<10}",
         "Repository", "Pass", "Review", "Fail", "Score", "Risk Tier"
     );
-    println!("  {:-<20} {:->4}  {:->6}  {:->4}  {:->5}  {:-<10}", "", "", "", "", "", "");
+    println!(
+        "  {:-<20} {:->4}  {:->6}  {:->4}  {:->5}  {:-<10}",
+        "", "", "", "", "", ""
+    );
 
     for a in &assessments {
         let score = risk_score(a);
@@ -368,7 +367,12 @@ fn main() {
     // ---- Worst Repo Call-out ----
     if let Some(worst) = assessments.first() {
         let score = risk_score(worst);
-        println!("  Worst-posture repo: {} (score={}, tier={})", worst.name, score, risk_tier(score));
+        println!(
+            "  Worst-posture repo: {} (score={}, tier={})",
+            worst.name,
+            score,
+            risk_tier(score)
+        );
         println!("  Recommended: prioritize enabling secret scanning and CODEOWNERS");
         println!("  for repos in CRITICAL/HIGH tiers before next SOC2 audit window.");
     }

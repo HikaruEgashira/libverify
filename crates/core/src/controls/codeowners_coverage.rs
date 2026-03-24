@@ -111,8 +111,7 @@ mod tests {
 
     #[test]
     fn not_applicable_when_posture_not_applicable() {
-        let findings =
-            CodeownersCoverageControl.evaluate(&bundle(EvidenceState::not_applicable()));
+        let findings = CodeownersCoverageControl.evaluate(&bundle(EvidenceState::not_applicable()));
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
     }
 
@@ -137,53 +136,52 @@ mod tests {
 
     #[test]
     fn violated_when_too_few_entries_without_catch_all() {
-        let findings = CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(
-            posture(vec![entry("/src/", &["@org/core-team"])]),
-        )));
+        let findings =
+            CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(posture(vec![
+                entry("/src/", &["@org/core-team"]),
+            ]))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("only 1 entries"));
     }
 
     #[test]
     fn satisfied_with_catch_all() {
-        let findings = CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(
-            posture(vec![
+        let findings =
+            CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(posture(vec![
                 entry("/src/auth/", &["@org/security-team"]),
                 entry("*", &["@org/default-reviewers"]),
-            ]),
-        )));
+            ]))));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 
     #[test]
     fn satisfied_with_glob_catch_all() {
-        let findings = CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(
-            posture(vec![entry("/**", &["@org/default-reviewers"])]),
-        )));
+        let findings =
+            CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(posture(vec![
+                entry("/**", &["@org/default-reviewers"]),
+            ]))));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 
     #[test]
     fn satisfied_with_targeted_entries_no_catch_all() {
-        let findings = CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(
-            posture(vec![
+        let findings =
+            CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(posture(vec![
                 entry("/src/auth/", &["@org/security-team"]),
                 entry("/infra/", &["@org/platform-team"]),
                 entry("/.github/", &["@org/devops"]),
-            ]),
-        )));
+            ]))));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
         assert!(findings[0].rationale.contains("targeted entries"));
     }
 
     #[test]
     fn violated_with_two_entries_no_catch_all() {
-        let findings = CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(
-            posture(vec![
+        let findings =
+            CodeownersCoverageControl.evaluate(&bundle(EvidenceState::complete(posture(vec![
                 entry("/src/auth/", &["@org/security-team"]),
                 entry("/infra/", &["@org/platform-team"]),
-            ]),
-        )));
+            ]))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
     }
 }

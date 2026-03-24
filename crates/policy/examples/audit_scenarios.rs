@@ -11,9 +11,7 @@ use libverify_core::controls::codeowners_coverage::CodeownersCoverageControl;
 use libverify_core::controls::secret_scanning::SecretScanningControl;
 use libverify_core::controls::security_policy::SecurityPolicyControl;
 use libverify_core::controls::vulnerability_scanning::VulnerabilityScanningControl;
-use libverify_core::evidence::{
-    CodeownersEntry, EvidenceBundle, EvidenceState, RepositoryPosture,
-};
+use libverify_core::evidence::{CodeownersEntry, EvidenceBundle, EvidenceState, RepositoryPosture};
 use libverify_core::profile::{ControlProfile, GateDecision};
 use libverify_policy::OpaProfile;
 
@@ -228,10 +226,7 @@ fn main() {
         ("D: sca-only tier", "sca-only", 3),
     ];
     for (label, needle, idx) in tier_checks {
-        let found = results[*idx]
-            .subjects
-            .iter()
-            .any(|s| s.contains(needle));
+        let found = results[*idx].subjects.iter().any(|s| s.contains(needle));
         let mark = if found { "PRESENT" } else { "MISSING" };
         println!("  {}: '{}' -> [{}]", label, needle, mark);
     }
