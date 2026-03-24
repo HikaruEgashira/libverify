@@ -66,9 +66,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn builtin_registry_has_20_controls() {
+    fn builtin_registry_has_21_controls() {
         let registry = ControlRegistry::builtin();
-        assert_eq!(registry.len(), 20);
+        assert_eq!(registry.len(), 21);
     }
 
     #[test]

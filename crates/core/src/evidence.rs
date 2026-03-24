@@ -291,6 +291,18 @@ pub struct CheckRunEvidence {
     pub app_slug: Option<String>,
 }
 
+/// Signature verification status for a single dependency.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DependencySignatureEvidence {
+    pub name: String,
+    pub version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    pub signature_verified: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signature_mechanism: Option<String>,
+}
+
 /// Build platform evidence for Build Track L2+.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BuildPlatformEvidence {
@@ -310,4 +322,5 @@ pub struct EvidenceBundle {
     pub artifact_attestations: EvidenceState<Vec<ArtifactAttestation>>,
     pub check_runs: EvidenceState<Vec<CheckRunEvidence>>,
     pub build_platform: EvidenceState<Vec<BuildPlatformEvidence>>,
+    pub dependency_signatures: EvidenceState<Vec<DependencySignatureEvidence>>,
 }

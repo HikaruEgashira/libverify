@@ -129,6 +129,16 @@ pub fn build_isolation_severity(non_isolated_count: usize) -> Severity {
     }
 }
 
+/// Core predicate for dependency signature verification severity.
+/// Zero unsigned dependencies -> Pass, any unsigned -> Error.
+pub fn dependency_signature_severity(unsigned_count: usize) -> Severity {
+    if unsigned_count == 0 {
+        Severity::Pass
+    } else {
+        Severity::Error
+    }
+}
+
 // --- Compliance control predicates ---
 
 /// Core predicate for stale review severity (CC7.2).

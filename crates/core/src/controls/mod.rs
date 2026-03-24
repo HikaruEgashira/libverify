@@ -4,6 +4,7 @@ pub mod build_isolation;
 pub mod build_provenance;
 pub mod change_request_size;
 pub mod conventional_title;
+pub mod dependency_signature;
 pub mod description_quality;
 pub mod hosted_build_platform;
 pub mod issue_linkage;
@@ -28,6 +29,7 @@ use self::build_isolation::BuildIsolationControl;
 use self::build_provenance::BuildProvenanceControl;
 use self::change_request_size::ChangeRequestSizeControl;
 use self::conventional_title::ConventionalTitleControl;
+use self::dependency_signature::DependencySignatureControl;
 use self::description_quality::DescriptionQualityControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
@@ -58,6 +60,7 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::HOSTED_BUILD_PLATFORM => Some(Box::new(HostedBuildPlatformControl)),
         builtin::PROVENANCE_AUTHENTICITY => Some(Box::new(ProvenanceAuthenticityControl)),
         builtin::BUILD_ISOLATION => Some(Box::new(BuildIsolationControl)),
+        builtin::DEPENDENCY_SIGNATURE => Some(Box::new(DependencySignatureControl)),
         builtin::CHANGE_REQUEST_SIZE => Some(Box::new(ChangeRequestSizeControl)),
         builtin::TEST_COVERAGE => Some(Box::new(TestCoverageControl)),
         builtin::SCOPED_CHANGE => Some(Box::new(ScopedChangeControl)),
@@ -105,6 +108,7 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(ConventionalTitleControl),
         Box::new(SecurityFileChangeControl),
         Box::new(ReleaseTraceabilityControl),
+        Box::new(DependencySignatureControl),
     ]
 }
 
@@ -162,8 +166,8 @@ mod tests {
         let controls = compliance_controls();
         assert_eq!(
             controls.len(),
-            10,
-            "compliance_controls() should return exactly 10 controls"
+            11,
+            "compliance_controls() should return exactly 11 controls"
         );
     }
 
