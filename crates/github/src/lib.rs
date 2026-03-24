@@ -13,4 +13,4 @@ pub mod verify;
 
 pub use client::GitHubClient;
 pub use config::GitHubConfig;
-pub use verify::{assess_bundle, verify_pr, verify_pr_batch, verify_release};
+pub use verify::{assess_bundle, verify_pr, verify_pr_batch, verify_release, verify_repo};

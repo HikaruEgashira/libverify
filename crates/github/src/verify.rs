@@ -211,6 +211,34 @@ pub fn verify_release(
     Ok(VerificationResult::new(report, evidence_bundle))
 }
 
+/// Verify repository-level dependency signatures at a given ref.
+///
+/// Scans for lock files (Cargo.lock, package-lock.json) at the specified
+/// reference and evaluates dependency signature evidence.
+pub fn verify_repo(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    reference: &str,
+    policy: Option<&str>,
+    with_evidence: bool,
+) -> Result<VerificationResult> {
+    let dep_sigs =
+        dependency::collect_repo_dependency_signatures(client, owner, repo, reference);
+
+    let bundle = libverify_core::evidence::EvidenceBundle {
+        dependency_signatures: dep_sigs,
+        check_runs: EvidenceState::not_applicable(),
+        build_platform: EvidenceState::not_applicable(),
+        artifact_attestations: EvidenceState::not_applicable(),
+        ..Default::default()
+    };
+
+    let report = assess_bundle(&bundle, policy)?;
+    let evidence_bundle = if with_evidence { Some(bundle) } else { None };
+    Ok(VerificationResult::new(report, evidence_bundle))
+}
+
 pub fn assess_bundle(
     bundle: &libverify_core::evidence::EvidenceBundle,
     policy: Option<&str>,

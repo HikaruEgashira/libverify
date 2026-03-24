@@ -79,6 +79,69 @@ pub fn collect_pr_dependency_signatures(
     }
 }
 
+/// Collect dependency signature evidence for an entire repository at a given ref.
+///
+/// Probes for known lock files (Cargo.lock, package-lock.json) at the given
+/// reference and parses each one found. Returns `NotApplicable` if no lock
+/// files exist in the repository.
+pub fn collect_repo_dependency_signatures(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    reference: &str,
+) -> EvidenceState<Vec<DependencySignatureEvidence>> {
+    let mut all_deps = Vec::new();
+    let mut gaps = Vec::new();
+    let mut found_any = false;
+
+    for &lock_file in LOCK_FILES {
+        match client.get_file_content(owner, repo, lock_file, reference) {
+            Ok(content) => {
+                found_any = true;
+                if lock_file == "Cargo.lock" {
+                    match parse_cargo_lock(&content) {
+                        Ok(deps) => all_deps.extend(deps),
+                        Err(e) => {
+                            gaps.push(EvidenceGap::CollectionFailed {
+                                source: "cargo-lock".to_string(),
+                                subject: lock_file.to_string(),
+                                detail: format!("parse error: {e}"),
+                            });
+                        }
+                    }
+                } else if lock_file == "package-lock.json" {
+                    // For npm, try npm audit signatures if available
+                    match collect_npm_signatures() {
+                        Ok(deps) => all_deps.extend(deps),
+                        Err(e) => {
+                            gaps.push(EvidenceGap::CollectionFailed {
+                                source: "npm-audit-signatures".to_string(),
+                                subject: lock_file.to_string(),
+                                detail: format!("{e}"),
+                            });
+                        }
+                    }
+                }
+            }
+            Err(_) => {
+                // File not found at this ref — skip silently
+            }
+        }
+    }
+
+    if !found_any {
+        return EvidenceState::NotApplicable;
+    }
+
+    if all_deps.is_empty() && !gaps.is_empty() {
+        EvidenceState::missing(gaps)
+    } else if gaps.is_empty() {
+        EvidenceState::complete(all_deps)
+    } else {
+        EvidenceState::partial(all_deps, gaps)
+    }
+}
+
 // -- npm provenance collection --
 
 /// Collect npm dependency signature evidence using `npm audit signatures --json`.
