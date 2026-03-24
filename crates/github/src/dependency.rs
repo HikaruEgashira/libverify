@@ -339,27 +339,42 @@ fn make_cargo_dep(
     checksum: Option<&str>,
     source: &str,
 ) -> DependencySignatureEvidence {
-    let (verification, mechanism, pinned_digest) = match checksum {
-        Some(cs) => (
+    let (verification, mechanism, pinned_digest, source_commit) = if let Some(cs) = checksum {
+        (
             VerificationOutcome::ChecksumMatch,
             Some("checksum".to_string()),
             Some(format!("sha256:{cs}")),
-        ),
-        None => (
+            None,
+        )
+    } else if let Some(commit) = extract_git_commit_pin(source) {
+        // Git dependencies pin to a specific commit SHA in Cargo.lock
+        // (e.g. source = "git+https://github.com/org/repo#abc123...").
+        // This is integrity verification through commit pinning — weaker than
+        // a registry checksum but still ensures reproducible builds.
+        (
+            VerificationOutcome::ChecksumMatch,
+            Some("git-commit-pin".to_string()),
+            Some(format!("git:{commit}")),
+            Some(commit.to_string()),
+        )
+    } else {
+        (
             VerificationOutcome::AttestationAbsent {
                 detail: "no checksum in Cargo.lock".to_string(),
             },
             None,
             None,
-        ),
+            None,
+        )
     };
 
-    // Derive registry from source field
-    let registry = if source.contains("crates.io-index") {
-        Some("crates.io".to_string())
+    // Derive registry and source_repo from source field
+    let (registry, source_repo) = if source.contains("crates.io-index") {
+        (Some("crates.io".to_string()), None)
+    } else if let Some(repo_url) = extract_git_repo_url(source) {
+        (Some(source.to_string()), Some(repo_url))
     } else {
-        // git sources, alternate registries, etc. — use source as-is
-        Some(source.to_string())
+        (Some(source.to_string()), None)
     };
 
     DependencySignatureEvidence {
@@ -369,8 +384,8 @@ fn make_cargo_dep(
         verification,
         signature_mechanism: mechanism,
         signer_identity: None,
-        source_repo: None,
-        source_commit: None,
+        source_repo,
+        source_commit,
         pinned_digest,
         actual_digest: None,
         transparency_log_uri: None,
@@ -378,6 +393,31 @@ fn make_cargo_dep(
         // Cargo.toml cross-reference would be needed for accurate classification.
         is_direct: true,
     }
+}
+
+/// Extract the commit SHA from a git source URL in Cargo.lock.
+/// e.g. "git+https://github.com/org/repo#abc123def456" → Some("abc123def456")
+fn extract_git_commit_pin(source: &str) -> Option<&str> {
+    if !source.starts_with("git+") {
+        return None;
+    }
+    let commit = source.rsplit_once('#').map(|(_, sha)| sha)?;
+    // Validate it looks like a hex SHA (at least 7 chars)
+    if commit.len() >= 7 && commit.chars().all(|c| c.is_ascii_hexdigit()) {
+        Some(commit)
+    } else {
+        None
+    }
+}
+
+/// Extract the repository URL from a git source field.
+/// e.g. "git+https://github.com/org/repo?branch=main#abc123" → "https://github.com/org/repo"
+fn extract_git_repo_url(source: &str) -> Option<String> {
+    let url = source.strip_prefix("git+")?;
+    // Strip fragment (#sha) and query (?branch=...)
+    let url = url.split('#').next()?;
+    let url = url.split('?').next()?;
+    Some(url.to_string())
 }
 
 fn unquote(s: &str) -> String {
@@ -557,16 +597,51 @@ checksum = "aaa"
     }
 
     #[test]
-    fn parse_cargo_lock_git_source_without_checksum() {
+    fn parse_cargo_lock_git_source_with_commit_pin() {
         let content = r#"
 [[package]]
 name = "git-dep"
 version = "0.1.0"
-source = "git+https://github.com/example/repo#abc123"
+source = "git+https://github.com/example/repo#abc123def456"
 "#;
         let deps = parse_cargo_lock(content).unwrap();
         assert_eq!(deps.len(), 1, "git source should be included");
-        assert!(!deps[0].verification.is_verified());
+        assert!(
+            deps[0].verification.is_verified(),
+            "git commit pin is a form of integrity verification"
+        );
+        assert_eq!(
+            deps[0].signature_mechanism,
+            Some("git-commit-pin".to_string())
+        );
+        assert_eq!(
+            deps[0].pinned_digest,
+            Some("git:abc123def456".to_string())
+        );
+        assert_eq!(
+            deps[0].source_repo,
+            Some("https://github.com/example/repo".to_string())
+        );
+        assert_eq!(
+            deps[0].source_commit,
+            Some("abc123def456".to_string())
+        );
+    }
+
+    #[test]
+    fn parse_cargo_lock_git_source_without_commit_pin() {
+        let content = r#"
+[[package]]
+name = "git-dep"
+version = "0.1.0"
+source = "git+https://github.com/example/repo"
+"#;
+        let deps = parse_cargo_lock(content).unwrap();
+        assert_eq!(deps.len(), 1);
+        assert!(
+            !deps[0].verification.is_verified(),
+            "git source without commit pin is unverified"
+        );
     }
 
     #[test]
