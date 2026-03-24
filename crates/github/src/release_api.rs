@@ -1,7 +1,9 @@
 use anyhow::{Context, Result};
 
 use crate::client::GitHubClient;
-use crate::types::{CompareCommit, CompareResponse, PullRequestSummary, Release, ReleaseAsset, Tag};
+use crate::types::{
+    CompareCommit, CompareResponse, PullRequestSummary, Release, ReleaseAsset, Tag,
+};
 
 /// Fetch repository tags (reverse chronological).
 pub fn get_tags(client: &GitHubClient, owner: &str, repo: &str) -> Result<Vec<Tag>> {

@@ -139,11 +139,7 @@ pub fn parse_release_arg(
 }
 
 /// Detect the latest release tag from repository tags.
-pub fn detect_latest_release_tag(
-    client: &GitHubClient,
-    owner: &str,
-    repo: &str,
-) -> Result<String> {
+pub fn detect_latest_release_tag(client: &GitHubClient, owner: &str, repo: &str) -> Result<String> {
     let tags = release_api::get_tags(client, owner, repo)?;
     tags.into_iter()
         .next()

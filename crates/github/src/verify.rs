@@ -26,8 +26,8 @@ pub fn verify_pr(
     slsa_level: Option<&str>,
     with_evidence: bool,
 ) -> Result<VerificationResult> {
-    let pr_data = graphql::fetch_pr(client, owner, repo, pr_number)
-        .context("failed to fetch PR data")?;
+    let pr_data =
+        graphql::fetch_pr(client, owner, repo, pr_number).context("failed to fetch PR data")?;
     assess_from_pr_data(
         &pr_data,
         owner,
@@ -73,8 +73,7 @@ fn assess_from_pr_data(
                 .collect(),
         })
     };
-    let evidence =
-        adapter::map_check_runs_evidence(&pr_data.check_runs, combined_status.as_ref());
+    let evidence = adapter::map_check_runs_evidence(&pr_data.check_runs, combined_status.as_ref());
     bundle.check_runs = EvidenceState::complete(evidence);
 
     if let Some(cr_list) = bundle.check_runs.value() {
@@ -192,13 +191,11 @@ pub fn verify_release(
         .collect();
 
     // Collect build-provenance attestations for release assets
-    let release_assets =
-        crate::release_api::get_release_assets(client, owner, repo, head_tag).unwrap_or_else(
-            |err| {
-                eprintln!("Warning: failed to fetch release assets: {err}");
-                vec![]
-            },
-        );
+    let release_assets = crate::release_api::get_release_assets(client, owner, repo, head_tag)
+        .unwrap_or_else(|err| {
+            eprintln!("Warning: failed to fetch release assets: {err}");
+            vec![]
+        });
 
     let artifact_attestations =
         crate::attestation::collect_release_attestations(owner, repo, head_tag, &release_assets);
