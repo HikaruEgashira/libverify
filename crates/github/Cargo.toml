@@ -1,0 +1,16 @@
+[package]
+name = "libverify-github"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "GitHub connector for libverify SDLC verification"
+
+[dependencies]
+libverify-core = { workspace = true }
+libverify-policy = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+reqwest = { workspace = true }
+sha2 = { workspace = true }
+tempfile = { workspace = true }
