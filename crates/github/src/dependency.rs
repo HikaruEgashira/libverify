@@ -158,7 +158,9 @@ pub fn collect_repo_dependency_signatures(
     }
 
     // dedup by (name, version, registry)
-    all_deps.sort_by(|a, b| (&a.name, &a.version).cmp(&(&b.name, &b.version)));
+    all_deps.sort_by(|a, b| {
+        (&a.name, &a.version, &a.registry).cmp(&(&b.name, &b.version, &b.registry))
+    });
     all_deps
         .dedup_by(|a, b| a.name == b.name && a.version == b.version && a.registry == b.registry);
 

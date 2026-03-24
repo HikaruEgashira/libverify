@@ -9,7 +9,7 @@ rustup toolchain install stable
 ## Development
 
 ```bash
-cargo test --workspace --exclude libverify-verif   # All tests (358+)
+cargo test --workspace --exclude libverify-verif   # All tests (421+)
 cargo check --workspace                             # Type check
 cargo clippy --workspace --exclude libverify-verif  # Lint
 cargo fmt --all                                     # Format
@@ -50,7 +50,7 @@ Five-crate workspace.
 │  │                                                   │   │
 │  │  libverify-core                                   │   │
 │  │  ├─ EvidenceBundle    (platform-neutral model)    │   │
-│  │  ├─ Control trait     (20 built-in controls)      │   │
+│  │  ├─ Control trait     (24 built-in controls)      │   │
 │  │  ├─ ControlRegistry   (dynamic collection)        │   │
 │  │  ├─ assessment        (evidence → findings)       │   │
 │  │  └─ SLSA v1.2 + SOC2 CC7/CC8 mapping             │   │
@@ -61,7 +61,7 @@ Five-crate workspace.
 │  ┌─────────────────┐  ┌─────────────────┐              │
 │  │ libverify-policy │  │ libverify-output│              │
 │  │ OPA Rego engine  │  │ SARIF / JSON    │              │
-│  │ 5 presets        │  │ rendering       │              │
+│  │ 9 presets        │  │ rendering       │              │
 │  └─────────────────┘  └─────────────────┘              │
 │                                                         │
 │  ┌──────────────────────────────────────────────────┐   │
@@ -109,11 +109,11 @@ GitHub API ──→ GitHubClient ──→ adapter ──→ EvidenceBundle
 | `PromotionBatch` | core | A release / deployment batch |
 | `EvidenceState<T>` | core | Tri-state: complete, partial (with gaps), missing, or N/A |
 | `Control` trait | core | Evaluates evidence → `Vec<ControlFinding>` |
-| `ControlId` | core | String-based open ID (`builtin::` constants for 20 built-in) |
-| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 20 |
+| `ControlId` | core | String-based open ID (`builtin::` constants for 24 built-in) |
+| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 24 |
 | `ControlProfile` trait | core | Maps findings → severity + gate decision |
 | `SlsaLevelProfile` | core | SLSA level-aware profile (Source L0–L4, Build L0–L3) |
-| `OpaProfile` | policy | Rego-based profile. 5 presets + custom file support |
+| `OpaProfile` | policy | Rego-based profile. 9 presets + custom file support |
 | `AssessmentReport` | core | Assessment result with findings + profile outcomes |
 | `VerificationResult` | core | Report + optional evidence for audit trail |
 | `BatchReport` | core | Multiple verification results |

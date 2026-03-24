@@ -16,7 +16,7 @@ impl ControlRegistry {
         }
     }
 
-    /// Creates a registry with all built-in controls (20 SLSA + compliance).
+    /// Creates a registry with all built-in controls (14 SLSA + 10 compliance).
     pub fn builtin() -> Self {
         let mut registry = Self::new();
         registry.register_builtins();
