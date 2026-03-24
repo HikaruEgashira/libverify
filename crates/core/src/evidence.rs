@@ -407,14 +407,23 @@ fn default_true() -> bool {
 /// allowing controls to skip dependencies from registries that lack the
 /// required infrastructure rather than producing false positives.
 ///
-/// Current ecosystem status (as of early 2026):
-/// - **npm** (`registry.npmjs.org`): L3 — Sigstore keyless signing + Rekor
-///   transparency log. GA since Oct 2023, 134+ high-impact projects adopted.
-/// - **PyPI** (`pypi.org`): L2 — Trusted Publishers + Sigstore attestations.
-///   17% of uploads include attestations, 132K+ packages.
-///   L3 capability is growing but signer_identity coverage is partial.
+/// Current ecosystem status (as of March 2026):
+/// - **npm** (`registry.npmjs.org`): L3 — Sigstore keyless signing + Rekor.
+///   GA since Oct 2023, 134+ high-impact projects adopted.
+/// - **PyPI** (`pypi.org`): L3 — Trusted Publishers + Sigstore attestations
+///   (Fulcio + Rekor, same stack as npm). 17% of uploads include attestations.
+///   Packages with attestations provide full L3: signer identity
+///   (publisher.repository + Fulcio cert SAN) and Rekor transparency log.
+/// - **Maven Central**: L3 capability — Sigstore `.sigstore.json` validation
+///   added Jan 2025 (opt-in). PGP `.asc` still mandatory. Very low Sigstore
+///   adoption. No dedicated query API (URL convention only).
 /// - **crates.io**: L1 only — SHA-256 checksums in Cargo.lock.
-///   Trusted Publishing (RFC #3691) covers auth only; signing is future work.
+///   Trusted Publishing (RFC #3691) covers auth only; Sigstore RFC #3403
+///   proposed but not merged.
+/// - **Go** (`proxy.golang.org`): L1 only — `sum.golang.org` provides
+///   tamper-evident checksum log but no provenance/signing.
+/// - **NuGet** (`nuget.org`): L1 — X.509 signing exists but no
+///   Sigstore/attestation API at registry level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RegistryProvenanceCapability {
     /// L1: integrity only (checksum). No cryptographic signing infrastructure.
@@ -435,7 +444,7 @@ impl DependencySignatureEvidence {
     pub fn registry_provenance_capability(&self) -> RegistryProvenanceCapability {
         match self.registry.as_deref() {
             Some(r) if r.contains("npmjs.org") => RegistryProvenanceCapability::FullTrustChain,
-            Some("pypi.org") => RegistryProvenanceCapability::CryptographicProvenance,
+            Some("pypi.org") => RegistryProvenanceCapability::FullTrustChain,
             _ => RegistryProvenanceCapability::ChecksumOnly,
         }
     }
