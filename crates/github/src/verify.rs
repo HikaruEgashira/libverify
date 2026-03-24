@@ -237,21 +237,23 @@ pub fn verify_repo(
         ..Default::default()
     };
 
-    // Use only dependency-scoped controls (L1-L4) to avoid NotApplicable noise
+    // Use dependency-scoped controls matching the requested policy level
+    use libverify_core::slsa::SlsaTrack;
+    let policy_str = policy.unwrap_or("default");
+    let dep_level = match policy_str {
+        "slsa-l1" => libverify_core::slsa::SlsaLevel::L1,
+        "slsa-l2" => libverify_core::slsa::SlsaLevel::L2,
+        "slsa-l3" => libverify_core::slsa::SlsaLevel::L3,
+        "slsa-l4" => libverify_core::slsa::SlsaLevel::L4,
+        _ => libverify_core::slsa::SlsaLevel::L4, // default/oss/soc2: evaluate all
+    };
+    let dep_controls =
+        libverify_core::controls::slsa_controls_for_level(SlsaTrack::Dependencies, dep_level);
     let mut registry = ControlRegistry::new();
-    registry.register(Box::new(
-        libverify_core::controls::dependency_signature::DependencySignatureControl,
-    ));
-    registry.register(Box::new(
-        libverify_core::controls::dependency_provenance::DependencyProvenanceControl,
-    ));
-    registry.register(Box::new(
-        libverify_core::controls::dependency_signer_verified::DependencySignerVerifiedControl,
-    ));
-    registry.register(Box::new(
-        libverify_core::controls::dependency_completeness::DependencyCompletenessControl,
-    ));
-    let profile = OpaProfile::from_preset_or_file(policy.unwrap_or("default"))?;
+    for control in dep_controls {
+        registry.register(control);
+    }
+    let profile = OpaProfile::from_preset_or_file(policy_str)?;
     let report = libverify_core::assessment::assess(&bundle, registry.controls(), &profile);
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
     Ok(VerificationResult::new(report, evidence_bundle))

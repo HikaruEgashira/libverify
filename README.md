@@ -86,6 +86,11 @@ let sarif = render(&opts, &report.into())?;
 | Dependencies | L3 | `dependency-signer-verified` |
 | Dependencies | L4 | `dependency-completeness` |
 
+> **Note:** Dependencies L1 is achievable with lock-file checksums alone.
+> L2+ requires cryptographic provenance (e.g. Sigstore/npm provenance) which
+> depends on ecosystem adoption. Lock-file parsers populate `ChecksumMatch`;
+> provenance adapters (future) will populate `Verified` + signer fields.
+
 ### SOC2 CC7/CC8
 
 | Criteria | Control |

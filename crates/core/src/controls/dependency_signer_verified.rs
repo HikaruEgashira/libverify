@@ -70,24 +70,34 @@ impl Control for DependencySignerVerifiedControl {
                     })
                     .collect();
 
+                let gaps = evidence.dependency_signatures.gaps();
+
                 if lacking.is_empty() {
-                    vec![ControlFinding::satisfied(
+                    let mut finding = ControlFinding::satisfied(
                         id,
                         format!(
                             "All {} dependenc(ies) have verified signer identity with transparency log",
                             value.len()
                         ),
                         subjects,
-                    )]
+                    );
+                    if !gaps.is_empty() {
+                        finding.evidence_gaps = gaps.to_vec();
+                    }
+                    vec![finding]
                 } else {
-                    vec![ControlFinding::violated(
+                    let mut finding = ControlFinding::violated(
                         id,
                         format!(
                             "Dependenc(ies) lacking signer verification: {}",
                             lacking.join("; ")
                         ),
                         subjects,
-                    )]
+                    );
+                    if !gaps.is_empty() {
+                        finding.evidence_gaps = gaps.to_vec();
+                    }
+                    vec![finding]
                 }
             }
         }
