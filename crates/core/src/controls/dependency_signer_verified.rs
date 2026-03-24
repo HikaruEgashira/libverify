@@ -1,5 +1,5 @@
 use crate::control::{Control, ControlFinding, ControlId, builtin};
-use crate::evidence::{EvidenceBundle, EvidenceState};
+use crate::evidence::{EvidenceBundle, EvidenceState, RegistryProvenanceCapability};
 
 /// Verifies that all dependencies have bound signer identity and transparency log (Dependencies L3).
 ///
@@ -10,6 +10,11 @@ use crate::evidence::{EvidenceBundle, EvidenceState};
 ///
 /// This extends L2 (`dependency-provenance`) by requiring the full trust chain
 /// to be inspectable: not just "signed by someone" but "signed by whom, verifiable where".
+///
+/// **Registry scoping**: Only evaluates dependencies from registries that support
+/// the full trust chain (L3: signature + signer identity + transparency log).
+/// Currently only npm (Sigstore + Rekor) qualifies. Dependencies from L2-only
+/// or checksum-only registries are excluded.
 pub struct DependencySignerVerifiedControl;
 
 impl Control for DependencySignerVerifiedControl {
@@ -47,12 +52,33 @@ impl Control for DependencySignerVerifiedControl {
                     )];
                 }
 
-                let subjects: Vec<String> = value
+                // Filter to registries that support L3 (full trust chain)
+                let in_scope: Vec<_> = value
+                    .iter()
+                    .filter(|d| {
+                        d.registry_provenance_capability()
+                            >= RegistryProvenanceCapability::FullTrustChain
+                    })
+                    .collect();
+
+                let skipped = value.len() - in_scope.len();
+
+                if in_scope.is_empty() {
+                    return vec![ControlFinding::not_applicable(
+                        id,
+                        format!(
+                            "No dependencies from registries with full trust chain support \
+                             ({skipped} dependenc(ies) from other registries skipped)",
+                        ),
+                    )];
+                }
+
+                let subjects: Vec<String> = in_scope
                     .iter()
                     .map(|d| format!("{}@{}", d.name, d.version))
                     .collect();
 
-                let lacking: Vec<String> = value
+                let lacking: Vec<String> = in_scope
                     .iter()
                     .filter(|d| {
                         !d.verification.is_cryptographically_signed()
@@ -81,12 +107,19 @@ impl Control for DependencySignerVerifiedControl {
                     format!(" (WARNING: {} evidence gap(s))", gaps.len())
                 };
 
+                let skip_note = if skipped > 0 {
+                    format!(" [{skipped} non-L3 registr(ies) skipped]")
+                } else {
+                    String::new()
+                };
+
                 if lacking.is_empty() {
                     let mut finding = ControlFinding::satisfied(
                         id,
                         format!(
-                            "All {} dependenc(ies) have verified signer identity with transparency log{}",
-                            value.len(),
+                            "All {} dependenc(ies) have verified signer identity with transparency log{}{}",
+                            in_scope.len(),
+                            skip_note,
                             gap_suffix,
                         ),
                         subjects,
@@ -99,8 +132,9 @@ impl Control for DependencySignerVerifiedControl {
                     let mut finding = ControlFinding::violated(
                         id,
                         format!(
-                            "Dependenc(ies) lacking signer verification: {}{}",
+                            "Dependenc(ies) lacking signer verification: {}{}{}",
                             lacking.join("; "),
+                            skip_note,
                             gap_suffix,
                         ),
                         subjects,
@@ -121,11 +155,11 @@ mod tests {
     use crate::control::ControlStatus;
     use crate::evidence::{DependencySignatureEvidence, VerificationOutcome};
 
-    fn dep_full(name: &str) -> DependencySignatureEvidence {
+    fn npm_dep_full(name: &str) -> DependencySignatureEvidence {
         DependencySignatureEvidence {
             name: name.to_string(),
             version: "1.0.0".to_string(),
-            registry: Some("crates.io".to_string()),
+            registry: Some("registry.npmjs.org".to_string()),
             verification: VerificationOutcome::Verified,
             signature_mechanism: Some("sigstore".to_string()),
             signer_identity: Some("https://github.com/login/oauth".to_string()),
@@ -140,16 +174,33 @@ mod tests {
         }
     }
 
-    fn dep_no_signer(name: &str) -> DependencySignatureEvidence {
-        let mut d = dep_full(name);
+    fn npm_dep_no_signer(name: &str) -> DependencySignatureEvidence {
+        let mut d = npm_dep_full(name);
         d.signer_identity = None;
         d
     }
 
-    fn dep_no_tlog(name: &str) -> DependencySignatureEvidence {
-        let mut d = dep_full(name);
+    fn npm_dep_no_tlog(name: &str) -> DependencySignatureEvidence {
+        let mut d = npm_dep_full(name);
         d.transparency_log_uri = None;
         d
+    }
+
+    fn cargo_dep(name: &str) -> DependencySignatureEvidence {
+        DependencySignatureEvidence {
+            name: name.to_string(),
+            version: "1.0.0".to_string(),
+            registry: Some("crates.io".to_string()),
+            verification: VerificationOutcome::ChecksumMatch,
+            signature_mechanism: Some("checksum".to_string()),
+            signer_identity: None,
+            source_repo: None,
+            source_commit: None,
+            pinned_digest: Some("sha256:abc".to_string()),
+            actual_digest: None,
+            transparency_log_uri: None,
+            is_direct: true,
+        }
     }
 
     fn bundle(deps: Vec<DependencySignatureEvidence>) -> EvidenceBundle {
@@ -162,14 +213,14 @@ mod tests {
     #[test]
     fn satisfied_with_full_trust_chain() {
         let findings = DependencySignerVerifiedControl
-            .evaluate(&bundle(vec![dep_full("serde"), dep_full("tokio")]));
+            .evaluate(&bundle(vec![npm_dep_full("react"), npm_dep_full("express")]));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 
     #[test]
     fn violated_when_signer_identity_missing() {
         let findings =
-            DependencySignerVerifiedControl.evaluate(&bundle(vec![dep_no_signer("serde")]));
+            DependencySignerVerifiedControl.evaluate(&bundle(vec![npm_dep_no_signer("lodash")]));
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("no signer_identity"));
     }
@@ -177,29 +228,25 @@ mod tests {
     #[test]
     fn violated_when_transparency_log_missing() {
         let findings =
-            DependencySignerVerifiedControl.evaluate(&bundle(vec![dep_no_tlog("serde")]));
+            DependencySignerVerifiedControl.evaluate(&bundle(vec![npm_dep_no_tlog("lodash")]));
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("no transparency_log"));
     }
 
     #[test]
-    fn violated_when_checksum_only() {
-        let evidence = bundle(vec![DependencySignatureEvidence {
-            name: "old-pkg".to_string(),
-            version: "1.0.0".to_string(),
-            registry: Some("crates.io".to_string()),
-            verification: VerificationOutcome::ChecksumMatch,
-            signature_mechanism: Some("checksum".to_string()),
-            signer_identity: None,
-            source_repo: None,
-            source_commit: None,
-            pinned_digest: Some("sha256:abc".to_string()),
-            actual_digest: None,
-            transparency_log_uri: None,
-            is_direct: true,
-        }]);
+    fn not_applicable_when_only_cargo_deps() {
+        let findings =
+            DependencySignerVerifiedControl.evaluate(&bundle(vec![cargo_dep("serde")]));
+        assert_eq!(findings[0].status, ControlStatus::NotApplicable);
+        assert!(findings[0].rationale.contains("skipped"));
+    }
+
+    #[test]
+    fn mixed_registries_only_evaluates_npm() {
+        let evidence = bundle(vec![cargo_dep("serde"), npm_dep_full("react")]);
         let findings = DependencySignerVerifiedControl.evaluate(&evidence);
-        assert_eq!(findings[0].status, ControlStatus::Violated);
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+        assert!(findings[0].rationale.contains("1 dependenc(ies)"));
     }
 
     #[test]
@@ -223,7 +270,7 @@ mod tests {
     fn partial_evidence_propagates_gaps_in_rationale() {
         let evidence = EvidenceBundle {
             dependency_signatures: EvidenceState::partial(
-                vec![dep_full("serde")],
+                vec![npm_dep_full("react")],
                 vec![crate::evidence::EvidenceGap::Truncated {
                     source: "tree-api".to_string(),
                     subject: "repo-tree".to_string(),
@@ -242,7 +289,7 @@ mod tests {
 
     #[test]
     fn violated_when_both_signer_and_tlog_missing() {
-        let mut d = dep_full("pkg");
+        let mut d = npm_dep_full("pkg");
         d.signer_identity = None;
         d.transparency_log_uri = None;
         let findings = DependencySignerVerifiedControl.evaluate(&bundle(vec![d]));

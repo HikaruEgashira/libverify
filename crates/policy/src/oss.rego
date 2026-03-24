@@ -49,9 +49,6 @@ oss_review_on_violated := {
 	"codeowners-coverage",
 	"vulnerability-scanning",
 	"secret-scanning",
-	"dependency-provenance",
-	"dependency-signer-verified",
-	"dependency-completeness",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
@@ -71,9 +68,6 @@ oss_review_on_indeterminate := {
 	"codeowners-coverage",
 	"vulnerability-scanning",
 	"secret-scanning",
-	"dependency-provenance",
-	"dependency-signer-verified",
-	"dependency-completeness",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

@@ -400,6 +400,47 @@ fn default_true() -> bool {
     true
 }
 
+/// Provenance capability levels supported by a package registry.
+///
+/// Registries evolve at different speeds. This enum captures the highest
+/// SLSA Dependencies level a registry's infrastructure can currently support,
+/// allowing controls to skip dependencies from registries that lack the
+/// required infrastructure rather than producing false positives.
+///
+/// Current ecosystem status (as of early 2026):
+/// - **npm** (`registry.npmjs.org`): L3 — Sigstore keyless signing + Rekor
+///   transparency log. GA since Oct 2023, 134+ high-impact projects adopted.
+/// - **PyPI** (`pypi.org`): L2 — Trusted Publishers + Sigstore attestations.
+///   17% of uploads include attestations, 132K+ packages.
+///   L3 capability is growing but signer_identity coverage is partial.
+/// - **crates.io**: L1 only — SHA-256 checksums in Cargo.lock.
+///   Trusted Publishing (RFC #3691) covers auth only; signing is future work.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum RegistryProvenanceCapability {
+    /// L1: integrity only (checksum). No cryptographic signing infrastructure.
+    ChecksumOnly,
+    /// L2: cryptographic signature + source provenance available.
+    CryptographicProvenance,
+    /// L3: signature + signer identity + transparency log available.
+    FullTrustChain,
+}
+
+impl DependencySignatureEvidence {
+    /// Returns the provenance capability level of this dependency's registry.
+    ///
+    /// This determines whether higher-level controls (L2 provenance, L3 signer
+    /// verification) are meaningful for this dependency. Dependencies from
+    /// registries that lack the required infrastructure are excluded from
+    /// evaluation rather than producing false positives.
+    pub fn registry_provenance_capability(&self) -> RegistryProvenanceCapability {
+        match self.registry.as_deref() {
+            Some(r) if r.contains("npmjs.org") => RegistryProvenanceCapability::FullTrustChain,
+            Some("pypi.org") => RegistryProvenanceCapability::CryptographicProvenance,
+            _ => RegistryProvenanceCapability::ChecksumOnly,
+        }
+    }
+}
+
 /// A single CODEOWNERS entry mapping a file pattern to its designated owners.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CodeownersEntry {

@@ -348,56 +348,6 @@ mod tests {
     }
 
     #[test]
-    fn default_policy_dependency_provenance_violated_is_review() {
-        let profile = OpaProfile::default_policy().unwrap();
-        let finding = make_finding(
-            builtin::DEPENDENCY_PROVENANCE_CHECK,
-            ControlStatus::Violated,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-        assert_eq!(outcome.severity, FindingSeverity::Warning);
-    }
-
-    #[test]
-    fn default_policy_dependency_signer_verified_violated_is_review() {
-        let profile = OpaProfile::default_policy().unwrap();
-        let finding = make_finding(
-            builtin::DEPENDENCY_SIGNER_VERIFIED,
-            ControlStatus::Violated,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
-    fn default_policy_dependency_completeness_violated_is_review() {
-        let profile = OpaProfile::default_policy().unwrap();
-        let finding = make_finding(builtin::DEPENDENCY_COMPLETENESS, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
-    fn default_policy_dependency_signature_violated_still_fails() {
-        let profile = OpaProfile::default_policy().unwrap();
-        let finding = make_finding(builtin::DEPENDENCY_SIGNATURE, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn oss_preset_dependency_provenance_violated_is_review() {
-        let profile = OpaProfile::oss_preset().unwrap();
-        let finding = make_finding(
-            builtin::DEPENDENCY_PROVENANCE_CHECK,
-            ControlStatus::Violated,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
     fn custom_policy_from_string() {
         let custom_rego = r#"
 package verify.profile

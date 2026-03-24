@@ -1,5 +1,5 @@
 use crate::control::{Control, ControlFinding, ControlId, builtin};
-use crate::evidence::{EvidenceBundle, EvidenceState};
+use crate::evidence::{EvidenceBundle, EvidenceState, RegistryProvenanceCapability};
 
 /// Verifies that ALL dependencies (direct AND transitive) meet L3 verification (Dependencies L4).
 ///
@@ -10,6 +10,9 @@ use crate::evidence::{EvidenceBundle, EvidenceState};
 ///
 /// This is the strictest dependency verification level. It ensures the entire
 /// dependency tree — not just direct dependencies — is fully provenance-verified.
+///
+/// **Registry scoping**: Only evaluates dependencies from registries that support
+/// the full trust chain (L3). Dependencies from non-L3 registries are excluded.
 pub struct DependencyCompletenessControl;
 
 impl Control for DependencyCompletenessControl {
@@ -47,11 +50,32 @@ impl Control for DependencyCompletenessControl {
                     )];
                 }
 
-                let total = value.len();
-                let direct_count = value.iter().filter(|d| d.is_direct).count();
+                // Filter to registries that support L3 (full trust chain)
+                let in_scope: Vec<_> = value
+                    .iter()
+                    .filter(|d| {
+                        d.registry_provenance_capability()
+                            >= RegistryProvenanceCapability::FullTrustChain
+                    })
+                    .collect();
+
+                let skipped = value.len() - in_scope.len();
+
+                if in_scope.is_empty() {
+                    return vec![ControlFinding::not_applicable(
+                        id,
+                        format!(
+                            "No dependencies from registries with full trust chain support \
+                             ({skipped} dependenc(ies) from other registries skipped)",
+                        ),
+                    )];
+                }
+
+                let total = in_scope.len();
+                let direct_count = in_scope.iter().filter(|d| d.is_direct).count();
                 let transitive_count = total - direct_count;
 
-                let subjects: Vec<String> = value
+                let subjects: Vec<String> = in_scope
                     .iter()
                     .map(|d| {
                         let kind = if d.is_direct { "direct" } else { "transitive" };
@@ -60,7 +84,7 @@ impl Control for DependencyCompletenessControl {
                     .collect();
 
                 // L4 requires L3-level verification for ALL deps
-                let lacking: Vec<String> = value
+                let lacking: Vec<String> = in_scope
                     .iter()
                     .filter(|d| {
                         !d.verification.is_cryptographically_signed()
@@ -103,12 +127,18 @@ impl Control for DependencyCompletenessControl {
                     return vec![finding];
                 }
 
+                let skip_note = if skipped > 0 {
+                    format!(" [{skipped} non-L3 registr(ies) skipped]")
+                } else {
+                    String::new()
+                };
+
                 if lacking.is_empty() {
                     vec![ControlFinding::satisfied(
                         id,
                         format!(
                             "All {total} dependenc(ies) ({direct_count} direct, \
-                             {transitive_count} transitive) fully verified with provenance",
+                             {transitive_count} transitive) fully verified with provenance{skip_note}",
                         ),
                         subjects,
                     )]
@@ -116,7 +146,7 @@ impl Control for DependencyCompletenessControl {
                     vec![ControlFinding::violated(
                         id,
                         format!(
-                            "{}/{total} dependenc(ies) lack full provenance: {}",
+                            "{}/{total} dependenc(ies) lack full provenance: {}{skip_note}",
                             lacking.len(),
                             lacking.join("; ")
                         ),
@@ -134,11 +164,11 @@ mod tests {
     use crate::control::ControlStatus;
     use crate::evidence::{DependencySignatureEvidence, EvidenceGap, VerificationOutcome};
 
-    fn dep_l3(name: &str, is_direct: bool) -> DependencySignatureEvidence {
+    fn npm_dep_l3(name: &str, is_direct: bool) -> DependencySignatureEvidence {
         DependencySignatureEvidence {
             name: name.to_string(),
             version: "1.0.0".to_string(),
-            registry: Some("crates.io".to_string()),
+            registry: Some("registry.npmjs.org".to_string()),
             verification: VerificationOutcome::Verified,
             signature_mechanism: Some("sigstore".to_string()),
             signer_identity: Some("https://github.com/login/oauth".to_string()),
@@ -153,7 +183,24 @@ mod tests {
         }
     }
 
-    fn dep_checksum(name: &str, is_direct: bool) -> DependencySignatureEvidence {
+    fn npm_dep_checksum(name: &str, is_direct: bool) -> DependencySignatureEvidence {
+        DependencySignatureEvidence {
+            name: name.to_string(),
+            version: "1.0.0".to_string(),
+            registry: Some("registry.npmjs.org".to_string()),
+            verification: VerificationOutcome::ChecksumMatch,
+            signature_mechanism: Some("checksum".to_string()),
+            signer_identity: None,
+            source_repo: None,
+            source_commit: None,
+            pinned_digest: Some("sha512-abc".to_string()),
+            actual_digest: None,
+            transparency_log_uri: None,
+            is_direct,
+        }
+    }
+
+    fn cargo_dep(name: &str) -> DependencySignatureEvidence {
         DependencySignatureEvidence {
             name: name.to_string(),
             version: "1.0.0".to_string(),
@@ -166,7 +213,7 @@ mod tests {
             pinned_digest: Some("sha256:abc".to_string()),
             actual_digest: None,
             transparency_log_uri: None,
-            is_direct,
+            is_direct: true,
         }
     }
 
@@ -178,12 +225,12 @@ mod tests {
     }
 
     #[test]
-    fn satisfied_when_all_deps_fully_verified() {
+    fn satisfied_when_all_npm_deps_fully_verified() {
         let evidence = bundle(vec![
-            dep_l3("serde", true),
-            dep_l3("serde_derive", false),
-            dep_l3("tokio", true),
-            dep_l3("mio", false),
+            npm_dep_l3("react", true),
+            npm_dep_l3("react-dom", false),
+            npm_dep_l3("express", true),
+            npm_dep_l3("body-parser", false),
         ]);
         let findings = DependencyCompletenessControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
@@ -192,33 +239,54 @@ mod tests {
     }
 
     #[test]
-    fn violated_when_transitive_dep_lacks_provenance() {
+    fn violated_when_npm_transitive_dep_lacks_provenance() {
         let evidence = bundle(vec![
-            dep_l3("serde", true),
-            dep_checksum("serde_derive", false),
+            npm_dep_l3("react", true),
+            npm_dep_checksum("scheduler", false),
         ]);
         let findings = DependencyCompletenessControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(
             findings[0]
                 .rationale
-                .contains("serde_derive@1.0.0 [transitive]")
+                .contains("scheduler@1.0.0 [transitive]")
         );
     }
 
     #[test]
-    fn violated_when_direct_dep_lacks_provenance() {
-        let evidence = bundle(vec![dep_checksum("serde", true), dep_l3("tokio", false)]);
+    fn violated_when_npm_direct_dep_lacks_provenance() {
+        let evidence = bundle(vec![
+            npm_dep_checksum("lodash", true),
+            npm_dep_l3("express", false),
+        ]);
         let findings = DependencyCompletenessControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0].rationale.contains("serde@1.0.0 [direct]"));
+        assert!(findings[0].rationale.contains("lodash@1.0.0 [direct]"));
+    }
+
+    #[test]
+    fn not_applicable_when_only_cargo_deps() {
+        let findings =
+            DependencyCompletenessControl.evaluate(&bundle(vec![cargo_dep("serde")]));
+        assert_eq!(findings[0].status, ControlStatus::NotApplicable);
+    }
+
+    #[test]
+    fn mixed_registries_only_evaluates_npm() {
+        let evidence = bundle(vec![
+            cargo_dep("serde"),
+            npm_dep_l3("react", true),
+        ]);
+        let findings = DependencyCompletenessControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+        assert!(findings[0].rationale.contains("skipped"));
     }
 
     #[test]
     fn violated_when_partial_evidence_has_gaps() {
         let evidence = EvidenceBundle {
             dependency_signatures: EvidenceState::partial(
-                vec![dep_l3("serde", true)],
+                vec![npm_dep_l3("react", true)],
                 vec![EvidenceGap::Truncated {
                     source: "github-tree-api".to_string(),
                     subject: "repository-tree".to_string(),
