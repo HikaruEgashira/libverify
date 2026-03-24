@@ -53,13 +53,6 @@ Five-crate workspace:
 5. Add SARIF rule description to `crates/output/src/sarif.rs::builtin_rule_description()`
 6. Add Creusot spec if the predicate is verifiable
 
-## Naming
-
-- Control ID: kebab-case string (`"review-independence"`)
-- File name: snake_case (`review_independence.rs`)
-- Crate name: kebab-case (`libverify-core`)
-- Built-in constant: SCREAMING_SNAKE_CASE (`REVIEW_INDEPENDENCE`)
-
 ## Releasing gh-verify
 
 gh-verify側でバージョンバンプ + タグpushすると GitHub Actions release workflow が自動でマルチプラットフォームビルド + GitHub Release を作成する。`gh run watch` で完了を確認。
