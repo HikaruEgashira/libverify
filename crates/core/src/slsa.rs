@@ -12,6 +12,8 @@ use crate::control::{ControlId, builtin};
 pub enum SlsaTrack {
     Source,
     Build,
+    /// SLSA Dependencies Track: verifies integrity and provenance of dependencies.
+    Dependencies,
 }
 
 impl fmt::Display for SlsaTrack {
@@ -19,6 +21,7 @@ impl fmt::Display for SlsaTrack {
         match self {
             Self::Source => f.write_str("source"),
             Self::Build => f.write_str("build"),
+            Self::Dependencies => f.write_str("dependencies"),
         }
     }
 }
@@ -39,6 +42,7 @@ impl SlsaLevel {
         match track {
             SlsaTrack::Source => true,
             SlsaTrack::Build => self <= SlsaLevel::L3,
+            SlsaTrack::Dependencies => self <= SlsaLevel::L1,
         }
     }
 }
@@ -111,6 +115,12 @@ pub fn control_slsa_mapping(id: &ControlId) -> Option<SlsaMapping> {
             level: SlsaLevel::L3,
         }),
 
+        // Dependencies Track
+        builtin::DEPENDENCY_SIGNATURE => Some(SlsaMapping {
+            track: SlsaTrack::Dependencies,
+            level: SlsaLevel::L1,
+        }),
+
         // Compliance and platform-specific controls have no SLSA mapping
         _ => None,
     }
@@ -136,6 +146,7 @@ const ALL_SLSA_CONTROLS: &[&str] = &[
     builtin::HOSTED_BUILD_PLATFORM,
     builtin::PROVENANCE_AUTHENTICITY,
     builtin::BUILD_ISOLATION,
+    builtin::DEPENDENCY_SIGNATURE,
 ];
 
 #[cfg(test)]
@@ -173,5 +184,27 @@ mod tests {
     fn l4_not_valid_for_build_track() {
         assert!(!SlsaLevel::L4.is_valid_for_track(SlsaTrack::Build));
         assert!(SlsaLevel::L4.is_valid_for_track(SlsaTrack::Source));
+    }
+
+    #[test]
+    fn dependencies_track_l1_includes_dependency_signature() {
+        let controls = controls_for_level(SlsaTrack::Dependencies, SlsaLevel::L1);
+        let ids: Vec<&str> = controls.iter().map(|c| c.as_str()).collect();
+        assert!(ids.contains(&builtin::DEPENDENCY_SIGNATURE));
+        assert_eq!(controls.len(), 1);
+    }
+
+    #[test]
+    fn dependency_signature_has_slsa_mapping() {
+        let mapping =
+            control_slsa_mapping(&ControlId::new(builtin::DEPENDENCY_SIGNATURE)).unwrap();
+        assert_eq!(mapping.track, SlsaTrack::Dependencies);
+        assert_eq!(mapping.level, SlsaLevel::L1);
+    }
+
+    #[test]
+    fn l2_not_valid_for_dependencies_track() {
+        assert!(SlsaLevel::L1.is_valid_for_track(SlsaTrack::Dependencies));
+        assert!(!SlsaLevel::L2.is_valid_for_track(SlsaTrack::Dependencies));
     }
 }

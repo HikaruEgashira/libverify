@@ -90,9 +90,14 @@ pub fn slsa_controls(source_level: SlsaLevel, build_level: SlsaLevel) -> Vec<Box
     controls
 }
 
-/// Returns all SLSA controls (Source L4 + Build L3).
+/// Returns all SLSA controls (Source L4 + Build L3 + Dependencies L1).
 pub fn all_slsa_controls() -> Vec<Box<dyn Control>> {
-    slsa_controls(SlsaLevel::L4, SlsaLevel::L3)
+    let mut controls = slsa_controls(SlsaLevel::L4, SlsaLevel::L3);
+    controls.extend(slsa_controls_for_level(
+        SlsaTrack::Dependencies,
+        SlsaLevel::L1,
+    ));
+    controls
 }
 
 /// Returns compliance controls (non-SLSA, SOC2 CC7/CC8 mapped).
@@ -108,7 +113,6 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(ConventionalTitleControl),
         Box::new(SecurityFileChangeControl),
         Box::new(ReleaseTraceabilityControl),
-        Box::new(DependencySignatureControl),
     ]
 }
 
@@ -166,8 +170,8 @@ mod tests {
         let controls = compliance_controls();
         assert_eq!(
             controls.len(),
-            11,
-            "compliance_controls() should return exactly 11 controls"
+            10,
+            "compliance_controls() should return exactly 10 controls"
         );
     }
 

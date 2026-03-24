@@ -64,6 +64,14 @@ impl Control for DependencySignatureControl {
     }
 }
 
+/// Returns true if pinned and actual digests both exist and differ.
+fn has_digest_mismatch(dep: &crate::evidence::DependencySignatureEvidence) -> bool {
+    match (&dep.pinned_digest, &dep.actual_digest) {
+        (Some(pinned), Some(actual)) => pinned != actual,
+        _ => false,
+    }
+}
+
 fn evaluate_deps(
     id: &ControlId,
     deps: &[crate::evidence::DependencySignatureEvidence],
@@ -76,13 +84,17 @@ fn evaluate_deps(
 
     let unverified: Vec<String> = deps
         .iter()
-        .filter(|d| !d.verification.is_verified())
+        .filter(|d| !d.verification.is_verified() || has_digest_mismatch(d))
         .map(|d| {
-            let reason = d
-                .verification
-                .failure_kind()
-                .unwrap_or("unverified");
-            format!("{}@{} ({})", d.name, d.version, reason)
+            if has_digest_mismatch(d) {
+                format!("{}@{} (digest_mismatch)", d.name, d.version)
+            } else {
+                let reason = d
+                    .verification
+                    .failure_kind()
+                    .unwrap_or("unverified");
+                format!("{}@{} ({})", d.name, d.version, reason)
+            }
         })
         .collect();
 
@@ -446,6 +458,53 @@ mod tests {
         let findings = DependencySignatureControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("signer_mismatch"));
+    }
+
+    #[test]
+    fn violated_when_verified_but_digest_differs() {
+        // Critical: artifact replacement attack where signature is valid
+        // but the actual artifact was swapped after signing.
+        let evidence = make_bundle(vec![DependencySignatureEvidence {
+            name: "swapped-pkg".to_string(),
+            version: "1.0.0".to_string(),
+            registry: Some("crates.io".to_string()),
+            verification: VerificationOutcome::Verified,
+            signature_mechanism: Some("sigstore".to_string()),
+            signer_identity: Some("legit@example.com".to_string()),
+            source_repo: Some("owner/repo".to_string()),
+            source_commit: None,
+            pinned_digest: Some("sha512:expected".to_string()),
+            actual_digest: Some("sha512:tampered".to_string()),
+            transparency_log_uri: None,
+            is_direct: true,
+        }]);
+        let findings = DependencySignatureControl.evaluate(&evidence);
+        assert_eq!(
+            findings[0].status,
+            ControlStatus::Violated,
+            "Verified signature with mismatched digest must be Violated"
+        );
+        assert!(findings[0].rationale.contains("digest_mismatch"));
+    }
+
+    #[test]
+    fn satisfied_when_verified_and_digests_match() {
+        let evidence = make_bundle(vec![DependencySignatureEvidence {
+            name: "good-pkg".to_string(),
+            version: "1.0.0".to_string(),
+            registry: Some("crates.io".to_string()),
+            verification: VerificationOutcome::Verified,
+            signature_mechanism: Some("sigstore".to_string()),
+            signer_identity: None,
+            source_repo: None,
+            source_commit: None,
+            pinned_digest: Some("sha512:abc".to_string()),
+            actual_digest: Some("sha512:abc".to_string()),
+            transparency_log_uri: None,
+            is_direct: true,
+        }]);
+        let findings = DependencySignatureControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 
     #[test]
