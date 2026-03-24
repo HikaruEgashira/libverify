@@ -99,6 +99,8 @@ let sarif = render(&opts, &report.into())?;
 | CC7.2 (Anomaly detection) | `stale-review`, `security-file-change` |
 | CC8.1 (Change management) | `change-request-size`, `test-coverage`, `scoped-change`, `description-quality`, `merge-commit-policy`, `conventional-title` |
 
+> **SOC2 scope:** gh-verify covers **technical control evidence** for CC7/CC8 (change management, traceability, review independence). It does NOT cover: access provisioning (CC6.1), physical security (CC6.4), incident response processes, or management's risk assessment. SOC2 Type II requires continuous monitoring over a 6-12 month period; gh-verify provides point-in-time checks that must be run on every PR and aggregated externally for period coverage.
+
 ### Policy presets
 
 | Preset | Description |

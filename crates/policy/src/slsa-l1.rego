@@ -1,5 +1,6 @@
-# SLSA Level 1 preset (Source L1, Build L1).
-# Required: source-authenticity, review-independence, build-provenance, required-status-checks.
+# SLSA Level 1 preset (Source L1, Build L1, Dependencies L1).
+# Required: source-authenticity, review-independence, build-provenance,
+#           required-status-checks, dependency-signature.
 # All other controls are advisory (indeterminate → review).
 #
 # Input (set per finding):
@@ -45,4 +46,5 @@ required := {
 	"review-independence",
 	"build-provenance",
 	"required-status-checks",
+	"dependency-signature",
 }

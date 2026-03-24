@@ -1,5 +1,6 @@
-# SLSA Level 3 preset (Source L3, Build L3).
-# Adds: branch-protection-enforcement, build-isolation.
+# SLSA Level 3 preset (Source L3, Build L3, Dependencies L3).
+# Adds: branch-protection-enforcement, build-isolation,
+#        dependency-signature, dependency-provenance, dependency-signer-verified.
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -49,4 +50,7 @@ required := {
 	"hosted-build-platform",
 	"provenance-authenticity",
 	"build-isolation",
+	"dependency-signature",
+	"dependency-provenance",
+	"dependency-signer-verified",
 }

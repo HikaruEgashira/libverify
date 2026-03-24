@@ -1,4 +1,4 @@
-# SLSA Level 4 preset (Source L4, Build L3 — maximum).
+# SLSA Level 4 preset (Source L4, Build L3, Dependencies L4 — maximum).
 # All SLSA controls required.
 #
 # Input (set per finding):
@@ -50,4 +50,8 @@ required := {
 	"hosted-build-platform",
 	"provenance-authenticity",
 	"build-isolation",
+	"dependency-signature",
+	"dependency-provenance",
+	"dependency-signer-verified",
+	"dependency-completeness",
 }

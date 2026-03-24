@@ -1,5 +1,6 @@
-# SLSA Level 2 preset (Source L2, Build L2).
-# Adds: branch-history-integrity, hosted-build-platform, provenance-authenticity.
+# SLSA Level 2 preset (Source L2, Build L2, Dependencies L2).
+# Adds: branch-history-integrity, hosted-build-platform, provenance-authenticity,
+#        dependency-signature, dependency-provenance.
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -47,4 +48,6 @@ required := {
 	"required-status-checks",
 	"hosted-build-platform",
 	"provenance-authenticity",
+	"dependency-signature",
+	"dependency-provenance",
 }

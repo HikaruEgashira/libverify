@@ -2,6 +2,41 @@ use anyhow::Result;
 use libverify_core::assessment::{AssessmentReport, BatchReport, VerificationResult};
 use libverify_core::control::ControlId;
 use libverify_core::profile::FindingSeverity;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+/// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp
+/// (e.g. `"2026-03-24T12:34:56Z"`). Uses only `std` — no external crates.
+fn utc_now_rfc3339() -> String {
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let s = secs % 60;
+    let total_min = secs / 60;
+    let m = total_min % 60;
+    let total_hour = total_min / 60;
+    let h = total_hour % 24;
+    let total_days = total_hour / 24;
+    // Gregorian calendar reconstruction from epoch days
+    let (year, month, day) = days_to_ymd(total_days);
+    format!("{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z")
+}
+
+/// Convert days since 1970-01-01 (UTC) to (year, month, day).
+fn days_to_ymd(days: u64) -> (u64, u64, u64) {
+    // Algorithm: Civil date from days — Hatcher/Richards (no external deps)
+    let z = days + 719468;
+    let era = z / 146097;
+    let doe = z % 146097;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+    (y, m, d)
+}
 
 /// Built-in rule descriptions, keyed by control ID string.
 fn builtin_rule_description(id: &str) -> &'static str {
@@ -156,6 +191,7 @@ fn build_sarif(
         })
         .collect();
 
+    let end_time = utc_now_rfc3339();
     serde_json::json!({
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
         "version": "2.1.0",
@@ -167,6 +203,10 @@ fn build_sarif(
                     "rules": rules,
                 }
             },
+            "invocations": [{
+                "endTimeUtc": end_time,
+                "executionSuccessful": true,
+            }],
             "results": results,
         }]
     })
@@ -263,5 +303,27 @@ mod tests {
             sarif["runs"][0]["tool"]["driver"]["name"],
             "atlassian-verify"
         );
+    }
+
+    #[test]
+    fn sarif_invocations_present_and_successful() {
+        let sarif = build_sarif(&sample_report(), "test-verify", "0.1.0");
+        let invocations = sarif["runs"][0]["invocations"].as_array().unwrap();
+        assert_eq!(invocations.len(), 1);
+        assert_eq!(invocations[0]["executionSuccessful"], true);
+        let ts = invocations[0]["endTimeUtc"].as_str().unwrap();
+        // Basic ISO 8601 UTC format check: YYYY-MM-DDTHH:MM:SSZ
+        assert!(ts.ends_with('Z'), "timestamp must end with Z: {ts}");
+        assert_eq!(ts.len(), 20, "unexpected timestamp length: {ts}");
+    }
+
+    #[test]
+    fn utc_now_rfc3339_format() {
+        let ts = utc_now_rfc3339();
+        assert!(ts.ends_with('Z'));
+        assert_eq!(ts.len(), 20);
+        // Year sanity: must be >= 2026
+        let year: u64 = ts[..4].parse().unwrap();
+        assert!(year >= 2026, "unexpected year: {year}");
     }
 }
