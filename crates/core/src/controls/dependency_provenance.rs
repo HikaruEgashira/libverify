@@ -65,13 +65,19 @@ impl Control for DependencyProvenanceControl {
                     .collect();
 
                 let gaps = evidence.dependency_signatures.gaps();
+                let gap_suffix = if gaps.is_empty() {
+                    String::new()
+                } else {
+                    format!(" (WARNING: {} evidence gap(s))", gaps.len())
+                };
 
                 if lacking.is_empty() {
                     let mut finding = ControlFinding::satisfied(
                         id,
                         format!(
-                            "All {} dependenc(ies) have cryptographic provenance",
-                            value.len()
+                            "All {} dependenc(ies) have cryptographic provenance{}",
+                            value.len(),
+                            gap_suffix,
                         ),
                         subjects,
                     );
@@ -83,8 +89,9 @@ impl Control for DependencyProvenanceControl {
                     let mut finding = ControlFinding::violated(
                         id,
                         format!(
-                            "Dependenc(ies) lacking provenance: {}",
-                            lacking.join("; ")
+                            "Dependenc(ies) lacking provenance: {}{}",
+                            lacking.join("; "),
+                            gap_suffix,
                         ),
                         subjects,
                     );
@@ -176,5 +183,43 @@ mod tests {
         let evidence = bundle(vec![]);
         let findings = DependencyProvenanceControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
+    }
+
+    #[test]
+    fn indeterminate_when_evidence_missing() {
+        let evidence = EvidenceBundle {
+            dependency_signatures: EvidenceState::missing(vec![
+                crate::evidence::EvidenceGap::CollectionFailed {
+                    source: "registry".to_string(),
+                    subject: "deps".to_string(),
+                    detail: "timeout".to_string(),
+                },
+            ]),
+            ..Default::default()
+        };
+        let findings = DependencyProvenanceControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Indeterminate);
+        assert_eq!(findings[0].evidence_gaps.len(), 1);
+    }
+
+    #[test]
+    fn partial_evidence_propagates_gaps_in_rationale() {
+        let evidence = EvidenceBundle {
+            dependency_signatures: EvidenceState::partial(
+                vec![dep_signed("serde", Some("serde-rs/serde"))],
+                vec![crate::evidence::EvidenceGap::Truncated {
+                    source: "tree-api".to_string(),
+                    subject: "repo-tree".to_string(),
+                }],
+            ),
+            ..Default::default()
+        };
+        let findings = DependencyProvenanceControl.evaluate(&evidence);
+        assert!(
+            findings[0].rationale.contains("evidence gap"),
+            "rationale should warn about gaps: {}",
+            findings[0].rationale
+        );
+        assert_eq!(findings[0].evidence_gaps.len(), 1);
     }
 }

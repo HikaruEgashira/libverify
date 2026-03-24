@@ -71,13 +71,19 @@ impl Control for DependencySignerVerifiedControl {
                     .collect();
 
                 let gaps = evidence.dependency_signatures.gaps();
+                let gap_suffix = if gaps.is_empty() {
+                    String::new()
+                } else {
+                    format!(" (WARNING: {} evidence gap(s))", gaps.len())
+                };
 
                 if lacking.is_empty() {
                     let mut finding = ControlFinding::satisfied(
                         id,
                         format!(
-                            "All {} dependenc(ies) have verified signer identity with transparency log",
-                            value.len()
+                            "All {} dependenc(ies) have verified signer identity with transparency log{}",
+                            value.len(),
+                            gap_suffix,
                         ),
                         subjects,
                     );
@@ -89,8 +95,9 @@ impl Control for DependencySignerVerifiedControl {
                     let mut finding = ControlFinding::violated(
                         id,
                         format!(
-                            "Dependenc(ies) lacking signer verification: {}",
-                            lacking.join("; ")
+                            "Dependenc(ies) lacking signer verification: {}{}",
+                            lacking.join("; "),
+                            gap_suffix,
                         ),
                         subjects,
                     );
@@ -189,5 +196,54 @@ mod tests {
         }]);
         let findings = DependencySignerVerifiedControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Violated);
+    }
+
+    #[test]
+    fn indeterminate_when_evidence_missing() {
+        let evidence = EvidenceBundle {
+            dependency_signatures: EvidenceState::missing(vec![
+                crate::evidence::EvidenceGap::CollectionFailed {
+                    source: "registry".to_string(),
+                    subject: "deps".to_string(),
+                    detail: "timeout".to_string(),
+                },
+            ]),
+            ..Default::default()
+        };
+        let findings = DependencySignerVerifiedControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Indeterminate);
+        assert_eq!(findings[0].evidence_gaps.len(), 1);
+    }
+
+    #[test]
+    fn partial_evidence_propagates_gaps_in_rationale() {
+        let evidence = EvidenceBundle {
+            dependency_signatures: EvidenceState::partial(
+                vec![dep_full("serde")],
+                vec![crate::evidence::EvidenceGap::Truncated {
+                    source: "tree-api".to_string(),
+                    subject: "repo-tree".to_string(),
+                }],
+            ),
+            ..Default::default()
+        };
+        let findings = DependencySignerVerifiedControl.evaluate(&evidence);
+        assert!(
+            findings[0].rationale.contains("evidence gap"),
+            "rationale should warn about gaps: {}",
+            findings[0].rationale
+        );
+        assert_eq!(findings[0].evidence_gaps.len(), 1);
+    }
+
+    #[test]
+    fn violated_when_both_signer_and_tlog_missing() {
+        let mut d = dep_full("pkg");
+        d.signer_identity = None;
+        d.transparency_log_uri = None;
+        let findings = DependencySignerVerifiedControl.evaluate(&bundle(vec![d]));
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+        assert!(findings[0].rationale.contains("no signer_identity"));
+        assert!(findings[0].rationale.contains("no transparency_log"));
     }
 }

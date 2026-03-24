@@ -229,4 +229,19 @@ mod tests {
         let findings = DependencyCompletenessControl.evaluate(&bundle(vec![]));
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
     }
+
+    #[test]
+    fn indeterminate_when_evidence_missing() {
+        let evidence = EvidenceBundle {
+            dependency_signatures: EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
+                source: "registry".to_string(),
+                subject: "deps".to_string(),
+                detail: "timeout".to_string(),
+            }]),
+            ..Default::default()
+        };
+        let findings = DependencyCompletenessControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Indeterminate);
+        assert_eq!(findings[0].evidence_gaps.len(), 1);
+    }
 }

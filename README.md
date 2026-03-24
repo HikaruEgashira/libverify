@@ -61,7 +61,7 @@ let sarif = render(&opts, &report.into())?;
 
 | Crate | Purpose |
 |-------|---------|
-| `libverify-core` | Evidence model, `Control` trait, 21 built-in controls, assessment engine, SLSA v1.2 mapping, profile system. Pure logic, serde only. |
+| `libverify-core` | Evidence model, `Control` trait, 24 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks), profile system. Pure logic, serde only. |
 | `libverify-policy` | OPA Rego policy engine ([regorus](https://github.com/nicholasbishop/regorus)). 5 built-in presets + custom `.rego` support. |
 | `libverify-output` | SARIF 2.1.0 / JSON formatters. Tool name/version configurable per consumer. |
 | `libverify-verif` | [Creusot](https://github.com/creusot-rs/creusot) formal verification targets. SMT-proven decision predicates. |
