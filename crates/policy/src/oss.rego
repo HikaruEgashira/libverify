@@ -38,9 +38,12 @@ map := {"severity": "info", "decision": "pass"} if {
 
 # --- Controls relaxed for OSS (violated → review) ---
 # These are common in open-source workflows and should not block CI.
+# Controls that commonly produce false positives in OSS due to platform
+# limitations (Gerrit mirrors, bot workflows, no GHAS, etc.)
 oss_review_on_violated := {
 	"source-authenticity",
 	"two-party-review",
+	"branch-protection-enforcement",
 	"issue-linkage",
 	"conventional-title",
 	"codeowners-coverage",
@@ -54,9 +57,14 @@ map := {"severity": "warning", "decision": "review"} if {
 }
 
 # --- Controls relaxed for OSS (indeterminate → review) ---
+# Evidence may be incomplete for OSS (Gerrit mirrors, external CI, etc.)
+# Indeterminate = "cannot prove from available evidence" → review, not fail.
 oss_review_on_indeterminate := {
 	"review-independence",
 	"required-status-checks",
+	"branch-history-integrity",
+	"branch-protection-enforcement",
+	"two-party-review",
 	"codeowners-coverage",
 	"vulnerability-scanning",
 	"secret-scanning",
