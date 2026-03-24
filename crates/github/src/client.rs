@@ -86,6 +86,42 @@ impl GitHubClient {
         resp.text().context("failed to read file content")
     }
 
+    /// List all file paths in a repository tree at a given ref using the Git Tree API.
+    ///
+    /// Returns paths matching `filter` predicate. Uses `recursive=1` to get the full tree.
+    pub fn find_files_in_tree(
+        &self,
+        owner: &str,
+        repo: &str,
+        ref_sha: &str,
+        filter: impl Fn(&str) -> bool,
+    ) -> Result<Vec<String>> {
+        let path = format!("/repos/{owner}/{repo}/git/trees/{ref_sha}?recursive=1");
+        let body = self.get(&path)?;
+        let tree: serde_json::Value = serde_json::from_str(&body)?;
+
+        let paths = tree
+            .get("tree")
+            .and_then(|t| t.as_array())
+            .map(|entries| {
+                entries
+                    .iter()
+                    .filter_map(|entry| {
+                        let path = entry.get("path")?.as_str()?;
+                        let entry_type = entry.get("type")?.as_str()?;
+                        if entry_type == "blob" && filter(path) {
+                            Some(path.to_string())
+                        } else {
+                            None
+                        }
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        Ok(paths)
+    }
+
     /// GET request returning body as string.
     pub fn get(&self, path: &str) -> Result<String> {
         let (body, _) = self.get_internal(path)?;

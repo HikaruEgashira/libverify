@@ -10,8 +10,8 @@ use libverify_core::evidence::{
 
 use crate::client::GitHubClient;
 
-/// Lock file types we can parse for dependency evidence.
-const LOCK_FILES: &[&str] = &["package-lock.json", "Cargo.lock"];
+/// Lock file basenames we can parse for dependency evidence.
+const LOCK_FILE_NAMES: &[&str] = &["package-lock.json", "Cargo.lock"];
 
 /// Collect dependency signature evidence for a PR by checking which lock files
 /// are present in the repository and parsing them for dependency information.
@@ -26,52 +26,45 @@ pub fn collect_pr_dependency_signatures(
     head_sha: &str,
     changed_files: &[String],
 ) -> EvidenceState<Vec<DependencySignatureEvidence>> {
-    // Only collect if a lock file was changed or exists
-    let has_lock_file_change = changed_files
+    // Find changed lock files (supports monorepo paths like packages/app/Cargo.lock)
+    let changed_lock_files: Vec<&str> = changed_files
         .iter()
-        .any(|f| LOCK_FILES.iter().any(|lf| f.ends_with(lf)));
+        .filter(|f| LOCK_FILE_NAMES.iter().any(|name| f.ends_with(name)))
+        .map(|f| f.as_str())
+        .collect();
 
-    if !has_lock_file_change {
+    if changed_lock_files.is_empty() {
         return EvidenceState::NotApplicable;
     }
 
     let mut all_deps = Vec::new();
     let mut gaps = Vec::new();
 
-    // Try parsing package-lock.json if present
-    if changed_files
-        .iter()
-        .any(|f| f.ends_with("package-lock.json"))
-    {
-        match client.get_file_content(owner, repo, "package-lock.json", head_sha) {
-            Ok(content) => match parse_package_lock_json(&content) {
-                Ok(deps) => all_deps.extend(deps),
-                Err(e) => {
-                    gaps.push(EvidenceGap::CollectionFailed {
-                        source: "package-lock-json".to_string(),
-                        subject: "package-lock.json".to_string(),
-                        detail: format!("parse error: {e}"),
-                    });
+    for lock_path in &changed_lock_files {
+        match client.get_file_content(owner, repo, lock_path, head_sha) {
+            Ok(content) => {
+                let result = if lock_path.ends_with("Cargo.lock") {
+                    parse_cargo_lock(&content)
+                } else if lock_path.ends_with("package-lock.json") {
+                    parse_package_lock_json(&content)
+                } else {
+                    continue;
+                };
+                match result {
+                    Ok(deps) => all_deps.extend(deps),
+                    Err(e) => {
+                        gaps.push(EvidenceGap::CollectionFailed {
+                            source: "lock-file-parser".to_string(),
+                            subject: lock_path.to_string(),
+                            detail: format!("parse error: {e}"),
+                        });
+                    }
                 }
-            },
+            }
             Err(e) => {
                 gaps.push(EvidenceGap::CollectionFailed {
                     source: "github-api".to_string(),
-                    subject: "package-lock.json".to_string(),
-                    detail: format!("{e}"),
-                });
-            }
-        }
-    }
-
-    // Try Cargo.lock parsing if present
-    if changed_files.iter().any(|f| f.ends_with("Cargo.lock")) {
-        match collect_cargo_checksums(client, owner, repo, head_sha) {
-            Ok(deps) => all_deps.extend(deps),
-            Err(e) => {
-                gaps.push(EvidenceGap::CollectionFailed {
-                    source: "cargo-lock".to_string(),
-                    subject: "Cargo.lock".to_string(),
+                    subject: lock_path.to_string(),
                     detail: format!("{e}"),
                 });
             }
@@ -89,55 +82,65 @@ pub fn collect_pr_dependency_signatures(
 
 /// Collect dependency signature evidence for an entire repository at a given ref.
 ///
-/// Probes for known lock files (Cargo.lock, package-lock.json) at the given
-/// reference and parses each one found. Returns `NotApplicable` if no lock
-/// files exist in the repository.
+/// Uses the GitHub Git Tree API to discover all lock files across the repository
+/// (including monorepo subdirectories), then fetches and parses each one.
+/// Returns `NotApplicable` if no lock files exist anywhere in the tree.
 pub fn collect_repo_dependency_signatures(
     client: &GitHubClient,
     owner: &str,
     repo: &str,
     reference: &str,
 ) -> EvidenceState<Vec<DependencySignatureEvidence>> {
+    // Discover all lock files in the repo tree
+    let lock_paths = match client.find_files_in_tree(owner, repo, reference, |path| {
+        LOCK_FILE_NAMES.iter().any(|name| path.ends_with(name))
+    }) {
+        Ok(paths) => paths,
+        Err(e) => {
+            return EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
+                source: "github-tree-api".to_string(),
+                subject: "lock-file-discovery".to_string(),
+                detail: format!("{e}"),
+            }]);
+        }
+    };
+
+    if lock_paths.is_empty() {
+        return EvidenceState::NotApplicable;
+    }
+
     let mut all_deps = Vec::new();
     let mut gaps = Vec::new();
-    let mut found_any = false;
 
-    for &lock_file in LOCK_FILES {
-        match client.get_file_content(owner, repo, lock_file, reference) {
+    for lock_path in &lock_paths {
+        match client.get_file_content(owner, repo, lock_path, reference) {
             Ok(content) => {
-                found_any = true;
-                if lock_file == "Cargo.lock" {
-                    match parse_cargo_lock(&content) {
-                        Ok(deps) => all_deps.extend(deps),
-                        Err(e) => {
-                            gaps.push(EvidenceGap::CollectionFailed {
-                                source: "cargo-lock".to_string(),
-                                subject: lock_file.to_string(),
-                                detail: format!("parse error: {e}"),
-                            });
-                        }
-                    }
-                } else if lock_file == "package-lock.json" {
-                    match parse_package_lock_json(&content) {
-                        Ok(deps) => all_deps.extend(deps),
-                        Err(e) => {
-                            gaps.push(EvidenceGap::CollectionFailed {
-                                source: "package-lock-json".to_string(),
-                                subject: lock_file.to_string(),
-                                detail: format!("parse error: {e}"),
-                            });
-                        }
+                let result = if lock_path.ends_with("Cargo.lock") {
+                    parse_cargo_lock(&content)
+                } else if lock_path.ends_with("package-lock.json") {
+                    parse_package_lock_json(&content)
+                } else {
+                    continue;
+                };
+                match result {
+                    Ok(deps) => all_deps.extend(deps),
+                    Err(e) => {
+                        gaps.push(EvidenceGap::CollectionFailed {
+                            source: "lock-file-parser".to_string(),
+                            subject: lock_path.clone(),
+                            detail: format!("parse error: {e}"),
+                        });
                     }
                 }
             }
-            Err(_) => {
-                // File not found at this ref — skip silently
+            Err(e) => {
+                gaps.push(EvidenceGap::CollectionFailed {
+                    source: "github-api".to_string(),
+                    subject: lock_path.clone(),
+                    detail: format!("{e}"),
+                });
             }
         }
-    }
-
-    if !found_any {
-        return EvidenceState::NotApplicable;
     }
 
     if all_deps.is_empty() && !gaps.is_empty() {
@@ -151,87 +154,90 @@ pub fn collect_repo_dependency_signatures(
 
 // -- package-lock.json parsing --
 
-/// Parse package-lock.json (v2/v3 format) to extract dependency integrity hashes.
+/// Parse package-lock.json (v1/v2/v3) to extract dependency integrity hashes.
 ///
-/// package-lock.json v2+ has a `packages` object keyed by path, where each entry
-/// contains `version`, `resolved`, and `integrity` (subresource integrity hash).
+/// - **v2/v3**: `packages` object keyed by `node_modules/` path
+/// - **v1**: `dependencies` object keyed by package name (flat or nested)
 fn parse_package_lock_json(
     content: &str,
 ) -> anyhow::Result<Vec<DependencySignatureEvidence>> {
     let lock: serde_json::Value = serde_json::from_str(content)?;
     let mut deps = Vec::new();
 
-    // v2/v3 format: "packages" object
+    // v2/v3 format: "packages" object (preferred)
     if let Some(packages) = lock.get("packages").and_then(|p| p.as_object()) {
         for (path, info) in packages {
-            // Skip the root package (empty key "")
             if path.is_empty() {
                 continue;
             }
-
-            // Extract package name from path: "node_modules/lodash" → "lodash"
-            // Scoped: "node_modules/@scope/pkg" → "@scope/pkg"
-            let name = path
-                .strip_prefix("node_modules/")
-                .unwrap_or(path);
-
-            let version = info
-                .get("version")
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown");
-
-            let integrity = info
-                .get("integrity")
-                .and_then(|i| i.as_str());
-
+            let name = path.strip_prefix("node_modules/").unwrap_or(path);
             let is_direct = !name.contains("node_modules/");
-
-            let (verification, pinned_digest) = match integrity {
-                Some(hash) => (
-                    VerificationOutcome::Verified,
-                    Some(hash.to_string()),
-                ),
-                None => (
-                    VerificationOutcome::AttestationAbsent {
-                        detail: "no integrity hash in package-lock.json".to_string(),
-                    },
-                    None,
-                ),
-            };
-
-            deps.push(DependencySignatureEvidence {
-                name: name.to_string(),
-                version: version.to_string(),
-                registry: Some("registry.npmjs.org".to_string()),
-                verification,
-                signature_mechanism: integrity.map(|_| "integrity-hash".to_string()),
-                signer_identity: None,
-                source_repo: None,
-                source_commit: None,
-                pinned_digest,
-                actual_digest: None,
-                transparency_log_uri: None,
-                is_direct,
-            });
+            push_npm_dep(&mut deps, name, info, is_direct);
         }
+    }
+    // v1 fallback: "dependencies" object
+    else if let Some(dependencies) = lock.get("dependencies").and_then(|d| d.as_object()) {
+        parse_npm_v1_deps(&mut deps, dependencies, true);
     }
 
     Ok(deps)
 }
 
-// -- Cargo.lock checksum collection --
+fn push_npm_dep(
+    deps: &mut Vec<DependencySignatureEvidence>,
+    name: &str,
+    info: &serde_json::Value,
+    is_direct: bool,
+) {
+    let version = info
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown");
 
-/// Parse Cargo.lock to extract dependency checksums.
-/// Fetches the lock file content from GitHub at the given commit SHA.
-fn collect_cargo_checksums(
-    client: &GitHubClient,
-    owner: &str,
-    repo: &str,
-    head_sha: &str,
-) -> anyhow::Result<Vec<DependencySignatureEvidence>> {
-    let content = client.get_file_content(owner, repo, "Cargo.lock", head_sha)?;
-    parse_cargo_lock(&content)
+    let integrity = info.get("integrity").and_then(|i| i.as_str());
+
+    let (verification, pinned_digest) = match integrity {
+        Some(hash) => (VerificationOutcome::Verified, Some(hash.to_string())),
+        None => (
+            VerificationOutcome::AttestationAbsent {
+                detail: "no integrity hash in package-lock.json".to_string(),
+            },
+            None,
+        ),
+    };
+
+    deps.push(DependencySignatureEvidence {
+        name: name.to_string(),
+        version: version.to_string(),
+        registry: Some("registry.npmjs.org".to_string()),
+        verification,
+        signature_mechanism: integrity.map(|_| "integrity-hash".to_string()),
+        signer_identity: None,
+        source_repo: None,
+        source_commit: None,
+        pinned_digest,
+        actual_digest: None,
+        transparency_log_uri: None,
+        is_direct,
+    });
 }
+
+/// Recursively parse v1 `dependencies` object.
+fn parse_npm_v1_deps(
+    deps: &mut Vec<DependencySignatureEvidence>,
+    dependencies: &serde_json::Map<String, serde_json::Value>,
+    is_direct: bool,
+) {
+    for (name, info) in dependencies {
+        push_npm_dep(deps, name, info, is_direct);
+        // v1 nests transitive deps under "dependencies" within each entry
+        if let Some(sub_deps) = info.get("dependencies").and_then(|d| d.as_object()) {
+            parse_npm_v1_deps(deps, sub_deps, false);
+        }
+    }
+}
+
+// -- Cargo.lock checksum collection --
 
 /// Parse Cargo.lock content and extract dependency name, version, and checksum.
 ///
@@ -535,5 +541,60 @@ checksum = "bbb"
         let content = r#"{ "lockfileVersion": 3, "packages": {} }"#;
         let deps = parse_package_lock_json(content).unwrap();
         assert!(deps.is_empty());
+    }
+
+    // -- package-lock.json v1 tests --
+
+    #[test]
+    fn parse_package_lock_v1_format() {
+        let content = r#"{
+  "lockfileVersion": 1,
+  "dependencies": {
+    "lodash": {
+      "version": "4.17.21",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+      "integrity": "sha512-v1-lodash-hash"
+    },
+    "express": {
+      "version": "4.18.2",
+      "resolved": "https://registry.npmjs.org/express/-/express-4.18.2.tgz",
+      "integrity": "sha512-express-hash",
+      "dependencies": {
+        "body-parser": {
+          "version": "1.20.0",
+          "integrity": "sha512-body-parser-hash"
+        }
+      }
+    }
+  }
+}"#;
+        let deps = parse_package_lock_json(content).unwrap();
+        assert_eq!(deps.len(), 3);
+
+        let lodash = deps.iter().find(|d| d.name == "lodash").expect("lodash");
+        assert!(lodash.is_direct);
+        assert!(lodash.verification.is_verified());
+
+        let express = deps.iter().find(|d| d.name == "express").expect("express");
+        assert!(express.is_direct);
+
+        let body_parser = deps.iter().find(|d| d.name == "body-parser").expect("body-parser");
+        assert!(!body_parser.is_direct, "nested dep should be transitive");
+        assert!(body_parser.verification.is_verified());
+    }
+
+    #[test]
+    fn parse_package_lock_v1_no_integrity() {
+        let content = r#"{
+  "lockfileVersion": 1,
+  "dependencies": {
+    "old-pkg": {
+      "version": "0.0.1"
+    }
+  }
+}"#;
+        let deps = parse_package_lock_json(content).unwrap();
+        assert_eq!(deps.len(), 1);
+        assert!(!deps[0].verification.is_verified());
     }
 }

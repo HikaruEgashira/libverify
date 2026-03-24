@@ -81,7 +81,7 @@ fn scenario_a_all_signed_is_satisfied() {
         finding.rationale
     );
     assert!(
-        finding.rationale.contains("3 dependency signature(s) verified"),
+        finding.rationale.contains("3 dependenc(ies) verified"),
         "rationale should mention count; got: {}",
         finding.rationale
     );

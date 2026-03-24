@@ -64,6 +64,21 @@ impl Control for DependencySignatureControl {
     }
 }
 
+/// Summarize verification mechanisms for rationale output.
+/// e.g. "142 checksum, 3 sigstore" or "checksum-pinned, not cryptographically signed"
+fn summarize_mechanisms(deps: &[crate::evidence::DependencySignatureEvidence]) -> String {
+    let mut counts: std::collections::BTreeMap<&str, usize> = std::collections::BTreeMap::new();
+    for dep in deps {
+        let mechanism = dep.signature_mechanism.as_deref().unwrap_or("unknown");
+        *counts.entry(mechanism).or_default() += 1;
+    }
+    counts
+        .iter()
+        .map(|(mechanism, count)| format!("{count} {mechanism}"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// Returns true if pinned and actual digests both exist and differ.
 fn has_digest_mismatch(dep: &crate::evidence::DependencySignatureEvidence) -> bool {
     match (&dep.pinned_digest, &dep.actual_digest) {
@@ -108,15 +123,19 @@ fn evaluate_deps(
     };
 
     let mut finding = match dependency_signature_severity(unverified.len()) {
-        Severity::Pass => ControlFinding::satisfied(
-            id.clone(),
-            format!(
-                "All {} dependency signature(s) verified{}",
-                deps.len(),
-                gap_suffix,
-            ),
-            subjects,
-        ),
+        Severity::Pass => {
+            let mechanism_summary = summarize_mechanisms(deps);
+            ControlFinding::satisfied(
+                id.clone(),
+                format!(
+                    "All {} dependenc(ies) verified ({}){}",
+                    deps.len(),
+                    mechanism_summary,
+                    gap_suffix,
+                ),
+                subjects,
+            )
+        }
         _ => ControlFinding::violated(
             id.clone(),
             format!(
@@ -271,7 +290,7 @@ mod tests {
         assert_eq!(findings[0].subjects.len(), 2);
         assert!(findings[0]
             .rationale
-            .contains("2 dependency signature(s) verified"));
+            .contains("2 dependenc(ies) verified"));
     }
 
     #[test]
