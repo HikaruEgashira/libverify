@@ -129,7 +129,9 @@ mod tests {
             source_commit: Some("abc123".to_string()),
             pinned_digest: None,
             actual_digest: None,
-            transparency_log_uri: Some("https://rekor.sigstore.dev/api/v1/log/entries/abc".to_string()),
+            transparency_log_uri: Some(
+                "https://rekor.sigstore.dev/api/v1/log/entries/abc".to_string(),
+            ),
             is_direct: true,
         }
     }
@@ -155,10 +157,8 @@ mod tests {
 
     #[test]
     fn satisfied_with_full_trust_chain() {
-        let findings = DependencySignerVerifiedControl.evaluate(&bundle(vec![
-            dep_full("serde"),
-            dep_full("tokio"),
-        ]));
+        let findings = DependencySignerVerifiedControl
+            .evaluate(&bundle(vec![dep_full("serde"), dep_full("tokio")]));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 

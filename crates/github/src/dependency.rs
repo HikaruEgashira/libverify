@@ -168,9 +168,7 @@ pub fn collect_repo_dependency_signatures(
 ///
 /// - **v2/v3**: `packages` object keyed by `node_modules/` path
 /// - **v1**: `dependencies` object keyed by package name (flat or nested)
-fn parse_package_lock_json(
-    content: &str,
-) -> anyhow::Result<Vec<DependencySignatureEvidence>> {
+fn parse_package_lock_json(content: &str) -> anyhow::Result<Vec<DependencySignatureEvidence>> {
     let lock: serde_json::Value = serde_json::from_str(content)?;
     let mut deps = Vec::new();
 
@@ -315,7 +313,12 @@ fn flush_cargo_package(
             Some(s) => s,
             None => return,
         };
-        deps.push(make_cargo_dep(&name, &version, checksum.as_deref(), &source));
+        deps.push(make_cargo_dep(
+            &name,
+            &version,
+            checksum.as_deref(),
+            &source,
+        ));
     }
 }
 
@@ -600,7 +603,10 @@ checksum = "bbb"
         let express = deps.iter().find(|d| d.name == "express").expect("express");
         assert!(express.is_direct);
 
-        let body_parser = deps.iter().find(|d| d.name == "body-parser").expect("body-parser");
+        let body_parser = deps
+            .iter()
+            .find(|d| d.name == "body-parser")
+            .expect("body-parser");
         assert!(!body_parser.is_direct, "nested dep should be transitive");
         assert!(body_parser.verification.is_verified());
     }

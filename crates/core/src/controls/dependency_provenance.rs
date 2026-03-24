@@ -49,8 +49,7 @@ impl Control for DependencyProvenanceControl {
                 let lacking: Vec<String> = value
                     .iter()
                     .filter(|d| {
-                        !d.verification.is_cryptographically_signed()
-                            || d.source_repo.is_none()
+                        !d.verification.is_cryptographically_signed() || d.source_repo.is_none()
                     })
                     .map(|d| {
                         let mut reasons = Vec::new();

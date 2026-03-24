@@ -111,10 +111,7 @@ fn evaluate_deps(
             if has_digest_mismatch(d) {
                 format!("{}@{} (digest_mismatch)", d.name, d.version)
             } else {
-                let reason = d
-                    .verification
-                    .failure_kind()
-                    .unwrap_or("unverified");
+                let reason = d.verification.failure_kind().unwrap_or("unverified");
                 format!("{}@{} ({})", d.name, d.version, reason)
             }
         })
@@ -165,9 +162,7 @@ fn evaluate_deps(
 mod tests {
     use super::*;
     use crate::control::ControlStatus;
-    use crate::evidence::{
-        DependencySignatureEvidence, EvidenceGap, VerificationOutcome,
-    };
+    use crate::evidence::{DependencySignatureEvidence, EvidenceGap, VerificationOutcome};
 
     fn make_dep(name: &str, version: &str, verified: bool) -> DependencySignatureEvidence {
         DependencySignatureEvidence {
@@ -269,13 +264,11 @@ mod tests {
     #[test]
     fn indeterminate_when_evidence_missing() {
         let evidence = EvidenceBundle {
-            dependency_signatures: EvidenceState::missing(vec![
-                EvidenceGap::CollectionFailed {
-                    source: "package-registry".to_string(),
-                    subject: "dependencies".to_string(),
-                    detail: "registry unreachable".to_string(),
-                },
-            ]),
+            dependency_signatures: EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
+                source: "package-registry".to_string(),
+                subject: "dependencies".to_string(),
+                detail: "registry unreachable".to_string(),
+            }]),
             ..Default::default()
         };
         let findings = DependencySignatureControl.evaluate(&evidence);
@@ -295,9 +288,7 @@ mod tests {
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
         assert_eq!(findings[0].subjects.len(), 2);
-        assert!(findings[0]
-            .rationale
-            .contains("2 dependenc(ies) verified"));
+        assert!(findings[0].rationale.contains("2 dependenc(ies) verified"));
     }
 
     #[test]

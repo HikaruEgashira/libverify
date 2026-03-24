@@ -142,7 +142,9 @@ mod tests {
             source_commit: Some("abc123".to_string()),
             pinned_digest: None,
             actual_digest: None,
-            transparency_log_uri: Some("https://rekor.sigstore.dev/api/v1/log/entries/abc".to_string()),
+            transparency_log_uri: Some(
+                "https://rekor.sigstore.dev/api/v1/log/entries/abc".to_string(),
+            ),
             is_direct,
         }
     }
@@ -193,15 +195,16 @@ mod tests {
         ]);
         let findings = DependencyCompletenessControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0].rationale.contains("serde_derive@1.0.0 [transitive]"));
+        assert!(
+            findings[0]
+                .rationale
+                .contains("serde_derive@1.0.0 [transitive]")
+        );
     }
 
     #[test]
     fn violated_when_direct_dep_lacks_provenance() {
-        let evidence = bundle(vec![
-            dep_checksum("serde", true),
-            dep_l3("tokio", false),
-        ]);
+        let evidence = bundle(vec![dep_checksum("serde", true), dep_l3("tokio", false)]);
         let findings = DependencyCompletenessControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("serde@1.0.0 [direct]"));
@@ -221,7 +224,11 @@ mod tests {
         };
         let findings = DependencyCompletenessControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0].rationale.contains("Cannot guarantee completeness"));
+        assert!(
+            findings[0]
+                .rationale
+                .contains("Cannot guarantee completeness")
+        );
     }
 
     #[test]

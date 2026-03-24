@@ -225,9 +225,7 @@ fn parse_verif_specs(path: &Path) -> Vec<VerifSpec> {
 
         let ensures: Vec<String> = ensures_re
             .captures_iter(attr_block)
-            .map(|cap| {
-                cap[1].split_whitespace().collect::<Vec<_>>().join(" ")
-            })
+            .map(|cap| cap[1].split_whitespace().collect::<Vec<_>>().join(" "))
             .collect();
 
         if ensures.is_empty() {
@@ -460,7 +458,9 @@ fn build_module_rule_maps(
                 screaming_to_kebab(&cap[1])
             } else if let Some(cap) = control_id_re.captures(&text) {
                 let variant = cap[1].to_string();
-                if variant == "new" { continue; }
+                if variant == "new" {
+                    continue;
+                }
                 pascal_to_kebab(&variant)
             } else {
                 continue;

@@ -224,12 +224,24 @@ pub enum VerificationOutcome {
     /// Checksum/integrity hash matched but no cryptographic signature was verified.
     /// This confirms download integrity but NOT authenticity.
     ChecksumMatch,
-    SignatureInvalid { detail: String },
-    SignerMismatch { detail: String },
-    TransparencyLogMissing { detail: String },
-    AttestationAbsent { detail: String },
-    DigestMismatch { detail: String },
-    Failed { detail: String },
+    SignatureInvalid {
+        detail: String,
+    },
+    SignerMismatch {
+        detail: String,
+    },
+    TransparencyLogMissing {
+        detail: String,
+    },
+    AttestationAbsent {
+        detail: String,
+    },
+    DigestMismatch {
+        detail: String,
+    },
+    Failed {
+        detail: String,
+    },
 }
 
 impl VerificationOutcome {
