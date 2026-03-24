@@ -12,34 +12,12 @@
 
 libverify is a shared verification library for supply chain security
 and compliance checks. Think libghostty for SDLC verification.
-Platform-specific tools like [gh-verify](https://github.com/HikaruEgashira/gh-verify)
-are thin shells that consume this library.
+Platform-specific tools are thin shells that consume this library.
 
 Each control evaluates evidence and produces a verdict:
 Satisfied, Violated, Indeterminate, or Not Applicable.
 A profile maps these to gate decisions — pass, review, or fail.
 Core decision predicates are formally proven via [Creusot](https://github.com/creusot-rs/creusot).
-
-## Quick start (CLI)
-
-For end-user CLI usage, install [gh-verify](https://github.com/HikaruEgashira/gh-verify):
-
-```bash
-# Install
-cargo install --git https://github.com/HikaruEgashira/gh-verify
-
-# Check a PR (auto-detects repo from git remote)
-export GH_TOKEN="$(gh auth token)"
-gh-verify pr 42
-
-# Check repository dependencies
-gh-verify repo --policy slsa-l1
-
-# Check a release
-gh-verify release v1.0.0
-```
-
-The sections below are for **library integrators** building platform-specific verifiers.
 
 > [!WARNING]
 >
@@ -120,7 +98,7 @@ let sarif = render(&opts, &report.into())?;
 | CC7.2 (Anomaly detection) | `stale-review`, `security-file-change` |
 | CC8.1 (Change management) | `change-request-size`, `test-coverage`, `scoped-change`, `description-quality`, `merge-commit-policy`, `conventional-title` |
 
-> **SOC2 scope:** gh-verify covers **technical control evidence** for CC7/CC8 (change management, traceability, review independence). It does NOT cover: access provisioning (CC6.1), physical security (CC6.4), incident response processes, or management's risk assessment. SOC2 Type II requires continuous monitoring over a 6-12 month period; gh-verify provides point-in-time checks that must be run on every PR and aggregated externally for period coverage.
+> **SOC2 scope:** libverify covers **technical control evidence** for CC7/CC8 (change management, traceability, review independence). It does NOT cover: access provisioning (CC6.1), physical security (CC6.4), incident response processes, or management's risk assessment. SOC2 Type II requires continuous monitoring over a 6-12 month period; libverify provides point-in-time checks that must be run on every PR and aggregated externally for period coverage.
 
 ### Policy presets
 
@@ -144,7 +122,7 @@ libverify is platform-agnostic. To build a verifier for a new platform (e.g., Gi
 3. **Apply policy** — Use a built-in preset or custom Rego policy
 4. **Format output** — Render as SARIF or JSON via `libverify-output`
 
-See [gh-verify](https://github.com/HikaruEgashira/gh-verify) as a reference implementation.
+See `libverify-github` as a reference platform connector.
 
 ## Development
 
