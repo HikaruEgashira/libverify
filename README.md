@@ -104,23 +104,6 @@ let sarif = render(&opts, &report.into())?;
 
 Custom OPA Rego policies are supported via `OpaProfile::from_file()`.
 
-### Dependency verification
-
-The `dependency-signature` control verifies that all dependencies have been checked for integrity or provenance. It distinguishes two trust levels:
-
-- **`Verified`** — Cryptographic signature confirmed (Sigstore, PGP, cosign)
-- **`ChecksumMatch`** — Integrity hash matched (Cargo.lock checksum, npm SRI hash) — confirms download integrity but NOT authenticity
-
-Both levels pass the control, but the rationale reports the breakdown (e.g. `"140 checksum, 2 sigstore"`) so consumers can distinguish trust levels.
-
-Supported lock files:
-- **Cargo.lock** — SHA-256 checksum extraction, path/workspace dependencies skipped, git sources labeled correctly
-- **package-lock.json** — v1 (`dependencies`), v2/v3 (`packages`) formats, scoped packages, transitive dependency detection via `is_direct`
-
-Evidence model (`DependencySignatureEvidence`) supports npm provenance fields: `signer_identity`, `source_repo`, `source_commit`, `transparency_log_uri`, `pinned_digest`, `actual_digest`.
-
-Repository-level scanning discovers lock files across monorepo subdirectories via the GitHub Tree API.
-
 ## Integrating a new platform
 
 libverify is platform-agnostic. To build a verifier for a new platform (e.g., GitLab, Bitbucket):
