@@ -38,7 +38,7 @@ use libverify_output::{OutputOptions, Format, render};
 // 1. Collect evidence from your platform
 let evidence = EvidenceBundle { /* ... */ };
 
-// 2. Run all 20 built-in controls with an OPA policy
+// 2. Run all 21 built-in controls with an OPA policy
 let registry = ControlRegistry::builtin();
 let profile = OpaProfile::from_preset_or_file("soc2")?;
 let report = assess_with_registry(&evidence, &registry, &profile);
@@ -61,14 +61,14 @@ let sarif = render(&opts, &report.into())?;
 
 | Crate | Purpose |
 |-------|---------|
-| `libverify-core` | Evidence model, `Control` trait, 20 built-in controls, assessment engine, SLSA v1.2 mapping, profile system. Pure logic, serde only. |
+| `libverify-core` | Evidence model, `Control` trait, 21 built-in controls, assessment engine, SLSA v1.2 mapping, profile system. Pure logic, serde only. |
 | `libverify-policy` | OPA Rego policy engine ([regorus](https://github.com/nicholasbishop/regorus)). 5 built-in presets + custom `.rego` support. |
 | `libverify-output` | SARIF 2.1.0 / JSON formatters. Tool name/version configurable per consumer. |
 | `libverify-verif` | [Creusot](https://github.com/creusot-rs/creusot) formal verification targets. SMT-proven decision predicates. |
 
 ## Controls
 
-20 built-in controls covering SLSA v1.2 and SOC2 CC7/CC8.
+21 built-in controls covering SLSA v1.2 and SOC2 CC7/CC8.
 
 ### SLSA v1.2
 
@@ -81,6 +81,7 @@ let sarif = render(&opts, &report.into())?;
 | Build | L1 | `build-provenance`, `required-status-checks` |
 | Build | L2 | `hosted-build-platform`, `provenance-authenticity` |
 | Build | L3 | `build-isolation` |
+| Dependencies | L1 | `dependency-signature` |
 
 ### SOC2 CC7/CC8
 
@@ -99,8 +100,26 @@ let sarif = render(&opts, &report.into())?;
 | `aiops` | Escalates all indeterminate to human review instead of fail |
 | `soc1` | Strict on ICFR-relevant controls; advisory on dev-quality controls |
 | `soc2` | Strict on all CC6/CC7/CC8 controls; review on build-track indeterminate |
+| `slsa-l1`..`slsa-l4` | SLSA level enforcement (Source + Build + Dependencies tracks) |
 
 Custom OPA Rego policies are supported via `OpaProfile::from_file()`.
+
+### Dependency verification
+
+The `dependency-signature` control verifies that all dependencies have been checked for integrity or provenance. It distinguishes two trust levels:
+
+- **`Verified`** — Cryptographic signature confirmed (Sigstore, PGP, cosign)
+- **`ChecksumMatch`** — Integrity hash matched (Cargo.lock checksum, npm SRI hash) — confirms download integrity but NOT authenticity
+
+Both levels pass the control, but the rationale reports the breakdown (e.g. `"140 checksum, 2 sigstore"`) so consumers can distinguish trust levels.
+
+Supported lock files:
+- **Cargo.lock** — SHA-256 checksum extraction, path/workspace dependencies skipped, git sources labeled correctly
+- **package-lock.json** — v1 (`dependencies`), v2/v3 (`packages`) formats, scoped packages, transitive dependency detection via `is_direct`
+
+Evidence model (`DependencySignatureEvidence`) supports npm provenance fields: `signer_identity`, `source_repo`, `source_commit`, `transparency_log_uri`, `pinned_digest`, `actual_digest`.
+
+Repository-level scanning discovers lock files across monorepo subdirectories via the GitHub Tree API.
 
 ## Integrating a new platform
 

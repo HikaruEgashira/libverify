@@ -6,7 +6,7 @@ gh-verify and atlassian-verify are thin platform-specific shells consuming this 
 ## Commands
 
 ```bash
-cargo test --workspace --exclude libverify-verif   # All tests (358+)
+cargo test --workspace --exclude libverify-verif   # All tests (421+)
 cargo check --workspace                             # Type check
 cargo clippy --workspace --exclude libverify-verif  # Lint
 ```
@@ -15,7 +15,7 @@ cargo clippy --workspace --exclude libverify-verif  # Lint
 
 Five-crate workspace:
 
-- `libverify-core` — evidence model, Control trait, 20 built-in controls, assessment engine, SLSA v1.2 mapping. Pure logic, serde only.
+- `libverify-core` — evidence model, Control trait, 21 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks). Pure logic, serde only.
 - `libverify-policy` — OPA Rego policy engine (regorus). 9 presets: default, oss, aiops, soc1, soc2, slsa-l1, slsa-l2, slsa-l3, slsa-l4.
 - `libverify-output` — SARIF/JSON output formatters. Tool name/version configurable per consumer.
 - `libverify-github` — GitHub API client, evidence adapter, verification orchestration. Used by [gh-verify](https://github.com/HikaruEgashira/gh-verify).
@@ -28,8 +28,10 @@ Five-crate workspace:
 | `EvidenceBundle` | core | Platform-normalized evidence container |
 | `GovernedChange` | core | A change request (PR, MR, etc.) |
 | `Control` trait | core | Evaluates evidence → findings |
-| `ControlId` | core | String-based open ID (`builtin::` constants for 20 built-in) |
-| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 20 |
+| `ControlId` | core | String-based open ID (`builtin::` constants for 21 built-in) |
+| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 21 |
+| `DependencySignatureEvidence` | core | Per-dependency verification evidence with provenance fields |
+| `VerificationOutcome` | core | `Verified` / `ChecksumMatch` / failure variants (7 total) |
 | `ControlProfile` trait | core | Maps findings → severity + gate decision. All profiles (including SLSA) are OPA policy presets. |
 | `OpaProfile` | policy | Rego-based profile implementation |
 | `VerificationResult` | core | Assessment report + optional evidence |
@@ -38,14 +40,17 @@ Five-crate workspace:
 | `GitHubClient` | github | REST + GraphQL client with retry/pagination |
 | `verify_pr` | github | Single PR verification orchestration |
 | `verify_release` | github | Release verification orchestration |
+| `verify_repo` | github | Repository-level dependency verification |
+| `TreeSearchResult` | github | Git Tree API result with truncated flag |
 
 ## Adding a new control
 
 1. Create `crates/core/src/controls/<name>.rs`, impl `Control` trait
 2. Add `&str` constant to `crates/core/src/control.rs::builtin` module
 3. Register in `crates/core/src/controls/mod.rs::instantiate()` and appropriate collection function
-4. If SLSA-mapped, add to `crates/core/src/slsa.rs::control_slsa_mapping()`
-5. Add Creusot spec if the predicate is verifiable
+4. If SLSA-mapped, add to `crates/core/src/slsa.rs::control_slsa_mapping()` and `ALL_SLSA_CONTROLS`
+5. Add SARIF rule description to `crates/output/src/sarif.rs::builtin_rule_description()`
+6. Add Creusot spec if the predicate is verifiable
 
 ## Naming
 
