@@ -259,7 +259,10 @@ mod tests {
     fn slsa_l1_optional_indeterminate_reviews() {
         let profile = OpaProfile::slsa_l1_preset().unwrap();
         // branch-history-integrity is L2, so optional in L1
-        let finding = make_finding(builtin::BRANCH_HISTORY_INTEGRITY, ControlStatus::Indeterminate);
+        let finding = make_finding(
+            builtin::BRANCH_HISTORY_INTEGRITY,
+            ControlStatus::Indeterminate,
+        );
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Review);
     }
@@ -267,7 +270,10 @@ mod tests {
     #[test]
     fn slsa_l2_branch_history_required() {
         let profile = OpaProfile::slsa_l2_preset().unwrap();
-        let finding = make_finding(builtin::BRANCH_HISTORY_INTEGRITY, ControlStatus::Indeterminate);
+        let finding = make_finding(
+            builtin::BRANCH_HISTORY_INTEGRITY,
+            ControlStatus::Indeterminate,
+        );
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Fail);
     }

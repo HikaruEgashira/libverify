@@ -82,4 +82,3 @@ pub fn assess_with_registry(
 ) -> AssessmentReport {
     assess(evidence, registry.controls(), profile)
 }
-

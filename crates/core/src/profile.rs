@@ -94,4 +94,3 @@ pub fn apply_profile(
         .map(|finding| profile.map(finding))
         .collect()
 }
-

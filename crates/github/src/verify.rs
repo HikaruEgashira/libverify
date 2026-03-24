@@ -26,14 +26,7 @@ pub fn verify_pr(
 ) -> Result<VerificationResult> {
     let pr_data =
         graphql::fetch_pr(client, owner, repo, pr_number).context("failed to fetch PR data")?;
-    assess_from_pr_data(
-        &pr_data,
-        owner,
-        repo,
-        pr_number,
-        policy,
-        with_evidence,
-    )
+    assess_from_pr_data(&pr_data, owner, repo, pr_number, policy, with_evidence)
 }
 
 fn assess_from_pr_data(
@@ -106,14 +99,7 @@ pub fn verify_pr_batch(
         eprintln!("Verifying PR #{pr_number} ({}/{})", i + 1, total);
 
         match result.and_then(|pr_data| {
-            assess_from_pr_data(
-                &pr_data,
-                owner,
-                repo,
-                pr_number,
-                policy,
-                with_evidence,
-            )
+            assess_from_pr_data(&pr_data, owner, repo, pr_number, policy, with_evidence)
         }) {
             Ok(vr) => {
                 for outcome in &vr.report.outcomes {
