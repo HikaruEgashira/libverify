@@ -54,6 +54,38 @@ impl GitHubClient {
         })
     }
 
+    /// Fetch raw file content from a repository at a specific ref.
+    ///
+    /// Uses the GitHub raw content media type to avoid base64 encoding.
+    pub fn get_file_content(
+        &self,
+        owner: &str,
+        repo: &str,
+        path: &str,
+        ref_sha: &str,
+    ) -> Result<String> {
+        let url = format!(
+            "{}/repos/{owner}/{repo}/contents/{path}?ref={ref_sha}",
+            self.base_url
+        );
+        let resp = self
+            .client
+            .get(&url)
+            .header("Accept", "application/vnd.github.raw+json")
+            .send()
+            .context("failed to fetch file content")?;
+
+        if !resp.status().is_success() {
+            bail!(
+                "failed to fetch {path}: {} {}",
+                resp.status().as_u16(),
+                resp.status().canonical_reason().unwrap_or("Unknown"),
+            );
+        }
+
+        resp.text().context("failed to read file content")
+    }
+
     /// GET request returning body as string.
     pub fn get(&self, path: &str) -> Result<String> {
         let (body, _) = self.get_internal(path)?;

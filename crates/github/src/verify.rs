@@ -12,6 +12,7 @@ use libverify_policy::OpaProfile;
 
 use crate::adapter;
 use crate::client::GitHubClient;
+use crate::dependency;
 use crate::graphql::{self, PrData};
 use crate::types::{CombinedStatusResponse, CommitStatusItem};
 
@@ -26,10 +27,11 @@ pub fn verify_pr(
 ) -> Result<VerificationResult> {
     let pr_data =
         graphql::fetch_pr(client, owner, repo, pr_number).context("failed to fetch PR data")?;
-    assess_from_pr_data(&pr_data, owner, repo, pr_number, policy, with_evidence)
+    assess_from_pr_data(client, &pr_data, owner, repo, pr_number, policy, with_evidence)
 }
 
 fn assess_from_pr_data(
+    client: &GitHubClient,
     pr_data: &PrData,
     owner: &str,
     repo: &str,
@@ -72,6 +74,20 @@ fn assess_from_pr_data(
         }
     }
 
+    // Collect dependency signature evidence from lock files
+    let changed_files: Vec<String> = pr_data
+        .files
+        .iter()
+        .map(|f| f.filename.clone())
+        .collect();
+    bundle.dependency_signatures = dependency::collect_pr_dependency_signatures(
+        client,
+        owner,
+        repo,
+        &pr_data.metadata.head.sha,
+        &changed_files,
+    );
+
     let report = assess_bundle(&bundle, policy)?;
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
     Ok(VerificationResult::new(report, evidence_bundle))
@@ -99,7 +115,7 @@ pub fn verify_pr_batch(
         eprintln!("Verifying PR #{pr_number} ({}/{})", i + 1, total);
 
         match result.and_then(|pr_data| {
-            assess_from_pr_data(&pr_data, owner, repo, pr_number, policy, with_evidence)
+            assess_from_pr_data(client, &pr_data, owner, repo, pr_number, policy, with_evidence)
         }) {
             Ok(vr) => {
                 for outcome in &vr.report.outcomes {

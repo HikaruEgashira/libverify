@@ -2,6 +2,7 @@ pub mod adapter;
 pub mod attestation;
 pub mod client;
 pub mod config;
+pub mod dependency;
 pub mod graphql;
 pub mod ossinsight;
 pub mod pr_api;
