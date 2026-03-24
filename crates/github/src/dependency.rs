@@ -131,6 +131,8 @@ pub fn collect_repo_dependency_signatures(
                     parse_cargo_lock(&content)
                 } else if lock_path.ends_with("package-lock.json") {
                     parse_package_lock_json(&content)
+                } else if lock_path.ends_with("poetry.lock") {
+                    parse_poetry_lock(&content)
                 } else {
                     continue;
                 };
@@ -157,7 +159,8 @@ pub fn collect_repo_dependency_signatures(
 
     // dedup by (name, version, registry)
     all_deps.sort_by(|a, b| (&a.name, &a.version).cmp(&(&b.name, &b.version)));
-    all_deps.dedup_by(|a, b| a.name == b.name && a.version == b.version && a.registry == b.registry);
+    all_deps
+        .dedup_by(|a, b| a.name == b.name && a.version == b.version && a.registry == b.registry);
 
     if all_deps.is_empty() && !gaps.is_empty() {
         EvidenceState::missing(gaps)
@@ -377,6 +380,121 @@ fn make_cargo_dep(
 
 fn unquote(s: &str) -> String {
     s.trim().trim_matches('"').to_string()
+}
+
+// -- poetry.lock parsing --
+
+/// Parse poetry.lock (TOML-like) to extract dependency name, version, and optional file hashes.
+///
+/// poetry.lock uses TOML format with `[[package]]` sections. Each section has `name` and
+/// `version` fields. File hashes appear in a `[metadata.files]` or inline `files` array
+/// within each `[[package]]` section (Poetry 1.x vs 2.x formats).
+///
+/// This parser uses the same line-based approach as `parse_cargo_lock` to avoid adding
+/// a TOML crate dependency.
+fn parse_poetry_lock(content: &str) -> anyhow::Result<Vec<DependencySignatureEvidence>> {
+    let mut deps = Vec::new();
+    let mut current_name: Option<String> = None;
+    let mut current_version: Option<String> = None;
+    let mut current_has_hash: bool = false;
+    let mut in_package = false;
+    // Track whether we are inside the files array of a [[package]] section.
+    // Poetry 2.x embeds `files = [...]` directly inside each [[package]].
+    let mut in_files_array = false;
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        if trimmed == "[[package]]" {
+            // Flush previous package
+            flush_poetry_package(
+                &mut deps,
+                current_name.take(),
+                current_version.take(),
+                current_has_hash,
+            );
+            in_package = true;
+            in_files_array = false;
+            current_has_hash = false;
+            continue;
+        }
+
+        // Detect start of a new top-level section (e.g. [metadata], [metadata.files])
+        // which ends any active [[package]] context.
+        if trimmed.starts_with('[') && !trimmed.starts_with("[[") {
+            in_files_array = false;
+            // Do NOT reset in_package — package fields may appear after sub-tables in
+            // future formats, but practically this is fine since name/version come first.
+        }
+
+        if in_package {
+            if let Some(rest) = trimmed.strip_prefix("name = ") {
+                current_name = Some(unquote(rest));
+                in_files_array = false;
+            } else if let Some(rest) = trimmed.strip_prefix("version = ") {
+                current_version = Some(unquote(rest));
+                in_files_array = false;
+            } else if trimmed == "files = [" || trimmed.starts_with("files = [") {
+                in_files_array = true;
+                // Check if the array is non-empty on the same line (single-line form)
+                // e.g. `files = [{file = "...", hash = "sha256:..."}]`
+                if trimmed.contains("hash =") || trimmed.contains("sha256:") {
+                    current_has_hash = true;
+                }
+            } else if in_files_array {
+                if trimmed == "]" {
+                    in_files_array = false;
+                } else if trimmed.contains("hash =") || trimmed.contains("sha256:") {
+                    current_has_hash = true;
+                }
+            }
+        }
+    }
+
+    // Flush last package
+    flush_poetry_package(&mut deps, current_name, current_version, current_has_hash);
+
+    Ok(deps)
+}
+
+fn flush_poetry_package(
+    deps: &mut Vec<DependencySignatureEvidence>,
+    name: Option<String>,
+    version: Option<String>,
+    has_hash: bool,
+) {
+    if let (Some(name), Some(version)) = (name, version) {
+        let (verification, mechanism) = if has_hash {
+            (
+                VerificationOutcome::ChecksumMatch,
+                Some("checksum".to_string()),
+            )
+        } else {
+            (
+                VerificationOutcome::AttestationAbsent {
+                    detail: "no file hash in poetry.lock".to_string(),
+                },
+                None,
+            )
+        };
+
+        deps.push(DependencySignatureEvidence {
+            name,
+            version,
+            registry: Some("pypi.org".to_string()),
+            verification,
+            signature_mechanism: mechanism,
+            signer_identity: None,
+            source_repo: None,
+            source_commit: None,
+            pinned_digest: None,
+            actual_digest: None,
+            transparency_log_uri: None,
+            // poetry.lock does not reliably distinguish direct from transitive;
+            // pyproject.toml cross-reference would be needed for accuracy.
+            is_direct: true,
+        });
+    }
 }
 
 #[cfg(test)]
@@ -630,5 +748,90 @@ checksum = "bbb"
         let deps = parse_package_lock_json(content).unwrap();
         assert_eq!(deps.len(), 1);
         assert!(!deps[0].verification.is_verified());
+    }
+
+    // -- poetry.lock tests --
+
+    #[test]
+    fn parse_poetry_lock_with_hash() {
+        let content = r#"
+[[package]]
+name = "requests"
+version = "2.31.0"
+description = "Python HTTP for Humans."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "requests-2.31.0-py3-none-any.whl", hash = "sha256:58cd2187423839"},
+    {file = "requests-2.31.0.tar.gz", hash = "sha256:942c5a758f98"},
+]
+
+[[package]]
+name = "urllib3"
+version = "2.0.7"
+description = "HTTP library with thread-safe connection pooling"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "urllib3-2.0.7-py3-none-any.whl", hash = "sha256:fdb6d215c776a"},
+]
+"#;
+        let deps = parse_poetry_lock(content).unwrap();
+        assert_eq!(deps.len(), 2);
+
+        let requests = deps
+            .iter()
+            .find(|d| d.name == "requests")
+            .expect("requests");
+        assert_eq!(requests.version, "2.31.0");
+        assert!(
+            requests.verification.is_verified(),
+            "hash present → ChecksumMatch"
+        );
+        assert_eq!(requests.signature_mechanism, Some("checksum".to_string()));
+        assert_eq!(requests.registry, Some("pypi.org".to_string()));
+
+        let urllib3 = deps.iter().find(|d| d.name == "urllib3").expect("urllib3");
+        assert_eq!(urllib3.version, "2.0.7");
+        assert!(urllib3.verification.is_verified());
+    }
+
+    #[test]
+    fn parse_poetry_lock_without_hash() {
+        let content = r#"
+[[package]]
+name = "legacy-pkg"
+version = "0.1.0"
+description = "A package without file hashes"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "another-legacy"
+version = "1.2.3"
+description = "Also no hashes"
+optional = false
+python-versions = "*"
+"#;
+        let deps = parse_poetry_lock(content).unwrap();
+        assert_eq!(deps.len(), 2);
+
+        let legacy = deps
+            .iter()
+            .find(|d| d.name == "legacy-pkg")
+            .expect("legacy-pkg");
+        assert_eq!(legacy.version, "0.1.0");
+        assert!(
+            !legacy.verification.is_verified(),
+            "no hash → AttestationAbsent"
+        );
+        assert_eq!(legacy.signature_mechanism, None);
+        assert_eq!(legacy.registry, Some("pypi.org".to_string()));
+
+        let another = deps
+            .iter()
+            .find(|d| d.name == "another-legacy")
+            .expect("another-legacy");
+        assert!(!another.verification.is_verified());
     }
 }

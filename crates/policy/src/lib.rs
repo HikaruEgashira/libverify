@@ -289,10 +289,7 @@ mod tests {
     #[test]
     fn slsa_l1_dependency_signature_required() {
         let profile = OpaProfile::slsa_l1_preset().unwrap();
-        let finding = make_finding(
-            builtin::DEPENDENCY_SIGNATURE,
-            ControlStatus::Indeterminate,
-        );
+        let finding = make_finding(builtin::DEPENDENCY_SIGNATURE, ControlStatus::Indeterminate);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Fail);
     }

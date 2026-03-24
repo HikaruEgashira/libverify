@@ -27,6 +27,22 @@ fn validate_host(host: &str) -> Result<()> {
     if host.as_bytes()[0].is_ascii_digit() {
         bail!("invalid host: IP addresses not allowed");
     }
+    // Block IMDS and special-purpose IP addresses (SSRF mitigation)
+    if host.starts_with("169.254.169.254") {
+        bail!("invalid host: IMDS endpoint not allowed");
+    }
+    if host.starts_with("fd00::") {
+        bail!("invalid host: ULA IPv6 address not allowed");
+    }
+    if host.starts_with("fe80::") {
+        bail!("invalid host: link-local IPv6 address not allowed");
+    }
+    if host.starts_with("0.0.0.0") {
+        bail!("invalid host: 0.0.0.0 not allowed");
+    }
+    if host.starts_with("[::") {
+        bail!("invalid host: unspecified IPv6 address not allowed");
+    }
     if !host.contains('.') {
         bail!("invalid host: must contain a dot");
     }
