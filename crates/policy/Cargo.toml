@@ -11,3 +11,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
 regorus = { workspace = true }
+
+[dev-dependencies]
+libverify-output = { path = "../output" }
