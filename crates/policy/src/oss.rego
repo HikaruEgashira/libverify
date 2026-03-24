@@ -54,9 +54,11 @@ map := {"severity": "warning", "decision": "review"} if {
 # --- ASPM posture controls relaxed for OSS ---
 
 # codeowners-coverage: many OSS projects don't use CODEOWNERS
+# secret-scanning included: not available on GitHub Free/Pro plans
 oss_posture_review_controls := {
 	"codeowners-coverage",
 	"vulnerability-scanning",
+	"secret-scanning",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
@@ -69,18 +71,11 @@ map := {"severity": "warning", "decision": "review"} if {
 	input.status == "indeterminate"
 }
 
-# secret-scanning indeterminate -> review (not available on GitHub Free)
-map := {"severity": "warning", "decision": "review"} if {
-	input.control_id == "secret-scanning"
-	input.status == "indeterminate"
-}
-
 # Generic indeterminate -> fail (except those handled above)
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "indeterminate"
 	input.control_id != "review-independence"
 	input.control_id != "required-status-checks"
-	input.control_id != "secret-scanning"
 	not input.control_id in oss_posture_review_controls
 }
 

@@ -40,7 +40,7 @@ impl Control for SecretScanningControl {
             vec![ControlFinding::satisfied(
                 self.id(),
                 "Secret scanning with push protection is enabled",
-                vec!["repository".to_string()],
+                vec!["repository:secret-scanning:prevention".to_string()],
             )]
         } else {
             // Detection-only: scanning enabled but push protection off.
@@ -50,7 +50,7 @@ impl Control for SecretScanningControl {
                 self.id(),
                 "Secret scanning is enabled (detection only — \
                  consider enabling push protection for prevention)",
-                vec!["repository".to_string()],
+                vec!["repository:secret-scanning:detection".to_string()],
             )]
         }
     }
@@ -113,5 +113,24 @@ mod tests {
             SecretScanningControl.evaluate(&bundle(EvidenceState::complete(posture(false))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert!(findings[0].rationale.contains("not enabled"));
+    }
+
+    #[test]
+    fn satisfied_with_push_protection_has_prevention_tier() {
+        let mut p = posture(true);
+        p.secret_push_protection_enabled = true;
+        let findings = SecretScanningControl.evaluate(&bundle(EvidenceState::complete(p)));
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+        assert!(findings[0].rationale.contains("push protection"));
+        assert!(findings[0].subjects[0].contains("prevention"));
+    }
+
+    #[test]
+    fn satisfied_detection_only_has_detection_tier() {
+        let findings =
+            SecretScanningControl.evaluate(&bundle(EvidenceState::complete(posture(true))));
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+        assert!(findings[0].rationale.contains("detection only"));
+        assert!(findings[0].subjects[0].contains("detection"));
     }
 }

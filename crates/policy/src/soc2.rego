@@ -6,7 +6,7 @@
 #   - Security-critical controls (CC6/CC7/CC8/PI core) → hard fail on violated
 #   - Advisory controls (dev-quality, style) → review on violated
 #   - OSS-origin controls → review on violated (enterprises use alternative evidence)
-#   - Build-track indeterminate → review (attestation infra may be absent)
+#   - Build/dependency-track indeterminate → review (infra may be absent)
 #
 # SOC2 criteria mapping:
 #   CC6 (Logical Access):     source-authenticity, branch-protection-enforcement,
@@ -58,6 +58,19 @@ map := {"severity": "warning", "decision": "review"} if {
 	input.control_id in soc2_build_controls
 }
 
+# --- Dependency-track indeterminate → review (provenance infra may be absent) ---
+soc2_dependency_controls := {
+	"dependency-signature",
+	"dependency-provenance",
+	"dependency-signer-verified",
+	"dependency-completeness",
+}
+
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "indeterminate"
+	input.control_id in soc2_dependency_controls
+}
+
 # --- Advisory controls (dev quality / style, not SOC2-critical) ---
 # These improve hygiene but no SOC2 auditor will issue an exception for
 # non-conventional commit titles or large PRs.
@@ -101,6 +114,7 @@ map := {"severity": "warning", "decision": "review"} if {
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "indeterminate"
 	not input.control_id in soc2_build_controls
+	not input.control_id in soc2_dependency_controls
 	not input.control_id in soc2_advisory_controls
 	not input.control_id in soc2_oss_origin_controls
 }

@@ -22,7 +22,7 @@ impl Control for CodeownersCoverageControl {
     }
 
     fn description(&self) -> &'static str {
-        "CODEOWNERS must exist with catch-all coverage for designated review routing"
+        "CODEOWNERS must exist with meaningful ownership coverage for review routing"
     }
 
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
