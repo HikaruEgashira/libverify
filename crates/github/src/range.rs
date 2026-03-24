@@ -28,10 +28,10 @@ pub fn parse_range(arg: &str) -> Option<RangeSpec> {
     }
 
     // #N..#M -- PR number range
-    if let (Some(l), Some(r)) = (left.strip_prefix('#'), right.strip_prefix('#')) {
-        if let (Ok(start), Ok(end)) = (l.parse::<u32>(), r.parse::<u32>()) {
-            return Some(RangeSpec::PrRange { start, end });
-        }
+    if let (Some(l), Some(r)) = (left.strip_prefix('#'), right.strip_prefix('#'))
+        && let (Ok(start), Ok(end)) = (l.parse::<u32>(), r.parse::<u32>())
+    {
+        return Some(RangeSpec::PrRange { start, end });
     }
 
     // YYYY-MM-DD..YYYY-MM-DD -- date range
