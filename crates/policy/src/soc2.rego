@@ -11,7 +11,7 @@
 #   CC6 (Logical Access):     source-authenticity, branch-protection-enforcement
 #   CC7 (System Operations):  issue-linkage, stale-review, security-file-change,
 #                             release-traceability, required-status-checks
-#   CC8 (Change Management):  review-independence, two-party-review, pr-size,
+#   CC8 (Change Management):  review-independence, two-party-review, change-request-size,
 #                             test-coverage, scoped-change, description-quality,
 #                             merge-commit-policy, conventional-title,
 #                             branch-history-integrity

@@ -287,6 +287,70 @@ mod tests {
     }
 
     #[test]
+    fn slsa_l1_dependency_signature_required() {
+        let profile = OpaProfile::slsa_l1_preset().unwrap();
+        let finding = make_finding(
+            builtin::DEPENDENCY_SIGNATURE,
+            ControlStatus::Indeterminate,
+        );
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn slsa_l2_dependency_provenance_required() {
+        let profile = OpaProfile::slsa_l2_preset().unwrap();
+        let finding = make_finding(
+            builtin::DEPENDENCY_PROVENANCE_CHECK,
+            ControlStatus::Indeterminate,
+        );
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn slsa_l3_dependency_signer_verified_required() {
+        let profile = OpaProfile::slsa_l3_preset().unwrap();
+        let finding = make_finding(
+            builtin::DEPENDENCY_SIGNER_VERIFIED,
+            ControlStatus::Indeterminate,
+        );
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn slsa_l4_dependency_completeness_required() {
+        let profile = OpaProfile::slsa_l4_preset().unwrap();
+        let finding = make_finding(
+            builtin::DEPENDENCY_COMPLETENESS,
+            ControlStatus::Indeterminate,
+        );
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn slsa_l1_dependency_provenance_optional() {
+        let profile = OpaProfile::slsa_l1_preset().unwrap();
+        // dependency-provenance is L2, so optional in L1
+        let finding = make_finding(
+            builtin::DEPENDENCY_PROVENANCE_CHECK,
+            ControlStatus::Indeterminate,
+        );
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Review);
+    }
+
+    #[test]
+    fn soc1_change_request_size_advisory() {
+        let profile = OpaProfile::soc1_preset().unwrap();
+        let finding = make_finding(builtin::CHANGE_REQUEST_SIZE, ControlStatus::Violated);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Review);
+    }
+
+    #[test]
     fn custom_policy_from_string() {
         let custom_rego = r#"
 package verify.profile

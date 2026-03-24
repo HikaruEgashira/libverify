@@ -20,11 +20,32 @@ Satisfied, Violated, Indeterminate, or Not Applicable.
 A profile maps these to gate decisions — pass, review, or fail.
 Core decision predicates are formally proven via [Creusot](https://github.com/creusot-rs/creusot).
 
+## Quick start (CLI)
+
+For end-user CLI usage, install [gh-verify](https://github.com/HikaruEgashira/gh-verify):
+
+```bash
+# Install
+cargo install --git https://github.com/HikaruEgashira/gh-verify
+
+# Check a PR (auto-detects repo from git remote)
+export GH_TOKEN="$(gh auth token)"
+gh-verify pr 42
+
+# Check repository dependencies
+gh-verify repo --policy slsa-l1
+
+# Check a release
+gh-verify release v1.0.0
+```
+
+The sections below are for **library integrators** building platform-specific verifiers.
+
 > [!WARNING]
 >
 > This project is under active development. Controls and output format may change.
 
-## Usage
+## Library usage
 
 ```rust
 use libverify_core::registry::ControlRegistry;

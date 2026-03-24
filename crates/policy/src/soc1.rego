@@ -1,7 +1,7 @@
 # SOC1 (SSAE 18 / ISAE 3402) policy preset.
 # Focused on Internal Controls over Financial Reporting (ICFR).
 # Enforces processing integrity and change traceability controls strictly.
-# Development quality controls (PR size, conventional titles, etc.) are advisory.
+# Development quality controls (change-request size, conventional titles, etc.) are advisory.
 #
 # Key SOC1 control objectives mapped:
 #   CC-PI  (Processing Integrity): build provenance, required status checks,
@@ -35,11 +35,11 @@ map := {"severity": "info", "decision": "pass"} if {
 }
 
 # --- Advisory controls (dev quality, not ICFR-relevant) ---
-# PR size, scoped change, description quality, merge commit policy,
+# Change-request size, scoped change, description quality, merge commit policy,
 # conventional title, test coverage: violations are warnings, not gates.
 
 soc1_advisory_controls := {
-	"pr-size",
+	"change-request-size",
 	"scoped-change",
 	"description-quality",
 	"merge-commit-policy",

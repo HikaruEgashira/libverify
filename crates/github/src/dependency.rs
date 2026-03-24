@@ -11,7 +11,7 @@ use libverify_core::evidence::{
 use crate::client::GitHubClient;
 
 /// Lock file basenames we can parse for dependency evidence.
-const LOCK_FILE_NAMES: &[&str] = &["package-lock.json", "Cargo.lock"];
+const LOCK_FILE_NAMES: &[&str] = &["package-lock.json", "Cargo.lock", "poetry.lock"];
 
 /// Collect dependency signature evidence for a PR by checking which lock files
 /// are present in the repository and parsing them for dependency information.
@@ -47,6 +47,8 @@ pub fn collect_pr_dependency_signatures(
                     parse_cargo_lock(&content)
                 } else if lock_path.ends_with("package-lock.json") {
                     parse_package_lock_json(&content)
+                } else if lock_path.ends_with("poetry.lock") {
+                    parse_poetry_lock(&content)
                 } else {
                     continue;
                 };
@@ -152,6 +154,10 @@ pub fn collect_repo_dependency_signatures(
             }
         }
     }
+
+    // dedup by (name, version, registry)
+    all_deps.sort_by(|a, b| (&a.name, &a.version).cmp(&(&b.name, &b.version)));
+    all_deps.dedup_by(|a, b| a.name == b.name && a.version == b.version && a.registry == b.registry);
 
     if all_deps.is_empty() && !gaps.is_empty() {
         EvidenceState::missing(gaps)
