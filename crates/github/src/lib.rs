@@ -4,6 +4,7 @@ pub mod client;
 pub mod config;
 pub mod dependency;
 pub mod graphql;
+pub mod npm_attestation;
 pub mod ossinsight;
 pub mod pr_api;
 pub mod range;

@@ -84,13 +84,14 @@ fn assess_from_pr_data(
 
     // Collect dependency signature evidence from lock files
     let changed_files: Vec<String> = pr_data.files.iter().map(|f| f.filename.clone()).collect();
-    bundle.dependency_signatures = dependency::collect_pr_dependency_signatures(
+    let dep_sigs = dependency::collect_pr_dependency_signatures(
         client,
         owner,
         repo,
         &pr_data.metadata.head.sha,
         &changed_files,
     );
+    bundle.dependency_signatures = enrich_npm_attestations(dep_sigs);
 
     let report = assess_bundle(&bundle, policy)?;
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
@@ -240,6 +241,9 @@ pub fn verify_repo(
 ) -> Result<VerificationResult> {
     let dep_sigs = dependency::collect_repo_dependency_signatures(client, owner, repo, reference);
 
+    // Enrich npm dependencies with provenance from the npm attestation API
+    let dep_sigs = enrich_npm_attestations(dep_sigs);
+
     let bundle = libverify_core::evidence::EvidenceBundle {
         dependency_signatures: dep_sigs,
         check_runs: EvidenceState::not_applicable(),
@@ -291,5 +295,34 @@ pub fn exit_if_assessment_fails(result: &VerificationResult) {
         .any(|o| o.decision == GateDecision::Fail)
     {
         process::exit(1);
+    }
+}
+
+/// Enrich npm dependencies in an EvidenceState with provenance from the
+/// npm attestation API. Non-npm deps and failures are left unchanged.
+fn enrich_npm_attestations(
+    state: EvidenceState<Vec<libverify_core::evidence::DependencySignatureEvidence>>,
+) -> EvidenceState<Vec<libverify_core::evidence::DependencySignatureEvidence>> {
+    use crate::npm_attestation::NpmAttestationClient;
+
+    let has_npm = |deps: &[libverify_core::evidence::DependencySignatureEvidence]| {
+        deps.iter()
+            .any(|d| d.registry.as_deref() == Some("registry.npmjs.org"))
+    };
+
+    match state {
+        EvidenceState::Complete { mut value } if has_npm(&value) => {
+            if let Ok(client) = NpmAttestationClient::new() {
+                client.enrich_npm_deps(&mut value);
+            }
+            EvidenceState::Complete { value }
+        }
+        EvidenceState::Partial { mut value, gaps } if has_npm(&value) => {
+            if let Ok(client) = NpmAttestationClient::new() {
+                client.enrich_npm_deps(&mut value);
+            }
+            EvidenceState::Partial { value, gaps }
+        }
+        other => other,
     }
 }
