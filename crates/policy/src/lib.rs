@@ -10,6 +10,10 @@ const OSS_POLICY: &str = include_str!("oss.rego");
 const AIOPS_POLICY: &str = include_str!("aiops.rego");
 const SOC1_POLICY: &str = include_str!("soc1.rego");
 const SOC2_POLICY: &str = include_str!("soc2.rego");
+const SLSA_L1_POLICY: &str = include_str!("slsa-l1.rego");
+const SLSA_L2_POLICY: &str = include_str!("slsa-l2.rego");
+const SLSA_L3_POLICY: &str = include_str!("slsa-l3.rego");
+const SLSA_L4_POLICY: &str = include_str!("slsa-l4.rego");
 const RULE_PATH: &str = "data.verify.profile.map";
 
 /// OPA-based profile that evaluates Rego policies to map control findings
@@ -55,6 +59,22 @@ impl OpaProfile {
         Self::from_rego_with_name("soc2.rego", SOC2_POLICY, "soc2")
     }
 
+    pub fn slsa_l1_preset() -> Result<Self> {
+        Self::from_rego_with_name("slsa-l1.rego", SLSA_L1_POLICY, "slsa-l1")
+    }
+
+    pub fn slsa_l2_preset() -> Result<Self> {
+        Self::from_rego_with_name("slsa-l2.rego", SLSA_L2_POLICY, "slsa-l2")
+    }
+
+    pub fn slsa_l3_preset() -> Result<Self> {
+        Self::from_rego_with_name("slsa-l3.rego", SLSA_L3_POLICY, "slsa-l3")
+    }
+
+    pub fn slsa_l4_preset() -> Result<Self> {
+        Self::from_rego_with_name("slsa-l4.rego", SLSA_L4_POLICY, "slsa-l4")
+    }
+
     /// Loads a built-in preset by name, or falls back to file path.
     pub fn from_preset_or_file(name: &str) -> Result<Self> {
         match name {
@@ -63,6 +83,10 @@ impl OpaProfile {
             "aiops" => Self::aiops_preset(),
             "soc1" => Self::soc1_preset(),
             "soc2" => Self::soc2_preset(),
+            "slsa-l1" => Self::slsa_l1_preset(),
+            "slsa-l2" => Self::slsa_l2_preset(),
+            "slsa-l3" => Self::slsa_l3_preset(),
+            "slsa-l4" => Self::slsa_l4_preset(),
             path => Self::from_file(path),
         }
     }
@@ -186,6 +210,10 @@ mod tests {
         assert!(OpaProfile::from_preset_or_file("aiops").is_ok());
         assert!(OpaProfile::from_preset_or_file("soc1").is_ok());
         assert!(OpaProfile::from_preset_or_file("soc2").is_ok());
+        assert!(OpaProfile::from_preset_or_file("slsa-l1").is_ok());
+        assert!(OpaProfile::from_preset_or_file("slsa-l2").is_ok());
+        assert!(OpaProfile::from_preset_or_file("slsa-l3").is_ok());
+        assert!(OpaProfile::from_preset_or_file("slsa-l4").is_ok());
     }
 
     #[test]
@@ -217,6 +245,39 @@ mod tests {
         let profile = OpaProfile::soc1_preset().unwrap();
         let labels = profile.severity_labels();
         assert_eq!(labels.error, "material_weakness");
+    }
+
+    #[test]
+    fn slsa_l1_required_indeterminate_fails() {
+        let profile = OpaProfile::slsa_l1_preset().unwrap();
+        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Indeterminate);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn slsa_l1_optional_indeterminate_reviews() {
+        let profile = OpaProfile::slsa_l1_preset().unwrap();
+        // branch-history-integrity is L2, so optional in L1
+        let finding = make_finding(builtin::BRANCH_HISTORY_INTEGRITY, ControlStatus::Indeterminate);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Review);
+    }
+
+    #[test]
+    fn slsa_l2_branch_history_required() {
+        let profile = OpaProfile::slsa_l2_preset().unwrap();
+        let finding = make_finding(builtin::BRANCH_HISTORY_INTEGRITY, ControlStatus::Indeterminate);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn slsa_l1_non_slsa_control_indeterminate_reviews() {
+        let profile = OpaProfile::slsa_l1_preset().unwrap();
+        let finding = make_finding(builtin::CHANGE_REQUEST_SIZE, ControlStatus::Indeterminate);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Review);
     }
 
     #[test]

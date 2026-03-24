@@ -2,11 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::control::{Control, ControlFinding, ControlStatus, evaluate_all};
 use crate::evidence::EvidenceBundle;
-use crate::profile::{
-    ControlProfile, ProfileOutcome, SeverityLabels, SlsaLevelProfile, apply_profile,
-};
+use crate::profile::{ControlProfile, ProfileOutcome, SeverityLabels, apply_profile};
 use crate::registry::ControlRegistry;
-use crate::slsa::SlsaLevel;
 
 /// Complete assessment result combining raw control findings with profile-mapped outcomes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -86,13 +83,3 @@ pub fn assess_with_registry(
     assess(evidence, registry.controls(), profile)
 }
 
-/// Assess at specific SLSA levels using built-in controls.
-pub fn assess_with_slsa_levels(
-    evidence: &EvidenceBundle,
-    registry: &ControlRegistry,
-    source_level: SlsaLevel,
-    build_level: SlsaLevel,
-) -> AssessmentReport {
-    let profile = SlsaLevelProfile::new(source_level, build_level);
-    assess(evidence, registry.controls(), &profile)
-}

@@ -8,7 +8,6 @@ use libverify_core::assessment::{
 use libverify_core::evidence::EvidenceState;
 use libverify_core::profile::GateDecision;
 use libverify_core::registry::ControlRegistry;
-use libverify_core::slsa::SlsaLevel;
 use libverify_policy::OpaProfile;
 
 use crate::adapter;
@@ -23,7 +22,6 @@ pub fn verify_pr(
     repo: &str,
     pr_number: u32,
     policy: Option<&str>,
-    slsa_level: Option<&str>,
     with_evidence: bool,
 ) -> Result<VerificationResult> {
     let pr_data =
@@ -34,7 +32,6 @@ pub fn verify_pr(
         repo,
         pr_number,
         policy,
-        slsa_level,
         with_evidence,
     )
 }
@@ -45,7 +42,6 @@ fn assess_from_pr_data(
     repo: &str,
     pr_number: u32,
     policy: Option<&str>,
-    slsa_level: Option<&str>,
     with_evidence: bool,
 ) -> Result<VerificationResult> {
     let repo_full = format!("{owner}/{repo}");
@@ -83,7 +79,7 @@ fn assess_from_pr_data(
         }
     }
 
-    let report = assess_bundle(&bundle, policy, slsa_level)?;
+    let report = assess_bundle(&bundle, policy)?;
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
     Ok(VerificationResult::new(report, evidence_bundle))
 }
@@ -95,7 +91,6 @@ pub fn verify_pr_batch(
     repo: &str,
     pr_numbers: &[u32],
     policy: Option<&str>,
-    slsa_level: Option<&str>,
     with_evidence: bool,
 ) -> Result<BatchReport> {
     let mut reports = Vec::new();
@@ -117,7 +112,6 @@ pub fn verify_pr_batch(
                 repo,
                 pr_number,
                 policy,
-                slsa_level,
                 with_evidence,
             )
         }) {
@@ -157,7 +151,6 @@ pub fn verify_pr_batch(
 ///
 /// This encapsulates the full release verification flow:
 /// compare refs, resolve commit PRs, collect attestations, build bundle, assess.
-#[allow(clippy::too_many_arguments)]
 pub fn verify_release(
     client: &GitHubClient,
     owner: &str,
@@ -165,7 +158,6 @@ pub fn verify_release(
     base_tag: &str,
     head_tag: &str,
     policy: Option<&str>,
-    slsa_level: Option<&str>,
     with_evidence: bool,
 ) -> Result<VerificationResult> {
     let commits = crate::release_api::compare_refs(client, owner, repo, base_tag, head_tag)
@@ -212,72 +204,22 @@ pub fn verify_release(
     // Check runs are PR-scoped; not applicable for release verification.
     bundle.check_runs = EvidenceState::not_applicable();
 
-    let report = assess_bundle(&bundle, policy, slsa_level)?;
+    let report = assess_bundle(&bundle, policy)?;
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
     Ok(VerificationResult::new(report, evidence_bundle))
 }
 
-/// Parse a SLSA level string like "source-l3-build-l2" into (source_level, build_level).
-pub fn parse_slsa_level(s: &str) -> Result<(SlsaLevel, SlsaLevel)> {
-    let parts: Vec<&str> = s.split('-').collect();
-    if parts.len() != 4 || parts[0] != "source" || parts[2] != "build" {
-        bail!(
-            "invalid --slsa-level format: expected 'source-l{{N}}-build-l{{M}}' (e.g. 'source-l3-build-l2'), got '{s}'"
-        );
-    }
-
-    let source_level = parse_level_component(parts[1])
-        .with_context(|| format!("invalid source level in '{s}'"))?;
-    let build_level =
-        parse_level_component(parts[3]).with_context(|| format!("invalid build level in '{s}'"))?;
-
-    Ok((source_level, build_level))
-}
-
-fn parse_level_component(s: &str) -> Result<SlsaLevel> {
-    match s {
-        "l0" => Ok(SlsaLevel::L0),
-        "l1" => Ok(SlsaLevel::L1),
-        "l2" => Ok(SlsaLevel::L2),
-        "l3" => Ok(SlsaLevel::L3),
-        "l4" => Ok(SlsaLevel::L4),
-        _ => bail!("unknown level '{s}': expected l0, l1, l2, l3, or l4"),
-    }
-}
-
 pub fn assess_bundle(
     bundle: &libverify_core::evidence::EvidenceBundle,
-    policy_path: Option<&str>,
-    slsa_level: Option<&str>,
+    policy: Option<&str>,
 ) -> Result<AssessmentReport> {
     let registry = ControlRegistry::builtin();
-    match policy_path {
-        Some(name) => {
-            let profile = OpaProfile::from_preset_or_file(name)?;
-            Ok(libverify_core::assessment::assess(
-                bundle,
-                registry.controls(),
-                &profile,
-            ))
-        }
-        None => match slsa_level {
-            Some(level_str) => {
-                let (source_level, build_level) = parse_slsa_level(level_str)?;
-                Ok(libverify_core::assessment::assess_with_slsa_levels(
-                    bundle,
-                    &registry,
-                    source_level,
-                    build_level,
-                ))
-            }
-            None => Ok(libverify_core::assessment::assess_with_slsa_levels(
-                bundle,
-                &registry,
-                SlsaLevel::L1,
-                SlsaLevel::L1,
-            )),
-        },
-    }
+    let profile = OpaProfile::from_preset_or_file(policy.unwrap_or("default"))?;
+    Ok(libverify_core::assessment::assess(
+        bundle,
+        registry.controls(),
+        &profile,
+    ))
 }
 
 pub fn exit_if_assessment_fails(result: &VerificationResult) {
