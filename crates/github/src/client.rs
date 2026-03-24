@@ -14,6 +14,14 @@ const MAX_PAGES: usize = 10;
 const MAX_HTTP_ATTEMPTS: usize = 3;
 const INITIAL_RETRY_DELAY_MS: u64 = 250;
 
+/// Result of a tree search: matched paths and whether the tree was truncated.
+pub struct TreeSearchResult {
+    pub paths: Vec<String>,
+    /// True if the GitHub API truncated the tree (>100k entries).
+    /// Some matching files may be missing from `paths`.
+    pub truncated: bool,
+}
+
 pub struct GitHubClient {
     client: Client,
     base_url: String,
@@ -88,17 +96,24 @@ impl GitHubClient {
 
     /// List all file paths in a repository tree at a given ref using the Git Tree API.
     ///
-    /// Returns paths matching `filter` predicate. Uses `recursive=1` to get the full tree.
+    /// Returns paths matching `filter` predicate and a `truncated` flag.
+    /// When `truncated` is true, the tree exceeded GitHub's limit and some
+    /// files may be missing — callers should treat this as partial evidence.
     pub fn find_files_in_tree(
         &self,
         owner: &str,
         repo: &str,
         ref_sha: &str,
         filter: impl Fn(&str) -> bool,
-    ) -> Result<Vec<String>> {
+    ) -> Result<TreeSearchResult> {
         let path = format!("/repos/{owner}/{repo}/git/trees/{ref_sha}?recursive=1");
         let body = self.get(&path)?;
         let tree: serde_json::Value = serde_json::from_str(&body)?;
+
+        let truncated = tree
+            .get("truncated")
+            .and_then(|t| t.as_bool())
+            .unwrap_or(false);
 
         let paths = tree
             .get("tree")
@@ -119,7 +134,7 @@ impl GitHubClient {
             })
             .unwrap_or_default();
 
-        Ok(paths)
+        Ok(TreeSearchResult { paths, truncated })
     }
 
     /// GET request returning body as string.

@@ -92,10 +92,10 @@ pub fn collect_repo_dependency_signatures(
     reference: &str,
 ) -> EvidenceState<Vec<DependencySignatureEvidence>> {
     // Discover all lock files in the repo tree
-    let lock_paths = match client.find_files_in_tree(owner, repo, reference, |path| {
+    let tree_result = match client.find_files_in_tree(owner, repo, reference, |path| {
         LOCK_FILE_NAMES.iter().any(|name| path.ends_with(name))
     }) {
-        Ok(paths) => paths,
+        Ok(result) => result,
         Err(e) => {
             return EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
                 source: "github-tree-api".to_string(),
@@ -105,14 +105,24 @@ pub fn collect_repo_dependency_signatures(
         }
     };
 
-    if lock_paths.is_empty() {
+    if tree_result.paths.is_empty() && !tree_result.truncated {
         return EvidenceState::NotApplicable;
     }
 
     let mut all_deps = Vec::new();
     let mut gaps = Vec::new();
 
-    for lock_path in &lock_paths {
+    // If the tree was truncated, record it as a gap — some lock files may be missing
+    if tree_result.truncated {
+        gaps.push(EvidenceGap::Truncated {
+            source: "github-tree-api".to_string(),
+            subject: "repository-tree".to_string(),
+        });
+    }
+
+    let lock_paths = &tree_result.paths;
+
+    for lock_path in lock_paths {
         match client.get_file_content(owner, repo, lock_path, reference) {
             Ok(content) => {
                 let result = if lock_path.ends_with("Cargo.lock") {
@@ -127,7 +137,7 @@ pub fn collect_repo_dependency_signatures(
                     Err(e) => {
                         gaps.push(EvidenceGap::CollectionFailed {
                             source: "lock-file-parser".to_string(),
-                            subject: lock_path.clone(),
+                            subject: lock_path.to_string(),
                             detail: format!("parse error: {e}"),
                         });
                     }
@@ -136,7 +146,7 @@ pub fn collect_repo_dependency_signatures(
             Err(e) => {
                 gaps.push(EvidenceGap::CollectionFailed {
                     source: "github-api".to_string(),
-                    subject: lock_path.clone(),
+                    subject: lock_path.to_string(),
                     detail: format!("{e}"),
                 });
             }
@@ -331,11 +341,10 @@ fn make_cargo_dep(
     };
 
     // Derive registry from source field
-    let registry = if source.starts_with("registry+") {
+    let registry = if source.contains("crates.io-index") {
         Some("crates.io".to_string())
-    } else if source.starts_with("git+") {
-        Some(source.to_string())
     } else {
+        // git sources, alternate registries, etc. — use source as-is
         Some(source.to_string())
     };
 
@@ -351,6 +360,8 @@ fn make_cargo_dep(
         pinned_digest,
         actual_digest: None,
         transparency_log_uri: None,
+        // Cargo.lock does not distinguish direct from transitive dependencies;
+        // Cargo.toml cross-reference would be needed for accurate classification.
         is_direct: true,
     }
 }
