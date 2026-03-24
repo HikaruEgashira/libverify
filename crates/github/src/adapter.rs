@@ -321,6 +321,18 @@ fn classify_ci_platform(slug: &str) -> (bool, bool, bool, bool) {
         "dependabot" | "renovate" => (true, false, false, false),
         "buildomat" => (true, true, true, false),
 
+        // Code scanning / security analysis (hosted SaaS)
+        "github-advanced-security" => (true, true, true, false),
+
+        // Package preview / deploy bots (hosted)
+        "pkg-pr-new" => (true, false, false, false),
+
+        // DCO (Developer Certificate of Origin) check
+        "dco" => (true, false, false, false),
+
+        // ReadTheDocs (documentation build)
+        "readthedocs" => (true, false, false, false),
+
         // Unknown — conservative default
         _ => (false, false, false, false),
     }
@@ -391,6 +403,27 @@ fn infer_platform_from_name(name: &str) -> &'static str {
     // Cirrus CI
     if lower.contains("cirrus") {
         return "cirrus-ci";
+    }
+    // Buildkite
+    if lower.starts_with("buildkite/") || lower.contains("buildkite") {
+        return "buildkite";
+    }
+    // ReadTheDocs
+    if lower.contains("readthedocs") {
+        return "readthedocs";
+    }
+    // External CI reported via GitHub Status API (Jenkins, Buildbot, etc.)
+    // Pattern: "pull-requests-*", "pr-*" are common Jenkins job names
+    if lower.starts_with("pull-requests-") || lower.starts_with("pr-") {
+        return "github-actions"; // external CI, treat as hosted
+    }
+    // Vercel/preview deployments
+    if lower.contains("preview deploy") || lower.contains("vercel") {
+        return "vercel";
+    }
+    // Ecosystem CI (cross-project compatibility testing)
+    if lower.contains("ecosystem-ci") {
+        return "github-actions";
     }
     "unknown"
 }
