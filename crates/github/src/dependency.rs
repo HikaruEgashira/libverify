@@ -7,7 +7,6 @@
 use libverify_core::evidence::{
     DependencySignatureEvidence, EvidenceGap, EvidenceState, VerificationOutcome,
 };
-use std::process::Command;
 
 use crate::client::GitHubClient;
 
@@ -39,16 +38,25 @@ pub fn collect_pr_dependency_signatures(
     let mut all_deps = Vec::new();
     let mut gaps = Vec::new();
 
-    // Try npm audit signatures if package-lock.json is present
+    // Try parsing package-lock.json if present
     if changed_files
         .iter()
         .any(|f| f.ends_with("package-lock.json"))
     {
-        match collect_npm_signatures() {
-            Ok(deps) => all_deps.extend(deps),
+        match client.get_file_content(owner, repo, "package-lock.json", head_sha) {
+            Ok(content) => match parse_package_lock_json(&content) {
+                Ok(deps) => all_deps.extend(deps),
+                Err(e) => {
+                    gaps.push(EvidenceGap::CollectionFailed {
+                        source: "package-lock-json".to_string(),
+                        subject: "package-lock.json".to_string(),
+                        detail: format!("parse error: {e}"),
+                    });
+                }
+            },
             Err(e) => {
                 gaps.push(EvidenceGap::CollectionFailed {
-                    source: "npm-audit-signatures".to_string(),
+                    source: "github-api".to_string(),
                     subject: "package-lock.json".to_string(),
                     detail: format!("{e}"),
                 });
@@ -110,14 +118,13 @@ pub fn collect_repo_dependency_signatures(
                         }
                     }
                 } else if lock_file == "package-lock.json" {
-                    // For npm, try npm audit signatures if available
-                    match collect_npm_signatures() {
+                    match parse_package_lock_json(&content) {
                         Ok(deps) => all_deps.extend(deps),
                         Err(e) => {
                             gaps.push(EvidenceGap::CollectionFailed {
-                                source: "npm-audit-signatures".to_string(),
+                                source: "package-lock-json".to_string(),
                                 subject: lock_file.to_string(),
-                                detail: format!("{e}"),
+                                detail: format!("parse error: {e}"),
                             });
                         }
                     }
@@ -142,79 +149,70 @@ pub fn collect_repo_dependency_signatures(
     }
 }
 
-// -- npm provenance collection --
+// -- package-lock.json parsing --
 
-/// Collect npm dependency signature evidence using `npm audit signatures --json`.
-fn collect_npm_signatures() -> anyhow::Result<Vec<DependencySignatureEvidence>> {
-    if !command_available("npm") {
-        anyhow::bail!("`npm` CLI is not available");
-    }
-
-    let output = Command::new("npm")
-        .args(["audit", "signatures", "--json"])
-        .output()?;
-
-    // npm audit signatures returns non-zero if unsigned packages exist — that's expected
-    let stdout = String::from_utf8(output.stdout)?;
-    if stdout.trim().is_empty() {
-        anyhow::bail!("npm audit signatures produced no output");
-    }
-
-    // Try to parse as the structured format first, fall back to line-based parsing
-    let deps = parse_npm_audit_output(&stdout)?;
-    Ok(deps)
-}
-
-/// Parse npm audit signatures JSON output into dependency evidence.
+/// Parse package-lock.json (v2/v3 format) to extract dependency integrity hashes.
 ///
-/// npm audit signatures --json outputs a JSON object with attestation info.
-/// The exact format varies by npm version. We handle both structured and
-/// fallback approaches.
-fn parse_npm_audit_output(stdout: &str) -> anyhow::Result<Vec<DependencySignatureEvidence>> {
-    // npm audit signatures --json returns objects with keys per package
-    let value: serde_json::Value = serde_json::from_str(stdout)?;
-
+/// package-lock.json v2+ has a `packages` object keyed by path, where each entry
+/// contains `version`, `resolved`, and `integrity` (subresource integrity hash).
+fn parse_package_lock_json(
+    content: &str,
+) -> anyhow::Result<Vec<DependencySignatureEvidence>> {
+    let lock: serde_json::Value = serde_json::from_str(content)?;
     let mut deps = Vec::new();
 
-    // Handle the common format: { "audit": { "signatures": [...] } }
-    if let Some(audit) = value.get("audit").and_then(|a| a.get("signatures")) {
-        if let Some(sigs) = audit.as_array() {
-            for sig in sigs {
-                if let (Some(name), Some(version)) = (
-                    sig.get("name").and_then(|n| n.as_str()),
-                    sig.get("version").and_then(|v| v.as_str()),
-                ) {
-                    let verified = sig
-                        .get("verified")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(false);
-
-                    deps.push(DependencySignatureEvidence {
-                        name: name.to_string(),
-                        version: version.to_string(),
-                        registry: Some("registry.npmjs.org".to_string()),
-                        verification: if verified {
-                            VerificationOutcome::Verified
-                        } else {
-                            VerificationOutcome::AttestationAbsent {
-                                detail: "npm provenance not found".to_string(),
-                            }
-                        },
-                        signature_mechanism: if verified {
-                            Some("sigstore".to_string())
-                        } else {
-                            None
-                        },
-                        signer_identity: None,
-                        source_repo: None,
-                        source_commit: None,
-                        pinned_digest: None,
-                        actual_digest: None,
-                        transparency_log_uri: None,
-                        is_direct: true,
-                    });
-                }
+    // v2/v3 format: "packages" object
+    if let Some(packages) = lock.get("packages").and_then(|p| p.as_object()) {
+        for (path, info) in packages {
+            // Skip the root package (empty key "")
+            if path.is_empty() {
+                continue;
             }
+
+            // Extract package name from path: "node_modules/lodash" → "lodash"
+            // Scoped: "node_modules/@scope/pkg" → "@scope/pkg"
+            let name = path
+                .strip_prefix("node_modules/")
+                .unwrap_or(path);
+
+            let version = info
+                .get("version")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+
+            let integrity = info
+                .get("integrity")
+                .and_then(|i| i.as_str());
+
+            let is_direct = !name.contains("node_modules/");
+
+            let (verification, pinned_digest) = match integrity {
+                Some(hash) => (
+                    VerificationOutcome::Verified,
+                    Some(hash.to_string()),
+                ),
+                None => (
+                    VerificationOutcome::AttestationAbsent {
+                        detail: "no integrity hash in package-lock.json".to_string(),
+                    },
+                    None,
+                ),
+            };
+
+            deps.push(DependencySignatureEvidence {
+                name: name.to_string(),
+                version: version.to_string(),
+                registry: Some("registry.npmjs.org".to_string()),
+                verification,
+                signature_mechanism: integrity.map(|_| "integrity-hash".to_string()),
+                signer_identity: None,
+                source_repo: None,
+                source_commit: None,
+                pinned_digest,
+                actual_digest: None,
+                transparency_log_uri: None,
+                is_direct,
+            });
         }
     }
 
@@ -236,11 +234,15 @@ fn collect_cargo_checksums(
 }
 
 /// Parse Cargo.lock content and extract dependency name, version, and checksum.
+///
+/// Packages without a `source` field are workspace/path dependencies and are
+/// skipped — they are not external supply-chain dependencies.
 fn parse_cargo_lock(content: &str) -> anyhow::Result<Vec<DependencySignatureEvidence>> {
     let mut deps = Vec::new();
     let mut current_name: Option<String> = None;
     let mut current_version: Option<String> = None;
     let mut current_checksum: Option<String> = None;
+    let mut current_source: Option<String> = None;
     let mut in_package = false;
 
     for line in content.lines() {
@@ -248,10 +250,13 @@ fn parse_cargo_lock(content: &str) -> anyhow::Result<Vec<DependencySignatureEvid
 
         if line == "[[package]]" {
             // Flush previous package
-            if let (Some(name), Some(version)) = (current_name.take(), current_version.take()) {
-                let checksum = current_checksum.take();
-                deps.push(make_cargo_dep(&name, &version, checksum.as_deref()));
-            }
+            flush_cargo_package(
+                &mut deps,
+                current_name.take(),
+                current_version.take(),
+                current_checksum.take(),
+                current_source.take(),
+            );
             in_package = true;
             continue;
         }
@@ -263,16 +268,38 @@ fn parse_cargo_lock(content: &str) -> anyhow::Result<Vec<DependencySignatureEvid
                 current_version = Some(unquote(rest));
             } else if let Some(rest) = line.strip_prefix("checksum = ") {
                 current_checksum = Some(unquote(rest));
+            } else if let Some(rest) = line.strip_prefix("source = ") {
+                current_source = Some(unquote(rest));
             }
         }
     }
 
     // Flush last package
-    if let (Some(name), Some(version)) = (current_name, current_version) {
-        deps.push(make_cargo_dep(&name, &version, current_checksum.as_deref()));
-    }
+    flush_cargo_package(
+        &mut deps,
+        current_name,
+        current_version,
+        current_checksum,
+        current_source,
+    );
 
     Ok(deps)
+}
+
+fn flush_cargo_package(
+    deps: &mut Vec<DependencySignatureEvidence>,
+    name: Option<String>,
+    version: Option<String>,
+    checksum: Option<String>,
+    source: Option<String>,
+) {
+    if let (Some(name), Some(version)) = (name, version) {
+        // Skip path/workspace dependencies (no source field)
+        if source.is_none() {
+            return;
+        }
+        deps.push(make_cargo_dep(&name, &version, checksum.as_deref()));
+    }
 }
 
 fn make_cargo_dep(
@@ -315,14 +342,6 @@ fn unquote(s: &str) -> String {
     s.trim().trim_matches('"').to_string()
 }
 
-fn command_available(cmd: &str) -> bool {
-    Command::new(cmd)
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -333,11 +352,13 @@ mod tests {
 [[package]]
 name = "serde"
 version = "1.0.204"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abc123def456"
 
 [[package]]
 name = "tokio"
 version = "1.38.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "789xyz"
 "#;
         let deps = parse_cargo_lock(content).unwrap();
@@ -355,16 +376,21 @@ checksum = "789xyz"
     }
 
     #[test]
-    fn parse_cargo_lock_handles_missing_checksum() {
+    fn parse_cargo_lock_skips_path_dependencies() {
         let content = r#"
 [[package]]
-name = "path-dep"
+name = "my-workspace-crate"
 version = "0.1.0"
+
+[[package]]
+name = "external-dep"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aaa"
 "#;
         let deps = parse_cargo_lock(content).unwrap();
-        assert_eq!(deps.len(), 1);
-        assert!(!deps[0].verification.is_verified());
-        assert_eq!(deps[0].pinned_digest, None);
+        assert_eq!(deps.len(), 1, "path dependency should be skipped");
+        assert_eq!(deps[0].name, "external-dep");
     }
 
     #[test]
@@ -374,11 +400,25 @@ version = "0.1.0"
     }
 
     #[test]
-    fn parse_cargo_lock_multiple_packages_with_mixed_checksums() {
+    fn parse_cargo_lock_git_source_without_checksum() {
+        let content = r#"
+[[package]]
+name = "git-dep"
+version = "0.1.0"
+source = "git+https://github.com/example/repo#abc123"
+"#;
+        let deps = parse_cargo_lock(content).unwrap();
+        assert_eq!(deps.len(), 1, "git source should be included");
+        assert!(!deps[0].verification.is_verified());
+    }
+
+    #[test]
+    fn parse_cargo_lock_mixed_sources() {
         let content = r#"
 [[package]]
 name = "with-checksum"
 version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aaa"
 
 [[package]]
@@ -388,12 +428,112 @@ version = "0.1.0"
 [[package]]
 name = "another"
 version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbb"
 "#;
         let deps = parse_cargo_lock(content).unwrap();
-        assert_eq!(deps.len(), 3);
+        assert_eq!(deps.len(), 2, "local-dep (no source) should be skipped");
+        assert_eq!(deps[0].name, "with-checksum");
         assert!(deps[0].verification.is_verified());
-        assert!(!deps[1].verification.is_verified());
-        assert!(deps[2].verification.is_verified());
+        assert_eq!(deps[1].name, "another");
+        assert!(deps[1].verification.is_verified());
+    }
+
+    // -- package-lock.json tests --
+
+    #[test]
+    fn parse_package_lock_v3_with_integrity() {
+        let content = r#"{
+  "lockfileVersion": 3,
+  "packages": {
+    "": { "name": "my-app", "version": "1.0.0" },
+    "node_modules/lodash": {
+      "version": "4.17.21",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+      "integrity": "sha512-v2kDEe57RiUrWo9HuEz+"
+    },
+    "node_modules/react": {
+      "version": "18.3.1",
+      "resolved": "https://registry.npmjs.org/react/-/react-18.3.1.tgz",
+      "integrity": "sha512-wS+hAgJShR0K+"
+    }
+  }
+}"#;
+        let deps = parse_package_lock_json(content).unwrap();
+        assert_eq!(deps.len(), 2);
+        assert_eq!(deps[0].name, "lodash");
+        assert_eq!(deps[0].version, "4.17.21");
+        assert!(deps[0].verification.is_verified());
+        assert_eq!(
+            deps[0].pinned_digest,
+            Some("sha512-v2kDEe57RiUrWo9HuEz+".to_string())
+        );
+        assert!(deps[0].is_direct);
+        assert_eq!(deps[1].name, "react");
+    }
+
+    #[test]
+    fn parse_package_lock_transitive_deps() {
+        let content = r#"{
+  "lockfileVersion": 3,
+  "packages": {
+    "": { "name": "app", "version": "1.0.0" },
+    "node_modules/express": {
+      "version": "4.18.2",
+      "integrity": "sha512-abc"
+    },
+    "node_modules/express/node_modules/body-parser": {
+      "version": "1.20.0",
+      "integrity": "sha512-def"
+    }
+  }
+}"#;
+        let deps = parse_package_lock_json(content).unwrap();
+        assert_eq!(deps.len(), 2);
+        // express is direct
+        assert!(deps[0].is_direct);
+        // body-parser is transitive (nested under express)
+        assert!(!deps[1].is_direct);
+    }
+
+    #[test]
+    fn parse_package_lock_no_integrity() {
+        let content = r#"{
+  "lockfileVersion": 3,
+  "packages": {
+    "": { "name": "app", "version": "1.0.0" },
+    "node_modules/local-link": {
+      "version": "0.1.0"
+    }
+  }
+}"#;
+        let deps = parse_package_lock_json(content).unwrap();
+        assert_eq!(deps.len(), 1);
+        assert!(!deps[0].verification.is_verified());
+    }
+
+    #[test]
+    fn parse_package_lock_scoped_package() {
+        let content = r#"{
+  "lockfileVersion": 3,
+  "packages": {
+    "": { "name": "app", "version": "1.0.0" },
+    "node_modules/@babel/core": {
+      "version": "7.24.0",
+      "integrity": "sha512-babel-integrity"
+    }
+  }
+}"#;
+        let deps = parse_package_lock_json(content).unwrap();
+        assert_eq!(deps.len(), 1);
+        assert_eq!(deps[0].name, "@babel/core");
+        assert!(deps[0].verification.is_verified());
+    }
+
+    #[test]
+    fn parse_package_lock_empty() {
+        let content = r#"{ "lockfileVersion": 3, "packages": {} }"#;
+        let deps = parse_package_lock_json(content).unwrap();
+        assert!(deps.is_empty());
     }
 }

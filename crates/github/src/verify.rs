@@ -215,6 +215,9 @@ pub fn verify_release(
 ///
 /// Scans for lock files (Cargo.lock, package-lock.json) at the specified
 /// reference and evaluates dependency signature evidence.
+///
+/// Only evaluates dependency-related controls (not PR or build controls)
+/// to avoid noisy NotApplicable results.
 pub fn verify_repo(
     client: &GitHubClient,
     owner: &str,
@@ -234,7 +237,13 @@ pub fn verify_repo(
         ..Default::default()
     };
 
-    let report = assess_bundle(&bundle, policy)?;
+    // Use only dependency-scoped controls to avoid NotApplicable noise
+    let mut registry = ControlRegistry::new();
+    registry.register(Box::new(
+        libverify_core::controls::dependency_signature::DependencySignatureControl,
+    ));
+    let profile = OpaProfile::from_preset_or_file(policy.unwrap_or("default"))?;
+    let report = libverify_core::assessment::assess(&bundle, registry.controls(), &profile);
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
     Ok(VerificationResult::new(report, evidence_bundle))
 }
