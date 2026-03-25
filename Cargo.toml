@@ -6,11 +6,13 @@ resolver = "2"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
+repository = "https://github.com/HikaruEgashira/libverify"
+authors = ["Hikaru Egashira"]
 
 [workspace.dependencies]
-libverify-core = { path = "crates/core" }
-libverify-policy = { path = "crates/policy" }
-libverify-github = { path = "crates/github" }
+libverify-core = { path = "crates/core", version = "0.1.0" }
+libverify-policy = { path = "crates/policy", version = "0.1.0" }
+libverify-github = { path = "crates/github", version = "0.1.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"

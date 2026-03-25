@@ -3,6 +3,8 @@ name = "libverify-output"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+authors.workspace = true
 description = "Output formatters (SARIF, JSON) for libverify verification results"
 
 [dependencies]

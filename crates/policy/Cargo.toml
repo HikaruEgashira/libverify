@@ -3,6 +3,8 @@ name = "libverify-policy"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+authors.workspace = true
 description = "OPA Rego policy engine for libverify — maps control findings to gate decisions"
 
 [dependencies]
