@@ -6,7 +6,7 @@ Platform-specific shells (CLI extensions, IDE plugins, etc.) consume this librar
 ## Commands
 
 ```bash
-cargo test --workspace --exclude libverify-verif   # All tests (421+)
+cargo test --workspace --exclude libverify-verif
 cargo check --workspace                             # Type check
 cargo clippy --workspace --exclude libverify-verif  # Lint
 ```

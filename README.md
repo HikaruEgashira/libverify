@@ -29,21 +29,19 @@ Core decision predicates are formally proven via [Creusot](https://github.com/cr
 use libverify_core::registry::ControlRegistry;
 use libverify_core::evidence::EvidenceBundle;
 use libverify_core::assessment::assess_with_registry;
-use libverify_core::profile::SlsaLevelProfile;
-use libverify_core::slsa::SlsaLevel;
 use libverify_policy::OpaProfile;
 use libverify_output::{OutputOptions, Format, render};
 
 // 1. Collect evidence from your platform
 let evidence = EvidenceBundle { /* ... */ };
 
-// 2. Run all 24 built-in controls with an OPA policy
+// 2. Run all 28 built-in controls with an OPA policy
 let registry = ControlRegistry::builtin();
 let profile = OpaProfile::from_preset_or_file("soc2")?;
 let report = assess_with_registry(&evidence, &registry, &profile);
 
-// 3. Or use SLSA level-based assessment
-let slsa_profile = SlsaLevelProfile::new(SlsaLevel::L3, SlsaLevel::L2);
+// 3. Or use SLSA level-based assessment via OPA preset
+let slsa_profile = OpaProfile::from_preset_or_file("slsa-l3")?;
 let report = assess_with_registry(&evidence, &registry, &slsa_profile);
 
 // 4. Format output (JSON or SARIF)
@@ -60,14 +58,16 @@ let sarif = render(&opts, &report.into())?;
 
 | Crate | Purpose |
 |-------|---------|
-| `libverify-core` | Evidence model, `Control` trait, 24 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks), profile system. Pure logic, serde only. |
+| `libverify-core` | Evidence model, `Control` trait, 28 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks), profile system. Pure logic, serde only. |
 | `libverify-policy` | OPA Rego policy engine ([regorus](https://github.com/nicholasbishop/regorus)). 9 built-in presets (default, oss, aiops, soc1, soc2, slsa-l1..l4) + custom `.rego` support. |
 | `libverify-output` | SARIF 2.1.0 / JSON formatters. Tool name/version configurable per consumer. |
+| `libverify-github` | GitHub API client, evidence adapter, PR/release/repo verification orchestration. |
 | `libverify-verif` | [Creusot](https://github.com/creusot-rs/creusot) formal verification targets. SMT-proven decision predicates. |
+| `gen-docs` | Rule specification static site generator. Extracts Creusot specs and test metadata into `site/index.html`. |
 
 ## Controls
 
-24 built-in controls covering SLSA v1.2 and SOC2 CC7/CC8.
+28 built-in controls covering SLSA v1.2, SOC2 CC7/CC8, and ASPM repository posture.
 
 ### SLSA v1.2
 
@@ -97,6 +97,15 @@ let sarif = render(&opts, &report.into())?;
 | CC7.1 (Traceability) | `issue-linkage`, `release-traceability` |
 | CC7.2 (Anomaly detection) | `stale-review`, `security-file-change` |
 | CC8.1 (Change management) | `change-request-size`, `test-coverage`, `scoped-change`, `description-quality`, `merge-commit-policy`, `conventional-title` |
+
+### ASPM / Repository Posture
+
+| Control | Purpose |
+|---------|---------|
+| `codeowners-coverage` | CODEOWNERS file covers critical paths |
+| `secret-scanning` | Secret scanning enabled on the repository |
+| `vulnerability-scanning` | Vulnerability/Dependabot scanning enabled |
+| `security-policy` | SECURITY.md or equivalent policy exists |
 
 > **SOC2 scope:** libverify covers **technical control evidence** for CC7/CC8 (change management, traceability, review independence). It does NOT cover: access provisioning (CC6.1), physical security (CC6.4), incident response processes, or management's risk assessment. SOC2 Type II requires continuous monitoring over a 6-12 month period; libverify provides point-in-time checks that must be run on every PR and aggregated externally for period coverage.
 

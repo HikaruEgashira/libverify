@@ -9,7 +9,7 @@ rustup toolchain install stable
 ## Development
 
 ```bash
-cargo test --workspace --exclude libverify-verif   # All tests (421+)
+cargo test --workspace --exclude libverify-verif
 cargo check --workspace                             # Type check
 cargo clippy --workspace --exclude libverify-verif  # Lint
 cargo fmt --all                                     # Format
@@ -17,7 +17,7 @@ cargo fmt --all                                     # Format
 
 ## Architecture
 
-Five-crate workspace.
+Six-crate workspace.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -50,10 +50,10 @@ Five-crate workspace.
 │  │                                                   │   │
 │  │  libverify-core                                   │   │
 │  │  ├─ EvidenceBundle    (platform-neutral model)    │   │
-│  │  ├─ Control trait     (24 built-in controls)      │   │
+│  │  ├─ Control trait     (28 built-in controls)      │   │
 │  │  ├─ ControlRegistry   (dynamic collection)        │   │
 │  │  ├─ assessment        (evidence → findings)       │   │
-│  │  └─ SLSA v1.2 + SOC2 CC7/CC8 mapping             │   │
+│  │  └─ SLSA v1.2 + SOC2 CC7/CC8 + ASPM mapping      │   │
 │  └──────────────────────┬───────────────────────────┘   │
 │                         │                               │
 │              ┌──────────┴──────────┐                    │
@@ -67,6 +67,11 @@ Five-crate workspace.
 │  ┌──────────────────────────────────────────────────┐   │
 │  │ libverify-verif  (Creusot, excluded from builds)  │   │
 │  │ SMT-proven decision predicates                    │   │
+│  └──────────────────────────────────────────────────┘   │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │ gen-docs  (rule spec site generator)              │   │
+│  │ Extracts Creusot specs + test metadata → HTML     │   │
 │  └──────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -109,11 +114,10 @@ GitHub API ──→ GitHubClient ──→ adapter ──→ EvidenceBundle
 | `PromotionBatch` | core | A release / deployment batch |
 | `EvidenceState<T>` | core | Tri-state: complete, partial (with gaps), missing, or N/A |
 | `Control` trait | core | Evaluates evidence → `Vec<ControlFinding>` |
-| `ControlId` | core | String-based open ID (`builtin::` constants for 24 built-in) |
-| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 24 |
+| `ControlId` | core | String-based open ID (`builtin::` constants for 28 built-in) |
+| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 28 |
 | `ControlProfile` trait | core | Maps findings → severity + gate decision |
-| `SlsaLevelProfile` | core | SLSA level-aware profile (Source L0–L4, Build L0–L3) |
-| `OpaProfile` | policy | Rego-based profile. 9 presets + custom file support |
+| `OpaProfile` | policy | Rego-based profile. 9 presets (incl. slsa-l1..l4) + custom file support |
 | `AssessmentReport` | core | Assessment result with findings + profile outcomes |
 | `VerificationResult` | core | Report + optional evidence for audit trail |
 | `BatchReport` | core | Multiple verification results |
