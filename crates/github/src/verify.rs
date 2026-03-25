@@ -306,7 +306,7 @@ fn enrich_npm_attestations(
     use crate::npm_attestation::NpmAttestationClient;
     use crate::pypi_attestation::PypiAttestationClient;
 
-    fn enrich(deps: &mut Vec<libverify_core::evidence::DependencySignatureEvidence>) {
+    fn enrich(deps: &mut [libverify_core::evidence::DependencySignatureEvidence]) {
         let has_npm = deps
             .iter()
             .any(|d| d.registry.as_deref() == Some("registry.npmjs.org"));
@@ -314,15 +314,11 @@ fn enrich_npm_attestations(
             .iter()
             .any(|d| d.registry.as_deref() == Some("pypi.org"));
 
-        if has_npm {
-            if let Ok(client) = NpmAttestationClient::new() {
-                client.enrich_npm_deps(deps);
-            }
+        if has_npm && let Ok(client) = NpmAttestationClient::new() {
+            client.enrich_npm_deps(deps);
         }
-        if has_pypi {
-            if let Ok(client) = PypiAttestationClient::new() {
-                client.enrich_pypi_deps(deps);
-            }
+        if has_pypi && let Ok(client) = PypiAttestationClient::new() {
+            client.enrich_pypi_deps(deps);
         }
     }
 

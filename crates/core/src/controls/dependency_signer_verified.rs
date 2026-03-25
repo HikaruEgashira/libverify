@@ -212,8 +212,10 @@ mod tests {
 
     #[test]
     fn satisfied_with_full_trust_chain() {
-        let findings = DependencySignerVerifiedControl
-            .evaluate(&bundle(vec![npm_dep_full("react"), npm_dep_full("express")]));
+        let findings = DependencySignerVerifiedControl.evaluate(&bundle(vec![
+            npm_dep_full("react"),
+            npm_dep_full("express"),
+        ]));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 
@@ -235,8 +237,7 @@ mod tests {
 
     #[test]
     fn not_applicable_when_only_cargo_deps() {
-        let findings =
-            DependencySignerVerifiedControl.evaluate(&bundle(vec![cargo_dep("serde")]));
+        let findings = DependencySignerVerifiedControl.evaluate(&bundle(vec![cargo_dep("serde")]));
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
         assert!(findings[0].rationale.contains("skipped"));
     }

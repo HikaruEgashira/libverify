@@ -62,10 +62,7 @@ impl PypiAttestationClient {
         let response = self
             .client
             .get(&provenance_url)
-            .header(
-                ACCEPT,
-                "application/vnd.pypi.integrity.v1+json",
-            )
+            .header(ACCEPT, "application/vnd.pypi.integrity.v1+json")
             .send()
             .with_context(|| format!("PyPI provenance request failed for {name}@{version}"))?;
 
@@ -98,11 +95,9 @@ impl PypiAttestationClient {
             }
         });
 
-        let signer_identity = bundle.publisher.as_ref().map(|p| {
-            match &p.workflow {
-                Some(wf) => format!("{}@{}", p.repository, wf),
-                None => p.repository.clone(),
-            }
+        let signer_identity = bundle.publisher.as_ref().map(|p| match &p.workflow {
+            Some(wf) => format!("{}@{}", p.repository, wf),
+            None => p.repository.clone(),
         });
 
         let tlog_index = bundle
@@ -150,8 +145,7 @@ impl PypiAttestationClient {
             .iter()
             .filter(|f| {
                 let fname = f.filename.to_lowercase().replace('_', "-");
-                fname.starts_with(&version_prefix)
-                    && f.provenance.is_some()
+                fname.starts_with(&version_prefix) && f.provenance.is_some()
             })
             .collect();
 
@@ -191,7 +185,8 @@ impl PypiAttestationClient {
         let results: Vec<(usize, Option<PypiProvenance>)> = std::thread::scope(|scope| {
             let (tx, rx) = std::sync::mpsc::channel::<(usize, String, String)>();
             let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
-            let (result_tx, result_rx) = std::sync::mpsc::channel::<(usize, Option<PypiProvenance>)>();
+            let (result_tx, result_rx) =
+                std::sync::mpsc::channel::<(usize, Option<PypiProvenance>)>();
             let done = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
 
             let workers: Vec<_> = (0..CONCURRENCY.min(total))
@@ -218,7 +213,7 @@ impl PypiAttestationClient {
                                         }
                                     };
                                     let count = done.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-                                    if count % 50 == 0 || count == total {
+                                    if count.is_multiple_of(50) || count == total {
                                         eprint!("\r  [{count}/{total}]");
                                     }
                                     let _ = result_tx.send((idx, prov));
@@ -255,9 +250,8 @@ impl PypiAttestationClient {
                 dep.source_repo = prov.source_repo;
                 dep.signer_identity = prov.signer_identity;
                 if let Some(log_index) = prov.transparency_log_index {
-                    dep.transparency_log_uri = Some(format!(
-                        "https://search.sigstore.dev/?logIndex={log_index}"
-                    ));
+                    dep.transparency_log_uri =
+                        Some(format!("https://search.sigstore.dev/?logIndex={log_index}"));
                 }
                 if dep.verification == VerificationOutcome::ChecksumMatch {
                     dep.verification = VerificationOutcome::Verified;

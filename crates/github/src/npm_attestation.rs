@@ -107,12 +107,14 @@ impl NpmAttestationClient {
         // Decode the DSSE payload to get provenance predicate
         let payload_b64 = match &bundle.dsse_envelope {
             Some(env) => &env.payload,
-            None => return Ok(Some(NpmProvenance {
-                source_repo: None,
-                source_commit: None,
-                signer_identity: None,
-                transparency_log_index: tlog_index,
-            })),
+            None => {
+                return Ok(Some(NpmProvenance {
+                    source_repo: None,
+                    source_commit: None,
+                    signer_identity: None,
+                    transparency_log_index: tlog_index,
+                }));
+            }
         };
 
         let payload_bytes = base64_decode(payload_b64)?;
@@ -147,9 +149,7 @@ impl NpmAttestationClient {
                         format!(
                             "{}/.github/workflows/{}@{}",
                             w.repository,
-                            w.path
-                                .strip_prefix(".github/workflows/")
-                                .unwrap_or(&w.path),
+                            w.path.strip_prefix(".github/workflows/").unwrap_or(&w.path),
                             w.r#ref
                         )
                     });
@@ -230,7 +230,7 @@ impl NpmAttestationClient {
                                         }
                                     };
                                     let count = done.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
-                                    if count % 50 == 0 || count == total {
+                                    if count.is_multiple_of(50) || count == total {
                                         eprint!("\r  [{count}/{total}]");
                                     }
                                     let _ = result_tx.send((idx, prov));
@@ -273,9 +273,8 @@ impl NpmAttestationClient {
                 dep.source_commit = prov.source_commit;
                 dep.signer_identity = prov.signer_identity;
                 if let Some(log_index) = prov.transparency_log_index {
-                    dep.transparency_log_uri = Some(format!(
-                        "https://search.sigstore.dev/?logIndex={log_index}"
-                    ));
+                    dep.transparency_log_uri =
+                        Some(format!("https://search.sigstore.dev/?logIndex={log_index}"));
                 }
                 if dep.verification == VerificationOutcome::ChecksumMatch {
                     dep.verification = VerificationOutcome::Verified;
@@ -389,10 +388,8 @@ mod tests {
 
     #[test]
     fn base64_decode_standard() {
-        let encoded = base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            b"hello world",
-        );
+        let encoded =
+            base64::Engine::encode(&base64::engine::general_purpose::STANDARD, b"hello world");
         let decoded = base64_decode(&encoded).unwrap();
         assert_eq!(decoded, b"hello world");
     }

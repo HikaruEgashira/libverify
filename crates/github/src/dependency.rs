@@ -614,18 +614,12 @@ source = "git+https://github.com/example/repo#abc123def456"
             deps[0].signature_mechanism,
             Some("git-commit-pin".to_string())
         );
-        assert_eq!(
-            deps[0].pinned_digest,
-            Some("git:abc123def456".to_string())
-        );
+        assert_eq!(deps[0].pinned_digest, Some("git:abc123def456".to_string()));
         assert_eq!(
             deps[0].source_repo,
             Some("https://github.com/example/repo".to_string())
         );
-        assert_eq!(
-            deps[0].source_commit,
-            Some("abc123def456".to_string())
-        );
+        assert_eq!(deps[0].source_commit, Some("abc123def456".to_string()));
     }
 
     #[test]

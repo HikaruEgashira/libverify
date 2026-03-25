@@ -266,17 +266,13 @@ mod tests {
 
     #[test]
     fn not_applicable_when_only_cargo_deps() {
-        let findings =
-            DependencyCompletenessControl.evaluate(&bundle(vec![cargo_dep("serde")]));
+        let findings = DependencyCompletenessControl.evaluate(&bundle(vec![cargo_dep("serde")]));
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
     }
 
     #[test]
     fn mixed_registries_only_evaluates_npm() {
-        let evidence = bundle(vec![
-            cargo_dep("serde"),
-            npm_dep_l3("react", true),
-        ]);
+        let evidence = bundle(vec![cargo_dep("serde"), npm_dep_l3("react", true)]);
         let findings = DependencyCompletenessControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
         assert!(findings[0].rationale.contains("skipped"));
