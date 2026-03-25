@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/core", "crates/policy", "crates/output", "crates/github", "crates/verif", "tools/gen-docs"]
+members = ["crates/core", "crates/policy", "crates/output", "crates/github", "crates/verif", "crates/gen-docs"]
 resolver = "2"
 
 [workspace.package]
