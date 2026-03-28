@@ -356,6 +356,10 @@ pub fn verify_repo(
     for control in dep_controls {
         registry.register(control);
     }
+    // Repository-level posture controls (not PR-scoped compliance controls)
+    for control in libverify_core::controls::posture_controls() {
+        registry.register(control);
+    }
     let profile = OpaProfile::from_preset_or_file(policy_str)?;
     let report = libverify_core::assessment::assess(&bundle, registry.controls(), &profile);
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
