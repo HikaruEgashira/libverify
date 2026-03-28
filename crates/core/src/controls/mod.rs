@@ -150,6 +150,19 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
     ]
 }
 
+/// Returns repository-posture controls only (no PR-scoped compliance controls).
+///
+/// These evaluate repository-level security configuration:
+/// CODEOWNERS, secret scanning, vulnerability scanning, and security policy.
+pub fn posture_controls() -> Vec<Box<dyn Control>> {
+    vec![
+        Box::new(CodeownersCoverageControl),
+        Box::new(SecretScanningControl),
+        Box::new(VulnerabilityScanningControl),
+        Box::new(SecurityPolicyControl),
+    ]
+}
+
 /// Returns all controls (all SLSA + compliance).
 pub fn all_controls() -> Vec<Box<dyn Control>> {
     let mut controls = all_slsa_controls();

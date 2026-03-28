@@ -47,6 +47,31 @@ fn assess_from_pr_data(
     policy: Option<&str>,
     with_evidence: bool,
 ) -> Result<VerificationResult> {
+    let posture =
+        crate::posture::collect_repository_posture(client, owner, repo, &pr_data.metadata.head.sha);
+    assess_from_pr_data_with_posture(
+        client,
+        pr_data,
+        owner,
+        repo,
+        pr_number,
+        policy,
+        with_evidence,
+        posture,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn assess_from_pr_data_with_posture(
+    client: &GitHubClient,
+    pr_data: &PrData,
+    owner: &str,
+    repo: &str,
+    pr_number: u32,
+    policy: Option<&str>,
+    with_evidence: bool,
+    repository_posture: EvidenceState<libverify_core::evidence::RepositoryPosture>,
+) -> Result<VerificationResult> {
     let repo_full = format!("{owner}/{repo}");
     let mut bundle = adapter::build_pull_request_bundle(
         &repo_full,
@@ -82,6 +107,8 @@ fn assess_from_pr_data(
         }
     }
 
+    bundle.repository_posture = repository_posture;
+
     // Collect dependency signature evidence from lock files
     let changed_files: Vec<String> = pr_data.files.iter().map(|f| f.filename.clone()).collect();
     let dep_sigs = dependency::collect_pr_dependency_signatures(
@@ -116,11 +143,18 @@ pub fn verify_pr_batch(
 
     let all_data = graphql::fetch_prs(client, owner, repo, pr_numbers);
 
+    // Collect repository posture once for the entire batch (same repo)
+    let head_sha = all_data
+        .iter()
+        .find_map(|(_, r)| r.as_ref().ok().map(|d| d.metadata.head.sha.as_str()))
+        .unwrap_or("HEAD");
+    let posture = crate::posture::collect_repository_posture(client, owner, repo, head_sha);
+
     for (i, (pr_number, result)) in all_data.into_iter().enumerate() {
         eprintln!("Verifying PR #{pr_number} ({}/{})", i + 1, total);
 
         match result.and_then(|pr_data| {
-            assess_from_pr_data(
+            assess_from_pr_data_with_posture(
                 client,
                 &pr_data,
                 owner,
@@ -128,6 +162,7 @@ pub fn verify_pr_batch(
                 pr_number,
                 policy,
                 with_evidence,
+                posture.clone(),
             )
         }) {
             Ok(vr) => {
@@ -207,7 +242,45 @@ pub fn verify_release(
     let artifact_attestations =
         crate::attestation::collect_release_attestations(owner, repo, head_tag, &release_assets);
 
+    // Deduplicate PRs and fetch full evidence for each
+    let unique_pr_numbers: Vec<u32> = {
+        let mut seen = std::collections::HashSet::new();
+        commit_pr_map
+            .values()
+            .flatten()
+            .filter(|pr| seen.insert(pr.number))
+            .map(|pr| pr.number)
+            .collect()
+    };
+
     let repo_full = format!("{owner}/{repo}");
+
+    let mut change_requests = Vec::new();
+    let mut all_check_runs = Vec::new();
+
+    if !unique_pr_numbers.is_empty() {
+        for (pr_number, result) in graphql::fetch_prs(client, owner, repo, &unique_pr_numbers) {
+            match result {
+                Ok(pr_data) => {
+                    change_requests.push(adapter::map_pull_request_evidence(
+                        &repo_full,
+                        pr_number,
+                        &pr_data.metadata,
+                        &pr_data.files,
+                        &pr_data.reviews,
+                        &pr_data.commits,
+                    ));
+                    all_check_runs.extend(pr_data.check_runs);
+                }
+                Err(e) => {
+                    eprintln!(
+                        "Warning: failed to fetch PR #{pr_number} for release verification: {e:#}"
+                    );
+                }
+            }
+        }
+    }
+
     let mut bundle = adapter::build_release_bundle(
         &repo_full,
         base_tag,
@@ -216,8 +289,19 @@ pub fn verify_release(
         &commit_prs,
         artifact_attestations,
     );
-    // Check runs are PR-scoped; not applicable for release verification.
-    bundle.check_runs = EvidenceState::not_applicable();
+    bundle.change_requests = change_requests;
+    bundle.repository_posture =
+        crate::posture::collect_repository_posture(client, owner, repo, head_tag);
+
+    // Aggregate check runs from all PRs for build platform evidence
+    let check_run_evidence = adapter::map_check_runs_evidence(&all_check_runs, None);
+    bundle.check_runs = EvidenceState::complete(check_run_evidence);
+    if let Some(cr_list) = bundle.check_runs.value() {
+        let build_platforms = adapter::map_build_platform_evidence(cr_list);
+        if !build_platforms.is_empty() {
+            bundle.build_platform = EvidenceState::complete(build_platforms);
+        }
+    }
 
     let report = assess_bundle(&bundle, policy)?;
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
@@ -244,8 +328,12 @@ pub fn verify_repo(
     // Enrich npm dependencies with provenance from the npm attestation API
     let dep_sigs = enrich_npm_attestations(dep_sigs);
 
+    let repository_posture =
+        crate::posture::collect_repository_posture(client, owner, repo, reference);
+
     let bundle = libverify_core::evidence::EvidenceBundle {
         dependency_signatures: dep_sigs,
+        repository_posture,
         check_runs: EvidenceState::not_applicable(),
         build_platform: EvidenceState::not_applicable(),
         artifact_attestations: EvidenceState::not_applicable(),
@@ -266,6 +354,10 @@ pub fn verify_repo(
         libverify_core::controls::slsa_controls_for_level(SlsaTrack::Dependencies, dep_level);
     let mut registry = ControlRegistry::new();
     for control in dep_controls {
+        registry.register(control);
+    }
+    // Repository-level posture controls (not PR-scoped compliance controls)
+    for control in libverify_core::controls::posture_controls() {
         registry.register(control);
     }
     let profile = OpaProfile::from_preset_or_file(policy_str)?;
