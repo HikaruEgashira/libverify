@@ -38,14 +38,6 @@ pub struct PrBase {
     pub ref_name: String,
 }
 
-/// Pull request summary from the list pulls endpoint.
-#[derive(Debug, Clone, Deserialize)]
-pub struct PullRequestListItem {
-    pub number: u32,
-    pub title: String,
-    pub merged_at: Option<String>,
-}
-
 /// GitHub API response type for a tag.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Tag {
@@ -177,13 +169,6 @@ pub struct CheckRunItem {
     pub conclusion: Option<String>,
     /// The GitHub App that created this check run (e.g. "github-actions").
     pub app: Option<CheckRunApp>,
-}
-
-/// Response from GET /repos/{owner}/{repo}/commits/{ref}/check-runs.
-#[derive(Debug, Clone, Deserialize)]
-pub struct CheckRunsResponse {
-    pub total_count: u32,
-    pub check_runs: Vec<CheckRunItem>,
 }
 
 /// Response from GET /repos/{owner}/{repo}/commits/{ref}/status.
