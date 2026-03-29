@@ -174,7 +174,7 @@ fn main() {
     );
 
     // SOC2 policy preset
-    let profile = OpaProfile::soc2_preset().expect("SOC2 preset should load");
+    let profile = OpaProfile::from_preset_or_file("soc2").expect("SOC2 preset should load");
     let report = assess_with_registry(&evidence, &registry, &profile);
 
     // --- Print each finding ---

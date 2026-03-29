@@ -126,11 +126,11 @@ fn main() {
     let findings = evaluate_all(&controls, &evidence);
 
     // --- Evaluate through OSS preset ---
-    let oss_profile = OpaProfile::oss_preset().expect("OSS preset should load");
+    let oss_profile = OpaProfile::from_preset_or_file("oss").expect("OSS preset should load");
     let oss_outcomes = apply_profile(&oss_profile, &findings);
 
     // --- Evaluate through SOC2 preset ---
-    let soc2_profile = OpaProfile::soc2_preset().expect("SOC2 preset should load");
+    let soc2_profile = OpaProfile::from_preset_or_file("soc2").expect("SOC2 preset should load");
     let soc2_outcomes = apply_profile(&soc2_profile, &findings);
 
     // --- Print side-by-side comparison ---

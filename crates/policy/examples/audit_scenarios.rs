@@ -89,8 +89,8 @@ fn run_scenario(
 // ---------------------------------------------------------------------------
 
 fn main() {
-    let oss = OpaProfile::oss_preset().expect("oss preset");
-    let soc2 = OpaProfile::soc2_preset().expect("soc2 preset");
+    let oss = OpaProfile::from_preset_or_file("oss").expect("oss preset");
+    let soc2 = OpaProfile::from_preset_or_file("soc2").expect("soc2 preset");
 
     let secret_ctrl = SecretScanningControl;
     let codeowners_ctrl = CodeownersCoverageControl;

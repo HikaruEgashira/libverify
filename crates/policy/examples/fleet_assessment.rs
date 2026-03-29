@@ -230,7 +230,7 @@ fn decision_symbol(d: GateDecision) -> &'static str {
 }
 
 fn main() {
-    let soc2 = OpaProfile::soc2_preset().expect("SOC2 preset should load");
+    let soc2 = OpaProfile::from_preset_or_file("soc2").expect("SOC2 preset should load");
     let profiles = repo_profiles();
 
     let mut assessments: Vec<RepoAssessment> =

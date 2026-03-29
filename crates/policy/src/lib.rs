@@ -5,16 +5,38 @@ use libverify_core::profile::{
     ControlProfile, FindingSeverity, GateDecision, ProfileOutcome, SeverityLabels,
 };
 
-const DEFAULT_POLICY: &str = include_str!("default.rego");
-const OSS_POLICY: &str = include_str!("oss.rego");
-const AIOPS_POLICY: &str = include_str!("aiops.rego");
-const SOC1_POLICY: &str = include_str!("soc1.rego");
-const SOC2_POLICY: &str = include_str!("soc2.rego");
-const SLSA_L1_POLICY: &str = include_str!("slsa-l1.rego");
-const SLSA_L2_POLICY: &str = include_str!("slsa-l2.rego");
-const SLSA_L3_POLICY: &str = include_str!("slsa-l3.rego");
-const SLSA_L4_POLICY: &str = include_str!("slsa-l4.rego");
 const RULE_PATH: &str = "data.verify.profile.map";
+
+/// Single source of truth for built-in presets.
+///
+/// To add a preset: append one entry here and create the `.rego` file.
+/// Everything else (lookup, error messages, tests) derives from this table.
+struct Preset {
+    /// CLI-facing name (e.g. "scorecard")
+    name: &'static str,
+    /// Rego source (embedded at compile time)
+    rego: &'static str,
+    /// Internal profile name used by `severity_labels()` dispatch
+    profile_name: &'static str,
+}
+
+const PRESETS: &[Preset] = &[
+    Preset { name: "default",   rego: include_str!("default.rego"),   profile_name: "opa-default" },
+    Preset { name: "oss",       rego: include_str!("oss.rego"),       profile_name: "oss" },
+    Preset { name: "aiops",     rego: include_str!("aiops.rego"),     profile_name: "aiops" },
+    Preset { name: "soc1",      rego: include_str!("soc1.rego"),      profile_name: "soc1" },
+    Preset { name: "soc2",      rego: include_str!("soc2.rego"),      profile_name: "soc2" },
+    Preset { name: "scorecard", rego: include_str!("scorecard.rego"), profile_name: "scorecard" },
+    Preset { name: "slsa-l1",   rego: include_str!("slsa-l1.rego"),   profile_name: "slsa-l1" },
+    Preset { name: "slsa-l2",   rego: include_str!("slsa-l2.rego"),   profile_name: "slsa-l2" },
+    Preset { name: "slsa-l3",   rego: include_str!("slsa-l3.rego"),   profile_name: "slsa-l3" },
+    Preset { name: "slsa-l4",   rego: include_str!("slsa-l4.rego"),   profile_name: "slsa-l4" },
+];
+
+/// Returns the names of all built-in presets.
+pub fn available_presets() -> Vec<&'static str> {
+    PRESETS.iter().map(|p| p.name).collect()
+}
 
 /// OPA-based profile that evaluates Rego policies to map control findings
 /// to gate decisions, enabling per-organization customization.
@@ -24,11 +46,25 @@ pub struct OpaProfile {
 }
 
 impl OpaProfile {
+    /// Loads a built-in preset by name, or falls back to file path.
+    pub fn from_preset_or_file(name: &str) -> Result<Self> {
+        if let Some(preset) = PRESETS.iter().find(|p| p.name == name) {
+            return Self::from_rego_with_name(
+                &format!("{}.rego", preset.name),
+                preset.rego,
+                preset.profile_name,
+            );
+        }
+        Self::from_file(name)
+    }
+
     /// Loads a custom Rego policy from the given file path.
     pub fn from_file(path: &str) -> Result<Self> {
+        let names: Vec<_> = available_presets();
         let policy = std::fs::read_to_string(path).with_context(|| {
             format!(
-                "reading policy '{path}'. Use a built-in preset (default, oss, aiops, soc1, soc2) or a path to a .rego file"
+                "reading policy '{path}'. Use a built-in preset ({}) or a path to a .rego file",
+                names.join(", ")
             )
         })?;
         Self::from_rego_with_name(path, &policy, "opa-custom")
@@ -37,58 +73,6 @@ impl OpaProfile {
     /// Loads a Rego policy from a string.
     pub fn from_rego(name: &str, rego: &str) -> Result<Self> {
         Self::from_rego_with_name(name, rego, "opa-custom")
-    }
-
-    pub fn default_policy() -> Result<Self> {
-        Self::from_rego_with_name("default.rego", DEFAULT_POLICY, "opa-default")
-    }
-
-    pub fn oss_preset() -> Result<Self> {
-        Self::from_rego_with_name("oss.rego", OSS_POLICY, "oss")
-    }
-
-    pub fn aiops_preset() -> Result<Self> {
-        Self::from_rego_with_name("aiops.rego", AIOPS_POLICY, "aiops")
-    }
-
-    pub fn soc1_preset() -> Result<Self> {
-        Self::from_rego_with_name("soc1.rego", SOC1_POLICY, "soc1")
-    }
-
-    pub fn soc2_preset() -> Result<Self> {
-        Self::from_rego_with_name("soc2.rego", SOC2_POLICY, "soc2")
-    }
-
-    pub fn slsa_l1_preset() -> Result<Self> {
-        Self::from_rego_with_name("slsa-l1.rego", SLSA_L1_POLICY, "slsa-l1")
-    }
-
-    pub fn slsa_l2_preset() -> Result<Self> {
-        Self::from_rego_with_name("slsa-l2.rego", SLSA_L2_POLICY, "slsa-l2")
-    }
-
-    pub fn slsa_l3_preset() -> Result<Self> {
-        Self::from_rego_with_name("slsa-l3.rego", SLSA_L3_POLICY, "slsa-l3")
-    }
-
-    pub fn slsa_l4_preset() -> Result<Self> {
-        Self::from_rego_with_name("slsa-l4.rego", SLSA_L4_POLICY, "slsa-l4")
-    }
-
-    /// Loads a built-in preset by name, or falls back to file path.
-    pub fn from_preset_or_file(name: &str) -> Result<Self> {
-        match name {
-            "default" => Self::default_policy(),
-            "oss" => Self::oss_preset(),
-            "aiops" => Self::aiops_preset(),
-            "soc1" => Self::soc1_preset(),
-            "soc2" => Self::soc2_preset(),
-            "slsa-l1" => Self::slsa_l1_preset(),
-            "slsa-l2" => Self::slsa_l2_preset(),
-            "slsa-l3" => Self::slsa_l3_preset(),
-            "slsa-l4" => Self::slsa_l4_preset(),
-            path => Self::from_file(path),
-        }
     }
 
     fn from_rego_with_name(name: &str, rego: &str, profile_name: &str) -> Result<Self> {
@@ -199,26 +183,18 @@ mod tests {
     }
 
     #[test]
-    fn default_policy_loads() {
-        assert!(OpaProfile::default_policy().is_ok());
-    }
-
-    #[test]
     fn all_presets_load() {
-        assert!(OpaProfile::from_preset_or_file("default").is_ok());
-        assert!(OpaProfile::from_preset_or_file("oss").is_ok());
-        assert!(OpaProfile::from_preset_or_file("aiops").is_ok());
-        assert!(OpaProfile::from_preset_or_file("soc1").is_ok());
-        assert!(OpaProfile::from_preset_or_file("soc2").is_ok());
-        assert!(OpaProfile::from_preset_or_file("slsa-l1").is_ok());
-        assert!(OpaProfile::from_preset_or_file("slsa-l2").is_ok());
-        assert!(OpaProfile::from_preset_or_file("slsa-l3").is_ok());
-        assert!(OpaProfile::from_preset_or_file("slsa-l4").is_ok());
+        for name in available_presets() {
+            assert!(
+                OpaProfile::from_preset_or_file(name).is_ok(),
+                "preset '{name}' failed to load"
+            );
+        }
     }
 
     #[test]
     fn default_policy_violated_fails() {
-        let profile = OpaProfile::default_policy().unwrap();
+        let profile = OpaProfile::from_preset_or_file("default").unwrap();
         let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Fail);
@@ -226,7 +202,7 @@ mod tests {
 
     #[test]
     fn default_policy_satisfied_passes() {
-        let profile = OpaProfile::default_policy().unwrap();
+        let profile = OpaProfile::from_preset_or_file("default").unwrap();
         let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Satisfied);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Pass);
@@ -234,7 +210,7 @@ mod tests {
 
     #[test]
     fn oss_preset_source_authenticity_violated_is_review() {
-        let profile = OpaProfile::oss_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("oss").unwrap();
         let finding = make_finding(builtin::SOURCE_AUTHENTICITY, ControlStatus::Violated);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Review);
@@ -242,14 +218,14 @@ mod tests {
 
     #[test]
     fn soc1_preset_returns_soc1_severity_labels() {
-        let profile = OpaProfile::soc1_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("soc1").unwrap();
         let labels = profile.severity_labels();
         assert_eq!(labels.error, "material_weakness");
     }
 
     #[test]
     fn slsa_l1_required_indeterminate_fails() {
-        let profile = OpaProfile::slsa_l1_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
         let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Indeterminate);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Fail);
@@ -257,8 +233,7 @@ mod tests {
 
     #[test]
     fn slsa_l1_optional_indeterminate_reviews() {
-        let profile = OpaProfile::slsa_l1_preset().unwrap();
-        // branch-history-integrity is L2, so optional in L1
+        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
         let finding = make_finding(
             builtin::BRANCH_HISTORY_INTEGRITY,
             ControlStatus::Indeterminate,
@@ -269,7 +244,7 @@ mod tests {
 
     #[test]
     fn slsa_l2_branch_history_required() {
-        let profile = OpaProfile::slsa_l2_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("slsa-l2").unwrap();
         let finding = make_finding(
             builtin::BRANCH_HISTORY_INTEGRITY,
             ControlStatus::Indeterminate,
@@ -280,7 +255,7 @@ mod tests {
 
     #[test]
     fn slsa_l1_non_slsa_control_indeterminate_reviews() {
-        let profile = OpaProfile::slsa_l1_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
         let finding = make_finding(builtin::CHANGE_REQUEST_SIZE, ControlStatus::Indeterminate);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Review);
@@ -288,7 +263,7 @@ mod tests {
 
     #[test]
     fn slsa_l1_dependency_signature_required() {
-        let profile = OpaProfile::slsa_l1_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
         let finding = make_finding(builtin::DEPENDENCY_SIGNATURE, ControlStatus::Indeterminate);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Fail);
@@ -296,7 +271,7 @@ mod tests {
 
     #[test]
     fn slsa_l2_dependency_provenance_required() {
-        let profile = OpaProfile::slsa_l2_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("slsa-l2").unwrap();
         let finding = make_finding(
             builtin::DEPENDENCY_PROVENANCE_CHECK,
             ControlStatus::Indeterminate,
@@ -307,7 +282,7 @@ mod tests {
 
     #[test]
     fn slsa_l3_dependency_signer_verified_required() {
-        let profile = OpaProfile::slsa_l3_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("slsa-l3").unwrap();
         let finding = make_finding(
             builtin::DEPENDENCY_SIGNER_VERIFIED,
             ControlStatus::Indeterminate,
@@ -318,7 +293,7 @@ mod tests {
 
     #[test]
     fn slsa_l4_dependency_completeness_required() {
-        let profile = OpaProfile::slsa_l4_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("slsa-l4").unwrap();
         let finding = make_finding(
             builtin::DEPENDENCY_COMPLETENESS,
             ControlStatus::Indeterminate,
@@ -329,8 +304,7 @@ mod tests {
 
     #[test]
     fn slsa_l1_dependency_provenance_optional() {
-        let profile = OpaProfile::slsa_l1_preset().unwrap();
-        // dependency-provenance is L2, so optional in L1
+        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
         let finding = make_finding(
             builtin::DEPENDENCY_PROVENANCE_CHECK,
             ControlStatus::Indeterminate,
@@ -341,7 +315,59 @@ mod tests {
 
     #[test]
     fn soc1_change_request_size_advisory() {
-        let profile = OpaProfile::soc1_preset().unwrap();
+        let profile = OpaProfile::from_preset_or_file("soc1").unwrap();
+        let finding = make_finding(builtin::CHANGE_REQUEST_SIZE, ControlStatus::Violated);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Review);
+    }
+
+    // --- Scorecard preset tests ---
+
+    #[test]
+    fn scorecard_critical_violated_fails() {
+        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
+        let finding = make_finding(builtin::VULNERABILITY_SCANNING, ControlStatus::Violated);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+        assert_eq!(outcome.severity, FindingSeverity::Error);
+    }
+
+    #[test]
+    fn scorecard_critical_indeterminate_fails() {
+        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
+        let finding = make_finding(builtin::VULNERABILITY_SCANNING, ControlStatus::Indeterminate);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn scorecard_high_violated_fails() {
+        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
+        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn scorecard_medium_violated_fails() {
+        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
+        let finding = make_finding(builtin::REQUIRED_STATUS_CHECKS, ControlStatus::Violated);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn scorecard_medium_indeterminate_reviews() {
+        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
+        let finding =
+            make_finding(builtin::REQUIRED_STATUS_CHECKS, ControlStatus::Indeterminate);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Review);
+    }
+
+    #[test]
+    fn scorecard_unmapped_violated_reviews() {
+        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
         let finding = make_finding(builtin::CHANGE_REQUEST_SIZE, ControlStatus::Violated);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Review);

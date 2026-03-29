@@ -61,7 +61,7 @@ Six-crate workspace.
 │  ┌─────────────────┐  ┌─────────────────┐              │
 │  │ libverify-policy │  │ libverify-output│              │
 │  │ OPA Rego engine  │  │ SARIF / JSON    │              │
-│  │ 9 presets        │  │ rendering       │              │
+│  │ built-in presets │  │ rendering       │              │
 │  └─────────────────┘  └─────────────────┘              │
 │                                                         │
 │  ┌──────────────────────────────────────────────────┐   │
@@ -117,7 +117,7 @@ GitHub API ──→ GitHubClient ──→ adapter ──→ EvidenceBundle
 | `ControlId` | core | String-based open ID (`builtin::` constants for 28 built-in) |
 | `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 28 |
 | `ControlProfile` trait | core | Maps findings → severity + gate decision |
-| `OpaProfile` | policy | Rego-based profile. 9 presets (incl. slsa-l1..l4) + custom file support |
+| `OpaProfile` | policy | Rego-based profile. Data-driven preset table (`PRESETS`) + custom file support |
 | `AssessmentReport` | core | Assessment result with findings + profile outcomes |
 | `VerificationResult` | core | Report + optional evidence for audit trail |
 | `BatchReport` | core | Multiple verification results |
@@ -171,8 +171,9 @@ EvidenceBundle
 ## Adding a policy preset
 
 1. Create `crates/policy/src/<name>.rego` implementing `verify.profile.map` rule
-2. Add `include_str!` constant in `crates/policy/src/lib.rs`
-3. Add constructor method and match arm in `from_preset_or_file()`
+2. Append one entry to the `PRESETS` table in `crates/policy/src/lib.rs`
+
+That's it. Lookup, error messages, and the `all_presets_load` test derive from the table automatically.
 
 ## Custom OPA policies
 

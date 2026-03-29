@@ -101,7 +101,7 @@ fn build_evidence() -> EvidenceBundle {
 fn main() {
     let evidence = build_evidence();
     let controls = all_controls();
-    let profile = OpaProfile::oss_preset().expect("failed to load OSS policy preset");
+    let profile = OpaProfile::from_preset_or_file("oss").expect("failed to load OSS policy preset");
 
     // Step 1: raw control findings
     let findings = evaluate_all(&controls, &evidence);

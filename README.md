@@ -59,7 +59,7 @@ let sarif = render(&opts, &report.into())?;
 | Crate | Purpose |
 |-------|---------|
 | `libverify-core` | Evidence model, `Control` trait, 28 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks), profile system. Pure logic, serde only. |
-| `libverify-policy` | OPA Rego policy engine ([regorus](https://github.com/nicholasbishop/regorus)). 9 built-in presets (default, oss, aiops, soc1, soc2, slsa-l1..l4) + custom `.rego` support. |
+| `libverify-policy` | OPA Rego policy engine ([regorus](https://github.com/nicholasbishop/regorus)). Built-in presets + custom `.rego` support. See [Policy presets](#policy-presets). |
 | `libverify-output` | SARIF 2.1.0 / JSON formatters. Tool name/version configurable per consumer. |
 | `libverify-github` | GitHub API client, evidence adapter, PR/release/repo verification orchestration. |
 | `libverify-verif` | [Creusot](https://github.com/creusot-rs/creusot) formal verification targets. SMT-proven decision predicates. |
@@ -118,6 +118,7 @@ let sarif = render(&opts, &report.into())?;
 | `aiops` | Escalates all indeterminate to human review instead of fail |
 | `soc1` | Strict on ICFR-relevant controls; advisory on dev-quality controls |
 | `soc2` | Strict on all CC6/CC7/CC8 controls; review on build-track indeterminate |
+| `scorecard` | OSSF Scorecard risk-level mapping. Critical/High → fail, Medium → fail/review. Non-Scorecard controls are advisory |
 | `slsa-l1`..`slsa-l4` | SLSA level enforcement (Source + Build + Dependencies tracks) |
 
 Custom OPA Rego policies are supported via `OpaProfile::from_file()`.
