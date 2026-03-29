@@ -1,7 +1,6 @@
 # libverify — Platform-agnostic SDLC Verification Engine
 
-Shared verification library. Think libghostty for SDLC verification.
-Platform-specific shells (CLI extensions, IDE plugins, etc.) consume this library.
+Shared verification library. Platform-specific shells (CLI extensions, IDE plugins, etc.) consume this library.
 
 ## Commands
 
@@ -15,40 +14,17 @@ cargo clippy --workspace --exclude libverify-verif  # Lint
 
 Five-crate workspace:
 
-- `libverify-core` — evidence model, Control trait, built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks). Pure logic, serde only.
-- `libverify-policy` — OPA Rego policy engine (regorus). 9 presets: default, oss, aiops, soc1, soc2, slsa-l1, slsa-l2, slsa-l3, slsa-l4.
-- `libverify-output` — SARIF/JSON output formatters. Tool name/version configurable per consumer.
+- `libverify-core` — evidence model, Control trait, built-in controls, assessment engine. Pure logic, serde only.
+- `libverify-policy` — OPA Rego policy engine (regorus).
+- `libverify-output` — SARIF/JSON output formatters.
 - `libverify-github` — GitHub API client, evidence adapter, verification orchestration.
 - `libverify-verif` — Creusot formal verification targets.
-
-## Key types
-
-| Type | Crate | Purpose |
-|---|---|---|
-| `EvidenceBundle` | core | Platform-normalized evidence container |
-| `GovernedChange` | core | A change request (PR, MR, etc.) |
-| `Control` trait | core | Evaluates evidence → findings |
-| `ControlId` | core | String-based open ID (`builtin::` constants for all built-in) |
-| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all built-in |
-| `DependencySignatureEvidence` | core | Per-dependency verification evidence with provenance fields |
-| `VerificationOutcome` | core | `Verified` / `ChecksumMatch` / failure variants (7 total) |
-| `ControlProfile` trait | core | Maps findings → severity + gate decision. All profiles (including SLSA) are OPA policy presets. |
-| `OpaProfile` | policy | Rego-based profile implementation |
-| `VerificationResult` | core | Assessment report + optional evidence |
-| `BatchReport` | core | Multiple verification results |
-| `GitHubConfig` | github | GitHub API token/host/repo resolution |
-| `GitHubClient` | github | REST + GraphQL client with retry/pagination |
-| `verify_pr` | github | Single PR verification orchestration |
-| `verify_release` | github | Release verification orchestration |
-| `verify_repo` | github | Repository-level dependency verification |
-| `TreeSearchResult` | github | Git Tree API result with truncated flag |
 
 ## Adding a new control
 
 0. If new evidence types are needed, add structs + `EvidenceState` field to `crates/core/src/evidence.rs`
 1. Create `crates/core/src/controls/<name>.rs`, impl `Control` trait
 2. Add `&str` constant to `crates/core/src/control.rs::builtin` module and `ALL` array (update count comment)
-3. Register in `crates/core/src/controls/mod.rs`: `pub mod`, `use`, `instantiate()` match arm, and collection function (`compliance_controls()` or SLSA group)
+3. Register in `crates/core/src/controls/mod.rs`: `pub mod`, `use`, `instantiate()` match arm, and collection function (`compliance_controls()`, `posture_controls()`, or SLSA group)
 4. If SLSA-mapped, add to `crates/core/src/slsa.rs::control_slsa_mapping()` and `ALL_SLSA_CONTROLS`. If compliance-only, no changes needed in slsa.rs.
-5. Add SARIF rule description to `crates/output/src/sarif.rs::builtin_rule_description()`
-6. Add Creusot spec if the predicate is verifiable
+5. Add Creusot spec if the predicate is verifiable
