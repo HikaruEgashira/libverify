@@ -16,131 +16,37 @@ use crate::dependency;
 use crate::graphql::{self, PrData};
 use crate::types::{CombinedStatusResponse, CommitStatusItem};
 
-/// Verify a single pull request and return a verification result.
-pub fn verify_pr(
+// ---------------------------------------------------------------------------
+// Evidence collection (API calls happen here — expensive, cacheable)
+// ---------------------------------------------------------------------------
+
+/// Collect evidence for a single pull request without evaluating any policy.
+///
+/// Returns an [`EvidenceBundle`] that can be assessed multiple times with
+/// different policies via [`assess_bundle`].
+pub fn collect_pr_evidence(
     client: &GitHubClient,
     owner: &str,
     repo: &str,
     pr_number: u32,
-    policy: Option<&str>,
-    with_evidence: bool,
-) -> Result<VerificationResult> {
+) -> Result<libverify_core::evidence::EvidenceBundle> {
     let pr_data =
         graphql::fetch_pr(client, owner, repo, pr_number).context("failed to fetch PR data")?;
-    assess_from_pr_data(
-        client,
-        &pr_data,
-        owner,
-        repo,
-        pr_number,
-        policy,
-        with_evidence,
-    )
-}
-
-fn assess_from_pr_data(
-    client: &GitHubClient,
-    pr_data: &PrData,
-    owner: &str,
-    repo: &str,
-    pr_number: u32,
-    policy: Option<&str>,
-    with_evidence: bool,
-) -> Result<VerificationResult> {
     let posture =
         crate::posture::collect_repository_posture(client, owner, repo, &pr_data.metadata.head.sha);
-    assess_from_pr_data_with_posture(
-        client,
-        pr_data,
-        owner,
-        repo,
-        pr_number,
-        policy,
-        with_evidence,
-        posture,
-    )
+    collect_pr_evidence_from_data(client, &pr_data, owner, repo, pr_number, posture)
 }
 
-#[allow(clippy::too_many_arguments)]
-fn assess_from_pr_data_with_posture(
-    client: &GitHubClient,
-    pr_data: &PrData,
-    owner: &str,
-    repo: &str,
-    pr_number: u32,
-    policy: Option<&str>,
-    with_evidence: bool,
-    repository_posture: EvidenceState<libverify_core::evidence::RepositoryPosture>,
-) -> Result<VerificationResult> {
-    let repo_full = format!("{owner}/{repo}");
-    let mut bundle = adapter::build_pull_request_bundle(
-        &repo_full,
-        pr_number,
-        &pr_data.metadata,
-        &pr_data.files,
-        &pr_data.reviews,
-        &pr_data.commits,
-    );
-
-    let combined_status = if pr_data.commit_statuses.is_empty() {
-        None
-    } else {
-        Some(CombinedStatusResponse {
-            state: String::new(),
-            statuses: pr_data
-                .commit_statuses
-                .iter()
-                .map(|s| CommitStatusItem {
-                    context: s.context.clone(),
-                    state: s.state.clone(),
-                })
-                .collect(),
-        })
-    };
-    let evidence = adapter::map_check_runs_evidence(&pr_data.check_runs, combined_status.as_ref());
-    bundle.check_runs = EvidenceState::complete(evidence);
-
-    if let Some(cr_list) = bundle.check_runs.value() {
-        let build_platforms = adapter::map_build_platform_evidence(cr_list);
-        if !build_platforms.is_empty() {
-            bundle.build_platform = EvidenceState::complete(build_platforms);
-        }
-    }
-
-    bundle.repository_posture = repository_posture;
-
-    // Collect dependency signature evidence from lock files
-    let changed_files: Vec<String> = pr_data.files.iter().map(|f| f.filename.clone()).collect();
-    let dep_sigs = dependency::collect_pr_dependency_signatures(
-        client,
-        owner,
-        repo,
-        &pr_data.metadata.head.sha,
-        &changed_files,
-    );
-    bundle.dependency_signatures = enrich_npm_attestations(dep_sigs);
-
-    let report = assess_bundle(&bundle, policy)?;
-    let evidence_bundle = if with_evidence { Some(bundle) } else { None };
-    Ok(VerificationResult::new(report, evidence_bundle))
-}
-
-/// Verify a batch of PRs and aggregate results.
-pub fn verify_pr_batch(
+/// Collect evidence for a batch of PRs.
+///
+/// Returns `(subject_id, Result<EvidenceBundle>)` per PR, preserving order.
+/// Repository posture is collected once and shared across all PRs.
+pub fn collect_pr_batch_evidence(
     client: &GitHubClient,
     owner: &str,
     repo: &str,
     pr_numbers: &[u32],
-    policy: Option<&str>,
-    with_evidence: bool,
-) -> Result<BatchReport> {
-    let mut reports = Vec::new();
-    let mut skipped = Vec::new();
-    let mut total_pass = 0usize;
-    let mut total_review = 0usize;
-    let mut total_fail = 0usize;
-    let total = pr_numbers.len();
-
+) -> Vec<(String, Result<libverify_core::evidence::EvidenceBundle>)> {
     let all_data = graphql::fetch_prs(client, owner, repo, pr_numbers);
 
     // Collect repository posture once for the entire batch (same repo)
@@ -150,66 +56,33 @@ pub fn verify_pr_batch(
         .unwrap_or("HEAD");
     let posture = crate::posture::collect_repository_posture(client, owner, repo, head_sha);
 
-    for (i, (pr_number, result)) in all_data.into_iter().enumerate() {
-        eprintln!("Verifying PR #{pr_number} ({}/{})", i + 1, total);
-
-        match result.and_then(|pr_data| {
-            assess_from_pr_data_with_posture(
-                client,
-                &pr_data,
-                owner,
-                repo,
-                pr_number,
-                policy,
-                with_evidence,
-                posture.clone(),
-            )
-        }) {
-            Ok(vr) => {
-                for outcome in &vr.report.outcomes {
-                    match outcome.decision {
-                        GateDecision::Pass => total_pass += 1,
-                        GateDecision::Review => total_review += 1,
-                        GateDecision::Fail => total_fail += 1,
-                    }
-                }
-                reports.push(BatchEntry {
-                    subject_id: format!("#{pr_number}"),
-                    result: vr,
-                });
-            }
-            Err(e) => {
-                eprintln!("Warning: skipping PR #{pr_number}: {e:#}");
-                skipped.push(SkippedEntry {
-                    subject_id: format!("#{pr_number}"),
-                    reason: format!("{e:#}"),
-                });
-            }
-        }
-    }
-
-    Ok(BatchReport {
-        reports,
-        total_pass,
-        total_review,
-        total_fail,
-        skipped,
-    })
+    all_data
+        .into_iter()
+        .map(|(pr_number, result)| {
+            let subject_id = format!("#{pr_number}");
+            let bundle = result.and_then(|pr_data| {
+                collect_pr_evidence_from_data(
+                    client,
+                    &pr_data,
+                    owner,
+                    repo,
+                    pr_number,
+                    posture.clone(),
+                )
+            });
+            (subject_id, bundle)
+        })
+        .collect()
 }
 
-/// Verify a release (tag range) and return a verification result.
-///
-/// This encapsulates the full release verification flow:
-/// compare refs, resolve commit PRs, collect attestations, build bundle, assess.
-pub fn verify_release(
+/// Collect evidence for a release (tag range).
+pub fn collect_release_evidence(
     client: &GitHubClient,
     owner: &str,
     repo: &str,
     base_tag: &str,
     head_tag: &str,
-    policy: Option<&str>,
-    with_evidence: bool,
-) -> Result<VerificationResult> {
+) -> Result<libverify_core::evidence::EvidenceBundle> {
     let commits = crate::release_api::compare_refs(client, owner, repo, base_tag, head_tag)
         .context("failed to compare refs")?;
 
@@ -303,26 +176,16 @@ pub fn verify_release(
         }
     }
 
-    let report = assess_bundle(&bundle, policy)?;
-    let evidence_bundle = if with_evidence { Some(bundle) } else { None };
-    Ok(VerificationResult::new(report, evidence_bundle))
+    Ok(bundle)
 }
 
-/// Verify repository-level dependency signatures at a given ref.
-///
-/// Scans for lock files (Cargo.lock, package-lock.json) at the specified
-/// reference and evaluates dependency signature evidence.
-///
-/// Only evaluates dependency-related controls (not PR or build controls)
-/// to avoid noisy NotApplicable results.
-pub fn verify_repo(
+/// Collect evidence for repository-level posture and dependencies at a given ref.
+pub fn collect_repo_evidence(
     client: &GitHubClient,
     owner: &str,
     repo: &str,
     reference: &str,
-    policy: Option<&str>,
-    with_evidence: bool,
-) -> Result<VerificationResult> {
+) -> Result<libverify_core::evidence::EvidenceBundle> {
     let dep_sigs = dependency::collect_repo_dependency_signatures(client, owner, repo, reference);
 
     // Enrich npm dependencies with provenance from the npm attestation API
@@ -331,41 +194,21 @@ pub fn verify_repo(
     let repository_posture =
         crate::posture::collect_repository_posture(client, owner, repo, reference);
 
-    let bundle = libverify_core::evidence::EvidenceBundle {
+    Ok(libverify_core::evidence::EvidenceBundle {
         dependency_signatures: dep_sigs,
         repository_posture,
         check_runs: EvidenceState::not_applicable(),
         build_platform: EvidenceState::not_applicable(),
         artifact_attestations: EvidenceState::not_applicable(),
         ..Default::default()
-    };
-
-    // Use dependency-scoped controls matching the requested policy level
-    use libverify_core::slsa::SlsaTrack;
-    let policy_str = policy.unwrap_or("default");
-    let dep_level = match policy_str {
-        "slsa-l1" => libverify_core::slsa::SlsaLevel::L1,
-        "slsa-l2" => libverify_core::slsa::SlsaLevel::L2,
-        "slsa-l3" => libverify_core::slsa::SlsaLevel::L3,
-        "slsa-l4" => libverify_core::slsa::SlsaLevel::L4,
-        _ => libverify_core::slsa::SlsaLevel::L4, // default/oss/soc2: evaluate all
-    };
-    let dep_controls =
-        libverify_core::controls::slsa_controls_for_level(SlsaTrack::Dependencies, dep_level);
-    let mut registry = ControlRegistry::new();
-    for control in dep_controls {
-        registry.register(control);
-    }
-    // Repository-level posture controls (not PR-scoped compliance controls)
-    for control in libverify_core::controls::posture_controls() {
-        registry.register(control);
-    }
-    let profile = OpaProfile::from_preset_or_file(policy_str)?;
-    let report = libverify_core::assessment::assess(&bundle, registry.controls(), &profile);
-    let evidence_bundle = if with_evidence { Some(bundle) } else { None };
-    Ok(VerificationResult::new(report, evidence_bundle))
+    })
 }
 
+// ---------------------------------------------------------------------------
+// Assessment (CPU-only, no API calls — fast, re-runnable with different policies)
+// ---------------------------------------------------------------------------
+
+/// Assess an evidence bundle against all built-in controls using the given policy.
 pub fn assess_bundle(
     bundle: &libverify_core::evidence::EvidenceBundle,
     policy: Option<&str>,
@@ -379,6 +222,148 @@ pub fn assess_bundle(
     ))
 }
 
+/// Assess an evidence bundle using repo-scoped controls (dependencies + posture).
+///
+/// This mirrors the control selection logic of [`verify_repo`] but operates
+/// on a pre-collected bundle.
+pub fn assess_repo_bundle(
+    bundle: &libverify_core::evidence::EvidenceBundle,
+    policy: Option<&str>,
+) -> Result<AssessmentReport> {
+    use libverify_core::slsa::SlsaTrack;
+    let policy_str = policy.unwrap_or("default");
+    let dep_level = match policy_str {
+        "slsa-l1" => libverify_core::slsa::SlsaLevel::L1,
+        "slsa-l2" => libverify_core::slsa::SlsaLevel::L2,
+        "slsa-l3" => libverify_core::slsa::SlsaLevel::L3,
+        "slsa-l4" => libverify_core::slsa::SlsaLevel::L4,
+        _ => libverify_core::slsa::SlsaLevel::L4,
+    };
+    let dep_controls =
+        libverify_core::controls::slsa_controls_for_level(SlsaTrack::Dependencies, dep_level);
+    let mut registry = ControlRegistry::new();
+    for control in dep_controls {
+        registry.register(control);
+    }
+    for control in libverify_core::controls::posture_controls() {
+        registry.register(control);
+    }
+    let profile = OpaProfile::from_preset_or_file(policy_str)?;
+    Ok(libverify_core::assessment::assess(
+        bundle,
+        registry.controls(),
+        &profile,
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// Convenience wrappers (collect + assess in one call — backward compatible)
+// ---------------------------------------------------------------------------
+
+/// Verify a single pull request and return a verification result.
+pub fn verify_pr(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    pr_number: u32,
+    policy: Option<&str>,
+    with_evidence: bool,
+) -> Result<VerificationResult> {
+    let bundle = collect_pr_evidence(client, owner, repo, pr_number)?;
+    let report = assess_bundle(&bundle, policy)?;
+    let evidence_bundle = if with_evidence { Some(bundle) } else { None };
+    Ok(VerificationResult::new(report, evidence_bundle))
+}
+
+/// Verify a batch of PRs and aggregate results.
+pub fn verify_pr_batch(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    pr_numbers: &[u32],
+    policy: Option<&str>,
+    with_evidence: bool,
+) -> Result<BatchReport> {
+    let mut reports = Vec::new();
+    let mut skipped = Vec::new();
+    let mut total_pass = 0usize;
+    let mut total_review = 0usize;
+    let mut total_fail = 0usize;
+    let total = pr_numbers.len();
+
+    let evidence_items = collect_pr_batch_evidence(client, owner, repo, pr_numbers);
+
+    for (i, (subject_id, result)) in evidence_items.into_iter().enumerate() {
+        eprintln!("Verifying {subject_id} ({}/{})", i + 1, total);
+
+        match result.and_then(|bundle| {
+            let report = assess_bundle(&bundle, policy)?;
+            let evidence_bundle = if with_evidence { Some(bundle) } else { None };
+            Ok(VerificationResult::new(report, evidence_bundle))
+        }) {
+            Ok(vr) => {
+                for outcome in &vr.report.outcomes {
+                    match outcome.decision {
+                        GateDecision::Pass => total_pass += 1,
+                        GateDecision::Review => total_review += 1,
+                        GateDecision::Fail => total_fail += 1,
+                    }
+                }
+                reports.push(BatchEntry {
+                    subject_id,
+                    result: vr,
+                });
+            }
+            Err(e) => {
+                eprintln!("Warning: skipping {subject_id}: {e:#}");
+                skipped.push(SkippedEntry {
+                    subject_id,
+                    reason: format!("{e:#}"),
+                });
+            }
+        }
+    }
+
+    Ok(BatchReport {
+        reports,
+        total_pass,
+        total_review,
+        total_fail,
+        skipped,
+    })
+}
+
+/// Verify a release (tag range) and return a verification result.
+pub fn verify_release(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    base_tag: &str,
+    head_tag: &str,
+    policy: Option<&str>,
+    with_evidence: bool,
+) -> Result<VerificationResult> {
+    let bundle = collect_release_evidence(client, owner, repo, base_tag, head_tag)?;
+    let report = assess_bundle(&bundle, policy)?;
+    let evidence_bundle = if with_evidence { Some(bundle) } else { None };
+    Ok(VerificationResult::new(report, evidence_bundle))
+}
+
+/// Verify repository-level dependency signatures at a given ref.
+pub fn verify_repo(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    reference: &str,
+    policy: Option<&str>,
+    with_evidence: bool,
+) -> Result<VerificationResult> {
+    let bundle = collect_repo_evidence(client, owner, repo, reference)?;
+    let report = assess_repo_bundle(&bundle, policy)?;
+    let evidence_bundle = if with_evidence { Some(bundle) } else { None };
+    Ok(VerificationResult::new(report, evidence_bundle))
+}
+
 pub fn exit_if_assessment_fails(result: &VerificationResult) {
     if result
         .report
@@ -388,6 +373,69 @@ pub fn exit_if_assessment_fails(result: &VerificationResult) {
     {
         process::exit(1);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+fn collect_pr_evidence_from_data(
+    client: &GitHubClient,
+    pr_data: &PrData,
+    owner: &str,
+    repo: &str,
+    pr_number: u32,
+    repository_posture: EvidenceState<libverify_core::evidence::RepositoryPosture>,
+) -> Result<libverify_core::evidence::EvidenceBundle> {
+    let repo_full = format!("{owner}/{repo}");
+    let mut bundle = adapter::build_pull_request_bundle(
+        &repo_full,
+        pr_number,
+        &pr_data.metadata,
+        &pr_data.files,
+        &pr_data.reviews,
+        &pr_data.commits,
+    );
+
+    let combined_status = if pr_data.commit_statuses.is_empty() {
+        None
+    } else {
+        Some(CombinedStatusResponse {
+            state: String::new(),
+            statuses: pr_data
+                .commit_statuses
+                .iter()
+                .map(|s| CommitStatusItem {
+                    context: s.context.clone(),
+                    state: s.state.clone(),
+                })
+                .collect(),
+        })
+    };
+    let evidence = adapter::map_check_runs_evidence(&pr_data.check_runs, combined_status.as_ref());
+    bundle.check_runs = EvidenceState::complete(evidence);
+
+    if let Some(cr_list) = bundle.check_runs.value() {
+        let build_platforms = adapter::map_build_platform_evidence(cr_list);
+        if !build_platforms.is_empty() {
+            bundle.build_platform = EvidenceState::complete(build_platforms);
+        }
+    }
+
+    bundle.repository_posture = repository_posture;
+
+    // Collect dependency signature evidence from lock files
+    let changed_files: Vec<String> = pr_data.files.iter().map(|f| f.filename.clone()).collect();
+    let dep_sigs = dependency::collect_pr_dependency_signatures(
+        client,
+        owner,
+        repo,
+        &pr_data.metadata.head.sha,
+        &changed_files,
+    );
+    bundle.dependency_signatures = enrich_npm_attestations(dep_sigs);
+
+    Ok(bundle)
 }
 
 /// Enrich dependencies with provenance from registry attestation APIs.

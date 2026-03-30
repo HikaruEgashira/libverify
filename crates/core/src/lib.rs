@@ -1,4 +1,5 @@
 pub mod assessment;
+pub mod cache;
 pub mod control;
 pub mod controls;
 pub mod coverage;
