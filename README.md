@@ -8,6 +8,11 @@
   <a href="HACKING.md">Hacking</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/HikaruEgashira/libverify/actions/workflows/scorecard.yml"><img src="https://github.com/HikaruEgashira/libverify/actions/workflows/scorecard.yml/badge.svg" alt="OpenSSF Scorecard"></a>
+  <a href="https://github.com/HikaruEgashira/libverify/actions/workflows/verify-repo.yml"><img src="https://img.shields.io/github/actions/workflow/status/HikaruEgashira/libverify/verify-repo.yml?label=verify%20(oss)&logo=github" alt="verify (oss)"></a>
+</p>
+
 ---
 
 libverify is a shared verification library for supply chain security
