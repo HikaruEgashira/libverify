@@ -2,14 +2,21 @@
 # Applicable to payment card processing systems and supporting infrastructure.
 #
 # Controls are mapped to PCI DSS v4.0 requirements:
-#   Req 6.2.3 (Code Review):      review-independence, two-party-review, stale-review
-#   Req 6.3.1 (Vulnerability Mgmt): vulnerability-scanning, secret-scanning
-#   Req 6.5.1 (Change Management): change-request-size, description-quality, issue-linkage
-#   Req 6.5.4 (Separation of Duties): review-independence, two-party-review
-#   Build Integrity:               build-provenance, source-authenticity
-#   Development Quality (advisory): test-coverage, scoped-change, conventional-title,
-#                                    merge-commit-policy
+#   Req 6.2.3 (Code Review):      review-independence, two-party-review
+#   Req 6.3.1 (Vulnerability Mgmt): vulnerability-scanning, secret-scanning,
+#                                    code-scanning-alerts-resolved
+#   Req 6.5.1 (Change Management): issue-linkage, stale-review
+#   Req 6.5.4 (Separation of Duties): review-independence
+#   Build Integrity:               build-provenance, source-authenticity,
+#                                  provenance-authenticity
+#   Development Quality (advisory): test-coverage, scoped-change,
+#                                   conventional-title, merge-commit-policy,
+#                                   change-request-size, description-quality
 #   Dependency Controls:           dependency-signature, dependency-provenance
+#
+# Note: change-request-size and description-quality are advisory because
+# PCI DSS Req 6.5.1 requires change management processes, not PR size limits
+# or description formatting.
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -46,11 +53,10 @@ pcidss_mandatory_controls := {
 	"stale-review",
 	"vulnerability-scanning",
 	"secret-scanning",
-	"change-request-size",
-	"description-quality",
 	"issue-linkage",
 	"build-provenance",
 	"source-authenticity",
+	"provenance-authenticity",
 	"secret-scanning-push-protection",
 	"branch-protection-admin-enforcement",
 	"actions-pinned-dependencies",
@@ -60,12 +66,15 @@ pcidss_mandatory_controls := {
 	"privileged-workflow-detection",
 }
 
-# --- Development quality (advisory, violated -> review) ---
+# --- Development quality (advisory, violated/indeterminate -> review) ---
+# PCI DSS does not prescribe PR size, description format, or commit conventions.
 pcidss_advisory_controls := {
 	"test-coverage",
 	"scoped-change",
 	"conventional-title",
 	"merge-commit-policy",
+	"change-request-size",
+	"description-quality",
 	"dismiss-stale-reviews-on-push",
 	"sbom-attestation",
 	"release-asset-attestation",
@@ -83,6 +92,12 @@ map := {"severity": "warning", "decision": "review", "annotations": {"framework_
 	input.control_id in pcidss_advisory_controls
 }
 
+# --- Advisory controls: indeterminate -> review ---
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "PCI DSS v4.0 Req 6.5.1"}} if {
+	input.status == "indeterminate"
+	input.control_id in pcidss_advisory_controls
+}
+
 # --- Dependency controls: indeterminate -> review ---
 map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "PCI DSS v4.0 Req 6.3.2"}} if {
 	input.status == "indeterminate"
@@ -93,6 +108,7 @@ map := {"severity": "warning", "decision": "review", "annotations": {"framework_
 map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "PCI DSS v4.0 Req 6.2.3"}} if {
 	input.status == "indeterminate"
 	not input.control_id in pcidss_dependency_controls
+	not input.control_id in pcidss_advisory_controls
 }
 
 # --- All other violated -> fail (PCI DSS-critical controls) ---

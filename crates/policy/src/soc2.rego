@@ -5,19 +5,18 @@
 # Controls are tiered:
 #   - Security-critical controls (CC6/CC7/CC8/PI core) → hard fail on violated
 #   - Advisory controls (dev-quality, style) → review on violated
-#   - OSS-origin controls → review on violated (enterprises use alternative evidence)
 #   - Build/dependency-track indeterminate → review (infra may be absent)
+#   - Source-authenticity → review (commit signing is not a CC6 requirement;
+#     CC6 covers authentication/authorization, not Git signatures)
 #
 # SOC2 criteria mapping:
-#   CC6 (Logical Access):     source-authenticity, branch-protection-enforcement,
+#   CC6 (Logical Access):     branch-protection-enforcement,
 #                             codeowners-coverage, secret-scanning
-#   CC7 (System Operations):  issue-linkage, stale-review, security-file-change,
+#   CC7 (System Operations):  stale-review, security-file-change,
 #                             release-traceability, required-status-checks,
 #                             vulnerability-scanning, security-policy
-#   CC8 (Change Management):  review-independence, two-party-review, change-request-size,
-#                             test-coverage, scoped-change, description-quality,
-#                             merge-commit-policy, conventional-title,
-#                             branch-history-integrity
+#   CC8 (Change Management):  review-independence, two-party-review,
+#                             branch-history-integrity, test-coverage
 #   PI  (Processing Integrity): build-provenance, hosted-build-platform,
 #                               provenance-authenticity, build-isolation
 #
@@ -93,22 +92,26 @@ map := {"severity": "warning", "decision": "review"} if {
 	input.control_id in soc2_advisory_controls
 }
 
-# --- OSS-origin controls → review in enterprise (alternative evidence accepted) ---
-# security-policy checks for SECURITY.md which is an OSS convention.
-# Enterprises typically maintain disclosure processes in internal portals,
-# so a missing repo-level file is not a hard failure for SOC2.
-soc2_oss_origin_controls := {
+# --- Controls not directly required by SOC2 TSC → review ---
+# source-authenticity: commit signing is not a CC6 authentication requirement.
+# security-policy: enterprises maintain disclosure in internal portals.
+# security-file-change: no direct TSC mapping.
+# stale-review: CC7 operational concern but not a hard gate.
+soc2_non_tsc_controls := {
+	"source-authenticity",
 	"security-policy",
+	"security-file-change",
+	"stale-review",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
 	input.status == "violated"
-	input.control_id in soc2_oss_origin_controls
+	input.control_id in soc2_non_tsc_controls
 }
 
 map := {"severity": "warning", "decision": "review"} if {
 	input.status == "indeterminate"
-	input.control_id in soc2_oss_origin_controls
+	input.control_id in soc2_non_tsc_controls
 }
 
 # --- All other indeterminate → fail (strict SOC2 posture) ---
@@ -117,12 +120,12 @@ map := {"severity": "error", "decision": "fail"} if {
 	not input.control_id in soc2_build_controls
 	not input.control_id in soc2_dependency_controls
 	not input.control_id in soc2_advisory_controls
-	not input.control_id in soc2_oss_origin_controls
+	not input.control_id in soc2_non_tsc_controls
 }
 
 # --- All other violated → fail (SOC2-critical controls) ---
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "violated"
 	not input.control_id in soc2_advisory_controls
-	not input.control_id in soc2_oss_origin_controls
+	not input.control_id in soc2_non_tsc_controls
 }

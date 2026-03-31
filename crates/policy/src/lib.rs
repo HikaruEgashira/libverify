@@ -312,10 +312,20 @@ mod tests {
 
     #[test]
     fn slsa_l1_required_indeterminate_fails() {
+        // SLSA v1.2: Build L1 requires build-provenance
+        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
+        let finding = make_finding(builtin::BUILD_PROVENANCE, ControlStatus::Indeterminate);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn slsa_l1_review_independence_not_required() {
+        // SLSA v1.2: Source L1 only requires version control, not review independence
         let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
         let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Indeterminate);
         let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
+        assert_eq!(outcome.decision, GateDecision::Review);
     }
 
     #[test]
@@ -357,14 +367,27 @@ mod tests {
     }
 
     #[test]
-    fn slsa_l2_dependency_provenance_required() {
+    fn slsa_l2_vulnerability_scanning_required() {
+        // SLSA v1.2: Dep L2 requires known vulnerabilities triaged
+        let profile = OpaProfile::from_preset_or_file("slsa-l2").unwrap();
+        let finding = make_finding(
+            builtin::VULNERABILITY_SCANNING,
+            ControlStatus::Indeterminate,
+        );
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn slsa_l2_dependency_provenance_not_required() {
+        // SLSA v1.2: dependency-provenance is Dep L3, not L2
         let profile = OpaProfile::from_preset_or_file("slsa-l2").unwrap();
         let finding = make_finding(
             builtin::DEPENDENCY_PROVENANCE_CHECK,
             ControlStatus::Indeterminate,
         );
         let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
+        assert_eq!(outcome.decision, GateDecision::Review);
     }
 
     #[test]

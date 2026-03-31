@@ -1,7 +1,11 @@
 # AI-driven SDLC audit preset.
-# Maps all indeterminate findings to review instead of fail, so that
-# insufficient evidence is escalated to a human reviewer rather than
-# causing an automatic gate failure. Violated controls still fail.
+# Designed for workflows where AI generates code, commits, and PRs.
+#
+# Key design decisions:
+#   - All indeterminate → review (insufficient evidence → human escalation)
+#   - Dev-quality controls (titles, descriptions, PR size) → review on violated
+#     because AI-generated content may not follow human conventions
+#   - Security-critical controls remain strict (violated → fail)
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -32,6 +36,25 @@ map := {"severity": "warning", "decision": "review"} if {
 	input.status == "indeterminate"
 }
 
+# --- Dev-quality controls: violated → review ---
+# AI-generated PRs commonly produce non-conventional titles, descriptions,
+# and commit messages. These are style violations, not security issues.
+aiops_devquality_controls := {
+	"conventional-title",
+	"description-quality",
+	"change-request-size",
+	"scoped-change",
+	"merge-commit-policy",
+	"issue-linkage",
+}
+
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "violated"
+	input.control_id in aiops_devquality_controls
+}
+
+# --- Security-critical: violated → fail ---
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "violated"
+	not input.control_id in aiops_devquality_controls
 }

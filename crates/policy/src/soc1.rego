@@ -1,7 +1,7 @@
 # SOC1 (SSAE 18 / ISAE 3402) policy preset.
 # Focused on Internal Controls over Financial Reporting (ICFR).
 # Enforces processing integrity and change traceability controls strictly.
-# Development quality controls (change-request size, conventional titles, etc.) are advisory.
+# Controls outside ICFR scope are advisory (review, not fail).
 #
 # Key SOC1 control objectives mapped:
 #   CC-PI  (Processing Integrity): build provenance, required status checks,
@@ -37,7 +37,6 @@ map := {"severity": "info", "decision": "pass"} if {
 # --- Advisory controls (dev quality, not ICFR-relevant) ---
 # Change-request size, scoped change, description quality, merge commit policy,
 # conventional title, test coverage: violations are warnings, not gates.
-
 soc1_advisory_controls := {
 	"change-request-size",
 	"scoped-change",
@@ -57,26 +56,48 @@ map := {"severity": "warning", "decision": "review"} if {
 	input.control_id in soc1_advisory_controls
 }
 
-# --- Source authenticity: review (unsigned commits don't affect ICFR) ---
-map := {"severity": "warning", "decision": "review"} if {
-	input.control_id == "source-authenticity"
-	input.status == "violated"
+# --- Non-ICFR controls (outside SOC1 scope → review, not fail) ---
+# These controls relate to security posture, not financial reporting.
+# SOC1 auditors do not issue exceptions for these.
+soc1_out_of_scope := {
+	"source-authenticity",
+	"security-policy",
+	"security-file-change",
+	"vulnerability-scanning",
+	"secret-scanning",
+	"codeowners-coverage",
+	"branch-history-integrity",
+	"secret-scanning-push-protection",
+	"branch-protection-admin-enforcement",
+	"dismiss-stale-reviews-on-push",
+	"actions-pinned-dependencies",
+	"environment-protection-rules",
+	"code-scanning-alerts-resolved",
+	"dependency-license-compliance",
+	"sbom-attestation",
+	"release-asset-attestation",
+	"privileged-workflow-detection",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
-	input.control_id == "source-authenticity"
+	input.status == "violated"
+	input.control_id in soc1_out_of_scope
+}
+
+map := {"severity": "warning", "decision": "review"} if {
 	input.status == "indeterminate"
+	input.control_id in soc1_out_of_scope
 }
 
 # --- Strict controls (ICFR-critical): violated or indeterminate → fail ---
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "violated"
 	not input.control_id in soc1_advisory_controls
-	input.control_id != "source-authenticity"
+	not input.control_id in soc1_out_of_scope
 }
 
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "indeterminate"
 	not input.control_id in soc1_advisory_controls
-	input.control_id != "source-authenticity"
+	not input.control_id in soc1_out_of_scope
 }

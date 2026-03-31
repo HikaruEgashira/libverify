@@ -10,7 +10,9 @@
 #   - issue-linkage: trivial fixes/docs skip issues → review
 #   - conventional-title: most OSS don't use conventional commits → review
 #   - ASPM posture: codeowners, secret-scanning, vuln-scanning → review
-#   - security-policy: strict (SECURITY.md is primary disclosure channel for OSS)
+#   - security-policy: small projects may not have SECURITY.md → review
+#   - stale-review: solo developers self-merge; stale reviews are expected → review
+#   - security-file-change: OSS repos may not have security-sensitive file tracking → review
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -49,6 +51,9 @@ oss_review_on_violated := {
 	"codeowners-coverage",
 	"vulnerability-scanning",
 	"secret-scanning",
+	"security-policy",
+	"stale-review",
+	"security-file-change",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
@@ -68,6 +73,9 @@ oss_review_on_indeterminate := {
 	"codeowners-coverage",
 	"vulnerability-scanning",
 	"secret-scanning",
+	"security-policy",
+	"stale-review",
+	"security-file-change",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

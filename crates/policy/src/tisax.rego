@@ -45,9 +45,7 @@ map := {"severity": "info", "decision": "pass"} if {
 # --- AL3 mandatory controls (violated -> fail) ---
 # Combines VDA ISA 1.3.1, 1.3.2, 1.6.1, 3.1.3, 4.1
 tisax_mandatory_controls := {
-	"change-request-size",
 	"review-independence",
-	"description-quality",
 	"two-party-review",
 	"codeowners-coverage",
 	"source-authenticity",
@@ -58,15 +56,12 @@ tisax_mandatory_controls := {
 	"dependency-signer-verified",
 	"dependency-completeness",
 	"vulnerability-scanning",
+	"secret-scanning",
 	"secret-scanning-push-protection",
 	"branch-protection-admin-enforcement",
-	"dismiss-stale-reviews-on-push",
 	"actions-pinned-dependencies",
 	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
-	"dependency-license-compliance",
-	"sbom-attestation",
-	"release-asset-attestation",
 	"privileged-workflow-detection",
 }
 
@@ -78,12 +73,22 @@ tisax_devenv_controls := {
 }
 
 # --- Recommended controls (violated -> review) ---
+# These improve development quality but are not explicitly required by VDA ISA.
+# sbom-attestation, release-asset-attestation, dependency-license-compliance:
+#   Useful for VDA ISA 4.1 supply chain visibility but not mandatory controls.
+#   Moved to recommended until VDA ISA explicitly mandates SBOM attestation.
 tisax_recommended_controls := {
 	"test-coverage",
 	"scoped-change",
 	"conventional-title",
 	"merge-commit-policy",
 	"issue-linkage",
+	"change-request-size",
+	"description-quality",
+	"dismiss-stale-reviews-on-push",
+	"dependency-license-compliance",
+	"sbom-attestation",
+	"release-asset-attestation",
 }
 
 # --- Recommended: violated -> review ---

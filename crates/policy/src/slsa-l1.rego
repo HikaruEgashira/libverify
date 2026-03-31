@@ -1,7 +1,12 @@
 # SLSA Level 1 preset (Source L1, Build L1, Dependencies L1).
-# Required: source-authenticity, review-independence, build-provenance,
-#           required-status-checks, dependency-signature.
-# All other controls are advisory (indeterminate → review).
+#
+# SLSA v1.2 Level 1 requirements per track:
+#   Source L1:  Version controlled (prerequisite; no libverify control)
+#   Build L1:   Provenance exists → build-provenance
+#   Dep L1:     Dependency inventory exists → dependency-signature (proxy)
+#
+# Only controls that directly map to SLSA v1.2 L1 requirements are required.
+# All other controls are advisory (violated/indeterminate → review).
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -17,7 +22,7 @@ package verify.profile
 
 import rego.v1
 
-default map := {"severity": "error", "decision": "fail"}
+default map := {"severity": "warning", "decision": "review"}
 
 map := {"severity": "info", "decision": "pass"} if {
 	input.status == "satisfied"
@@ -27,9 +32,21 @@ map := {"severity": "info", "decision": "pass"} if {
 	input.status == "not_applicable"
 }
 
+# --- Required controls: violated or indeterminate → fail ---
+map := {"severity": "error", "decision": "fail"} if {
+	input.status == "violated"
+	input.control_id in required
+}
+
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "indeterminate"
 	input.control_id in required
+}
+
+# --- Non-required controls: violated or indeterminate → review ---
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "violated"
+	not input.control_id in required
 }
 
 map := {"severity": "warning", "decision": "review"} if {
@@ -37,14 +54,10 @@ map := {"severity": "warning", "decision": "review"} if {
 	not input.control_id in required
 }
 
-map := {"severity": "error", "decision": "fail"} if {
-	input.status == "violated"
-}
-
+# SLSA v1.2 Level 1 required controls:
+#   Build L1:  build-provenance (provenance must exist)
+#   Dep L1:    dependency-signature (proxy for dependency inventory)
 required := {
-	"source-authenticity",
-	"review-independence",
 	"build-provenance",
-	"required-status-checks",
 	"dependency-signature",
 }

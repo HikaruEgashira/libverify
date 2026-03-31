@@ -78,6 +78,7 @@ wp29_software_controls := {
 wp29_devenv_controls := {
 	"branch-protection-enforcement",
 	"build-isolation",
+	"hosted-build-platform",
 }
 
 # --- Recommended controls (violated -> review) ---
