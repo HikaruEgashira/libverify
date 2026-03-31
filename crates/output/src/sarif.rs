@@ -113,14 +113,20 @@ fn build_sarif(
         .iter()
         .zip(report.outcomes.iter())
         .map(|(finding, outcome)| {
+            let mut props = serde_json::json!({
+                "decision": outcome.decision.as_str(),
+                "controlStatus": finding.status.as_str(),
+            });
+            // Merge policy annotations into SARIF properties
+            for (k, v) in &outcome.annotations {
+                props[k] = serde_json::Value::String(v.clone());
+            }
+
             let mut result = serde_json::json!({
                 "ruleId": outcome.control_id.as_str(),
                 "level": severity_to_level(outcome.severity),
                 "message": { "text": outcome.rationale },
-                "properties": {
-                    "decision": outcome.decision.as_str(),
-                    "controlStatus": finding.status.as_str(),
-                },
+                "properties": props,
             });
 
             if !finding.subjects.is_empty() {
@@ -232,12 +238,14 @@ mod tests {
                     severity: FindingSeverity::Info,
                     decision: GateDecision::Pass,
                     rationale: "Independent reviewer approved".to_string(),
+                    annotations: Default::default(),
                 },
                 ProfileOutcome {
                     control_id: builtin::id(builtin::SOURCE_AUTHENTICITY),
                     severity: FindingSeverity::Error,
                     decision: GateDecision::Fail,
                     rationale: "1 unsigned commit".to_string(),
+                    annotations: Default::default(),
                 },
             ],
             severity_labels: Default::default(),

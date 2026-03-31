@@ -5,6 +5,7 @@ use anyhow::{Context, Result, bail};
 use libverify_core::assessment::{
     AssessmentReport, BatchEntry, BatchReport, SkippedEntry, VerificationResult,
 };
+use libverify_core::control::Control;
 use libverify_core::evidence::EvidenceState;
 use libverify_core::profile::GateDecision;
 use libverify_core::registry::ControlRegistry;
@@ -209,11 +210,18 @@ pub fn collect_repo_evidence(
 // ---------------------------------------------------------------------------
 
 /// Assess an evidence bundle against all built-in controls using the given policy.
+///
+/// Extra controls are appended to the built-in registry, enabling callers to
+/// inject platform-specific checks (e.g. Jira linkage, Bitbucket pipeline status).
 pub fn assess_bundle(
     bundle: &libverify_core::evidence::EvidenceBundle,
     policy: Option<&str>,
+    extra_controls: Vec<Box<dyn Control>>,
 ) -> Result<AssessmentReport> {
-    let registry = ControlRegistry::builtin();
+    let mut registry = ControlRegistry::builtin();
+    for c in extra_controls {
+        registry.register(c);
+    }
     let profile = OpaProfile::from_preset_or_file(policy.unwrap_or("default"))?;
     Ok(libverify_core::assessment::assess(
         bundle,
@@ -225,10 +233,12 @@ pub fn assess_bundle(
 /// Assess an evidence bundle using repo-scoped controls (dependencies + posture).
 ///
 /// This mirrors the control selection logic of [`verify_repo`] but operates
-/// on a pre-collected bundle.
+/// on a pre-collected bundle. Extra controls are appended after the built-in
+/// dependency + posture controls.
 pub fn assess_repo_bundle(
     bundle: &libverify_core::evidence::EvidenceBundle,
     policy: Option<&str>,
+    extra_controls: Vec<Box<dyn Control>>,
 ) -> Result<AssessmentReport> {
     use libverify_core::slsa::SlsaTrack;
     let policy_str = policy.unwrap_or("default");
@@ -247,6 +257,9 @@ pub fn assess_repo_bundle(
     }
     for control in libverify_core::controls::posture_controls() {
         registry.register(control);
+    }
+    for c in extra_controls {
+        registry.register(c);
     }
     let profile = OpaProfile::from_preset_or_file(policy_str)?;
     Ok(libverify_core::assessment::assess(
@@ -268,9 +281,10 @@ pub fn verify_pr(
     pr_number: u32,
     policy: Option<&str>,
     with_evidence: bool,
+    extra_controls: Vec<Box<dyn Control>>,
 ) -> Result<VerificationResult> {
     let bundle = collect_pr_evidence(client, owner, repo, pr_number)?;
-    let report = assess_bundle(&bundle, policy)?;
+    let report = assess_bundle(&bundle, policy, extra_controls)?;
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
     Ok(VerificationResult::new(report, evidence_bundle))
 }
@@ -283,6 +297,7 @@ pub fn verify_pr_batch(
     pr_numbers: &[u32],
     policy: Option<&str>,
     with_evidence: bool,
+    extra_controls_fn: impl Fn() -> Vec<Box<dyn Control>>,
 ) -> Result<BatchReport> {
     let mut reports = Vec::new();
     let mut skipped = Vec::new();
@@ -297,7 +312,7 @@ pub fn verify_pr_batch(
         eprintln!("Verifying {subject_id} ({}/{})", i + 1, total);
 
         match result.and_then(|bundle| {
-            let report = assess_bundle(&bundle, policy)?;
+            let report = assess_bundle(&bundle, policy, extra_controls_fn())?;
             let evidence_bundle = if with_evidence { Some(bundle) } else { None };
             Ok(VerificationResult::new(report, evidence_bundle))
         }) {
@@ -342,9 +357,10 @@ pub fn verify_release(
     head_tag: &str,
     policy: Option<&str>,
     with_evidence: bool,
+    extra_controls: Vec<Box<dyn Control>>,
 ) -> Result<VerificationResult> {
     let bundle = collect_release_evidence(client, owner, repo, base_tag, head_tag)?;
-    let report = assess_bundle(&bundle, policy)?;
+    let report = assess_bundle(&bundle, policy, extra_controls)?;
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
     Ok(VerificationResult::new(report, evidence_bundle))
 }
@@ -357,9 +373,10 @@ pub fn verify_repo(
     reference: &str,
     policy: Option<&str>,
     with_evidence: bool,
+    extra_controls: Vec<Box<dyn Control>>,
 ) -> Result<VerificationResult> {
     let bundle = collect_repo_evidence(client, owner, repo, reference)?;
-    let report = assess_repo_bundle(&bundle, policy)?;
+    let report = assess_repo_bundle(&bundle, policy, extra_controls)?;
     let evidence_bundle = if with_evidence { Some(bundle) } else { None };
     Ok(VerificationResult::new(report, evidence_bundle))
 }

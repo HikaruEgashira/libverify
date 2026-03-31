@@ -26,8 +26,9 @@
 #   input.subjects    - list of affected artifact URIs
 #
 # Output (data.verify.profile.map):
-#   severity - "info" | "warning" | "error"
-#   decision - "pass" | "review" | "fail"
+#   severity    - "info" | "warning" | "error"
+#   decision    - "pass" | "review" | "fail"
+#   annotations - optional object with framework_ref string
 
 package verify.profile
 
@@ -99,25 +100,25 @@ wp29_recommended_controls := {
 }
 
 # --- Recommended: violated -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "UN-R155 7.2"}} if {
 	input.status == "violated"
 	input.control_id in wp29_recommended_controls
 }
 
 # --- Development environment: indeterminate -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "UN-R155 7.3"}} if {
 	input.status == "indeterminate"
 	input.control_id in wp29_devenv_controls
 }
 
 # --- All other indeterminate -> fail ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "UN-R155 7.2.2.3"}} if {
 	input.status == "indeterminate"
 	not input.control_id in wp29_devenv_controls
 }
 
 # --- All other violated -> fail ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "UN-R155 7.2"}} if {
 	input.status == "violated"
 	not input.control_id in wp29_recommended_controls
 }

@@ -27,8 +27,9 @@
 #   input.subjects    - list of affected artifact URIs
 #
 # Output (data.verify.profile.map):
-#   severity - "info" | "warning" | "error"
-#   decision - "pass" | "review" | "fail"
+#   severity    - "info" | "warning" | "error"
+#   decision    - "pass" | "review" | "fail"
+#   annotations - optional object with framework_ref string
 
 package verify.profile
 
@@ -104,37 +105,37 @@ nist_dependency_controls := {
 }
 
 # --- Audit recommended: violated -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "NIST 800-53 AU-6"}} if {
 	input.status == "violated"
 	input.control_id in nist_audit_controls
 }
 
 # --- Development quality recommended: violated -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "NIST 800-53 SA-11"}} if {
 	input.status == "violated"
 	input.control_id in nist_devquality_controls
 }
 
 # --- Build/dependency indeterminate -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "NIST 800-53 SA-15"}} if {
 	input.status == "indeterminate"
 	input.control_id in nist_build_controls
 }
 
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "NIST 800-53 SR-4"}} if {
 	input.status == "indeterminate"
 	input.control_id in nist_dependency_controls
 }
 
 # --- All other indeterminate -> fail ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "NIST 800-53 CM-3"}} if {
 	input.status == "indeterminate"
 	not input.control_id in nist_build_controls
 	not input.control_id in nist_dependency_controls
 }
 
 # --- All other violated -> fail (mandatory controls) ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "NIST 800-53 CM-3"}} if {
 	input.status == "violated"
 	not input.control_id in nist_audit_controls
 	not input.control_id in nist_devquality_controls

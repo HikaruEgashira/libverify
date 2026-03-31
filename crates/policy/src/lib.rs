@@ -4,6 +4,7 @@ use libverify_core::control::ControlFinding;
 use libverify_core::profile::{
     ControlProfile, FindingSeverity, GateDecision, ProfileOutcome, SeverityLabels,
 };
+use std::collections::BTreeMap;
 
 const RULE_PATH: &str = "data.verify.profile.map";
 
@@ -151,7 +152,10 @@ impl OpaProfile {
         })
     }
 
-    fn eval_finding(&self, finding: &ControlFinding) -> Result<(FindingSeverity, GateDecision)> {
+    fn eval_finding(
+        &self,
+        finding: &ControlFinding,
+    ) -> Result<(FindingSeverity, GateDecision, BTreeMap<String, String>)> {
         let input_json = serde_json::to_string(finding).context("serializing finding to JSON")?;
 
         let mut engine = self.engine.clone();
@@ -170,7 +174,11 @@ impl OpaProfile {
 
         let severity = parse_severity(severity.as_ref())?;
         let decision = parse_decision(decision.as_ref())?;
-        Ok((severity, decision))
+
+        // Extract optional annotations object from Rego output
+        let annotations = extract_annotations(&result);
+
+        Ok((severity, decision, annotations))
     }
 }
 
@@ -180,19 +188,21 @@ impl ControlProfile for OpaProfile {
     }
 
     fn map(&self, finding: &ControlFinding) -> ProfileOutcome {
-        let (severity, decision) = self.eval_finding(finding).unwrap_or_else(|err| {
-            eprintln!(
-                "Warning: OPA evaluation failed for {}: {err:#}. Defaulting to Fail.",
-                finding.control_id
-            );
-            (FindingSeverity::Error, GateDecision::Fail)
-        });
+        let (severity, decision, annotations) =
+            self.eval_finding(finding).unwrap_or_else(|err| {
+                eprintln!(
+                    "Warning: OPA evaluation failed for {}: {err:#}. Defaulting to Fail.",
+                    finding.control_id
+                );
+                (FindingSeverity::Error, GateDecision::Fail, BTreeMap::new())
+            });
 
         ProfileOutcome {
             control_id: finding.control_id.clone(),
             severity,
             decision,
             rationale: finding.rationale.clone(),
+            annotations,
         }
     }
 
@@ -206,6 +216,19 @@ impl ControlProfile for OpaProfile {
             _ => SeverityLabels::default(),
         }
     }
+}
+
+/// Extract string-valued entries from the optional "annotations" object in Rego output.
+fn extract_annotations(result: &regorus::Value) -> BTreeMap<String, String> {
+    let mut map = BTreeMap::new();
+    if let Ok(ann) = result["annotations"].as_object() {
+        for (k, v) in ann.iter() {
+            if let (Ok(key), Ok(val)) = (k.as_string(), v.as_string()) {
+                map.insert(key.to_string(), val.to_string());
+            }
+        }
+    }
+    map
 }
 
 fn parse_severity(s: &str) -> Result<FindingSeverity> {
@@ -456,5 +479,36 @@ map := {"severity": "warning", "decision": "review"} if { input.status == "indet
         let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Indeterminate);
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Review);
+    }
+
+    #[test]
+    fn annotations_extracted_from_rego() {
+        let rego = r#"
+package verify.profile
+import rego.v1
+default map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "TEST-1"}}
+map := {"severity": "info", "decision": "pass"} if { input.status == "satisfied" }
+"#;
+        let profile = OpaProfile::from_rego("ann.rego", rego).unwrap();
+        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
+        let outcome = profile.map(&finding);
+        assert_eq!(outcome.annotations.get("framework_ref").map(|s| s.as_str()), Some("TEST-1"));
+    }
+
+    #[test]
+    fn annotations_empty_when_absent() {
+        let profile = OpaProfile::from_preset_or_file("default").unwrap();
+        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
+        let outcome = profile.map(&finding);
+        assert!(outcome.annotations.is_empty());
+    }
+
+    #[test]
+    fn ismap_annotations_present() {
+        let profile = OpaProfile::from_preset_or_file("ismap").unwrap();
+        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
+        let outcome = profile.map(&finding);
+        assert!(!outcome.annotations.is_empty(), "ISMAP violated finding should have annotations");
+        assert!(outcome.annotations.contains_key("framework_ref"));
     }
 }

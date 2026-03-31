@@ -15,8 +15,9 @@
 #   input.subjects    - list of affected artifact URIs
 #
 # Output (data.verify.profile.map):
-#   severity - "info" | "warning" | "error"
-#   decision - "pass" | "review" | "fail"
+#   severity    - "info" | "warning" | "error"
+#   decision    - "pass" | "review" | "fail"
+#   annotations - (non-pass only) {"framework_ref": "ISMAP <clause>"}
 
 package verify.profile
 
@@ -79,31 +80,31 @@ ismap_dependency_controls := {
 }
 
 # --- Recommended controls: violated -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "ISMAP A.14.2.2"}} if {
 	input.status == "violated"
 	input.control_id in ismap_recommended_controls
 }
 
 # --- Build/dependency indeterminate -> review (infra may be absent) ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "ISMAP A.14.2.6"}} if {
 	input.status == "indeterminate"
 	input.control_id in ismap_build_controls
 }
 
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "ISMAP A.15.1.1"}} if {
 	input.status == "indeterminate"
 	input.control_id in ismap_dependency_controls
 }
 
 # --- All other indeterminate -> fail (strict) ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "ISMAP A.14.2.1"}} if {
 	input.status == "indeterminate"
 	not input.control_id in ismap_build_controls
 	not input.control_id in ismap_dependency_controls
 }
 
 # --- All other violated -> fail (mandatory controls) ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "ISMAP A.14.2.1"}} if {
 	input.status == "violated"
 	not input.control_id in ismap_recommended_controls
 }

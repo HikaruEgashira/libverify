@@ -24,8 +24,9 @@
 #   input.subjects    - list of affected artifact URIs
 #
 # Output (data.verify.profile.map):
-#   severity - "info" | "warning" | "error"
-#   decision - "pass" | "review" | "fail"
+#   severity    - "info" | "warning" | "error"
+#   decision    - "pass" | "review" | "fail"
+#   annotations - optional object with "framework_ref" citing VDA ISA clause
 
 package verify.profile
 
@@ -86,25 +87,25 @@ tisax_recommended_controls := {
 }
 
 # --- Recommended: violated -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "TISAX VDA ISA 1.3.1"}} if {
 	input.status == "violated"
 	input.control_id in tisax_recommended_controls
 }
 
 # --- Development environment: indeterminate -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "TISAX VDA ISA 3.1.2"}} if {
 	input.status == "indeterminate"
 	input.control_id in tisax_devenv_controls
 }
 
 # --- All other indeterminate -> fail (strict AL3 posture) ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "TISAX VDA ISA 4.1"}} if {
 	input.status == "indeterminate"
 	not input.control_id in tisax_devenv_controls
 }
 
 # --- All other violated -> fail ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "TISAX VDA ISA 4.1"}} if {
 	input.status == "violated"
 	not input.control_id in tisax_recommended_controls
 }

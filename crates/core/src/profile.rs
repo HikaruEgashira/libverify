@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
@@ -73,6 +74,10 @@ pub struct ProfileOutcome {
     pub severity: FindingSeverity,
     pub decision: GateDecision,
     pub rationale: String,
+    /// Policy-supplied key-value annotations (e.g. framework_ref, recommendation).
+    /// Empty by default for backward compatibility with existing Rego presets.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub annotations: BTreeMap<String, String>,
 }
 
 /// Maps raw control findings to severity and gate decisions for a given policy.

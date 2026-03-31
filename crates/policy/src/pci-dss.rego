@@ -18,8 +18,9 @@
 #   input.subjects    - list of affected artifact URIs
 #
 # Output (data.verify.profile.map):
-#   severity - "info" | "warning" | "error"
-#   decision - "pass" | "review" | "fail"
+#   severity    - "info" | "warning" | "error"
+#   decision    - "pass" | "review" | "fail"
+#   annotations - optional map with "framework_ref" linking to the PCI DSS requirement
 
 package verify.profile
 
@@ -77,25 +78,25 @@ pcidss_dependency_controls := {
 }
 
 # --- Advisory controls: violated -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "PCI DSS v4.0 Req 6.5.1"}} if {
 	input.status == "violated"
 	input.control_id in pcidss_advisory_controls
 }
 
 # --- Dependency controls: indeterminate -> review ---
-map := {"severity": "warning", "decision": "review"} if {
+map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "PCI DSS v4.0 Req 6.3.2"}} if {
 	input.status == "indeterminate"
 	input.control_id in pcidss_dependency_controls
 }
 
 # --- All other indeterminate -> fail (strict PCI DSS posture) ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "PCI DSS v4.0 Req 6.2.3"}} if {
 	input.status == "indeterminate"
 	not input.control_id in pcidss_dependency_controls
 }
 
 # --- All other violated -> fail (PCI DSS-critical controls) ---
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "error", "decision": "fail", "annotations": {"framework_ref": "PCI DSS v4.0 Req 6.2.3"}} if {
 	input.status == "violated"
 	not input.control_id in pcidss_advisory_controls
 }
