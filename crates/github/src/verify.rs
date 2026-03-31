@@ -349,6 +349,7 @@ pub fn verify_pr_batch(
 }
 
 /// Verify a release (tag range) and return a verification result.
+#[allow(clippy::too_many_arguments)]
 pub fn verify_release(
     client: &GitHubClient,
     owner: &str,

@@ -188,14 +188,13 @@ impl ControlProfile for OpaProfile {
     }
 
     fn map(&self, finding: &ControlFinding) -> ProfileOutcome {
-        let (severity, decision, annotations) =
-            self.eval_finding(finding).unwrap_or_else(|err| {
-                eprintln!(
-                    "Warning: OPA evaluation failed for {}: {err:#}. Defaulting to Fail.",
-                    finding.control_id
-                );
-                (FindingSeverity::Error, GateDecision::Fail, BTreeMap::new())
-            });
+        let (severity, decision, annotations) = self.eval_finding(finding).unwrap_or_else(|err| {
+            eprintln!(
+                "Warning: OPA evaluation failed for {}: {err:#}. Defaulting to Fail.",
+                finding.control_id
+            );
+            (FindingSeverity::Error, GateDecision::Fail, BTreeMap::new())
+        });
 
         ProfileOutcome {
             control_id: finding.control_id.clone(),
@@ -492,7 +491,10 @@ map := {"severity": "info", "decision": "pass"} if { input.status == "satisfied"
         let profile = OpaProfile::from_rego("ann.rego", rego).unwrap();
         let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
         let outcome = profile.map(&finding);
-        assert_eq!(outcome.annotations.get("framework_ref").map(|s| s.as_str()), Some("TEST-1"));
+        assert_eq!(
+            outcome.annotations.get("framework_ref").map(|s| s.as_str()),
+            Some("TEST-1")
+        );
     }
 
     #[test]
@@ -508,7 +510,10 @@ map := {"severity": "info", "decision": "pass"} if { input.status == "satisfied"
         let profile = OpaProfile::from_preset_or_file("ismap").unwrap();
         let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
         let outcome = profile.map(&finding);
-        assert!(!outcome.annotations.is_empty(), "ISMAP violated finding should have annotations");
+        assert!(
+            !outcome.annotations.is_empty(),
+            "ISMAP violated finding should have annotations"
+        );
         assert!(outcome.annotations.contains_key("framework_ref"));
     }
 }
