@@ -145,6 +145,9 @@ fn build_evidence() -> EvidenceBundle {
         security_policy_present: true,
         security_policy_has_disclosure: false, // disclosure in internal portal, not SECURITY.md
         default_branch_protected: true,
+        enforce_admins: true,
+        dismiss_stale_reviews: true,
+    ..Default::default()
     };
 
     EvidenceBundle {

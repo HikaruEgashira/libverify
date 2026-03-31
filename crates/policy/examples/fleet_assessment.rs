@@ -40,6 +40,9 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 security_policy_present: false,
                 security_policy_has_disclosure: false,
                 default_branch_protected: false,
+                enforce_admins: false,
+                dismiss_stale_reviews: false,
+            ..Default::default()
             },
         },
         // 2. core-api: private, CODEOWNERS with catch-all, secret scanning + push
@@ -69,6 +72,9 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 security_policy_present: true,
                 security_policy_has_disclosure: true,
                 default_branch_protected: true,
+                enforce_admins: true,
+                dismiss_stale_reviews: true,
+            ..Default::default()
             },
         },
         // 3. infra-terraform: private, CODEOWNERS (2 entries only), secret scanning
@@ -94,6 +100,9 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 security_policy_present: false,
                 security_policy_has_disclosure: false,
                 default_branch_protected: false,
+                enforce_admins: false,
+                dismiss_stale_reviews: false,
+            ..Default::default()
             },
         },
         // 4. archived-legacy: no scanning, no CODEOWNERS, no policy
@@ -109,6 +118,9 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 security_policy_present: false,
                 security_policy_has_disclosure: false,
                 default_branch_protected: false,
+                enforce_admins: false,
+                dismiss_stale_reviews: false,
+            ..Default::default()
             },
         },
         // 5. new-microservice: Dependabot only, basic SECURITY.md, 3 CODEOWNERS entries
@@ -137,6 +149,9 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 security_policy_present: true,
                 security_policy_has_disclosure: false, // basic, no disclosure process
                 default_branch_protected: false,
+                enforce_admins: false,
+                dismiss_stale_reviews: false,
+            ..Default::default()
             },
         },
     ]

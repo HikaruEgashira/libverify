@@ -61,14 +61,9 @@ mod tests {
 
     fn posture(present: bool, disclosure: bool) -> RepositoryPosture {
         RepositoryPosture {
-            codeowners_entries: vec![],
-            secret_scanning_enabled: false,
-            secret_push_protection_enabled: false,
-            vulnerability_scanning_enabled: false,
-            code_scanning_enabled: false,
             security_policy_present: present,
             security_policy_has_disclosure: disclosure,
-            default_branch_protected: false,
+            ..Default::default()
         }
     }
 

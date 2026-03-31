@@ -81,6 +81,9 @@ fn build_evidence() -> EvidenceBundle {
         security_policy_present: true,
         security_policy_has_disclosure: false, // just "email me"
         default_branch_protected: true,
+        enforce_admins: false,
+        dismiss_stale_reviews: false,
+        ..Default::default()
     };
 
     EvidenceBundle {

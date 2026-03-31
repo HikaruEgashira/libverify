@@ -78,6 +78,9 @@ fn startup_evidence() -> EvidenceBundle {
         security_policy_present: true,         // basic SECURITY.md
         security_policy_has_disclosure: false, // no disclosure process
         default_branch_protected: false,       // no branch protection
+        enforce_admins: false,
+        dismiss_stale_reviews: false,
+    ..Default::default()
     };
 
     EvidenceBundle {

@@ -1,4 +1,5 @@
 pub mod branch_history_integrity;
+pub mod branch_protection_admin_enforcement;
 pub mod branch_protection_enforcement;
 pub mod build_isolation;
 pub mod build_provenance;
@@ -10,6 +11,7 @@ pub mod dependency_provenance;
 pub mod dependency_signature;
 pub mod dependency_signer_verified;
 pub mod description_quality;
+pub mod dismiss_stale_reviews_on_push;
 pub mod hosted_build_platform;
 pub mod issue_linkage;
 pub mod merge_commit_policy;
@@ -19,6 +21,7 @@ pub mod required_status_checks;
 pub mod review_independence;
 pub mod scoped_change;
 pub mod secret_scanning;
+pub mod secret_scanning_push_protection;
 pub mod security_file_change;
 pub mod security_policy;
 pub mod source_authenticity;
@@ -26,11 +29,19 @@ pub mod stale_review;
 pub mod test_coverage;
 pub mod two_party_review;
 pub mod vulnerability_scanning;
+pub mod actions_pinned_dependencies;
+pub mod code_scanning_alerts_resolved;
+pub mod dependency_license_compliance;
+pub mod environment_protection_rules;
+pub mod privileged_workflow_detection;
+pub mod release_asset_attestation;
+pub mod sbom_attestation;
 
 use crate::control::{Control, builtin};
 use crate::slsa::{SlsaLevel, SlsaTrack};
 
 use self::branch_history_integrity::BranchHistoryIntegrityControl;
+use self::branch_protection_admin_enforcement::BranchProtectionAdminEnforcementControl;
 use self::branch_protection_enforcement::BranchProtectionEnforcementControl;
 use self::build_isolation::BuildIsolationControl;
 use self::build_provenance::BuildProvenanceControl;
@@ -42,6 +53,7 @@ use self::dependency_provenance::DependencyProvenanceControl;
 use self::dependency_signature::DependencySignatureControl;
 use self::dependency_signer_verified::DependencySignerVerifiedControl;
 use self::description_quality::DescriptionQualityControl;
+use self::dismiss_stale_reviews_on_push::DismissStaleReviewsOnPushControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
 use self::merge_commit_policy::MergeCommitPolicyControl;
@@ -51,6 +63,7 @@ use self::required_status_checks::RequiredStatusChecksControl;
 use self::review_independence::ReviewIndependenceControl;
 use self::scoped_change::ScopedChangeControl;
 use self::secret_scanning::SecretScanningControl;
+use self::secret_scanning_push_protection::SecretScanningPushProtectionControl;
 use self::security_file_change::SecurityFileChangeControl;
 use self::security_policy::SecurityPolicyControl;
 use self::source_authenticity::SourceAuthenticityControl;
@@ -58,6 +71,13 @@ use self::stale_review::StaleReviewControl;
 use self::test_coverage::TestCoverageControl;
 use self::two_party_review::TwoPartyReviewControl;
 use self::vulnerability_scanning::VulnerabilityScanningControl;
+use self::actions_pinned_dependencies::ActionsPinnedDependenciesControl;
+use self::code_scanning_alerts_resolved::CodeScanningAlertsResolvedControl;
+use self::dependency_license_compliance::DependencyLicenseComplianceControl;
+use self::environment_protection_rules::EnvironmentProtectionRulesControl;
+use self::privileged_workflow_detection::PrivilegedWorkflowDetectionControl;
+use self::release_asset_attestation::ReleaseAssetAttestationControl;
+use self::sbom_attestation::SbomAttestationControl;
 
 /// Instantiates a control by its string ID.
 fn instantiate(id: &str) -> Option<Box<dyn Control>> {
@@ -92,6 +112,32 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::SECRET_SCANNING => Some(Box::new(SecretScanningControl)),
         builtin::VULNERABILITY_SCANNING => Some(Box::new(VulnerabilityScanningControl)),
         builtin::SECURITY_POLICY => Some(Box::new(SecurityPolicyControl)),
+        builtin::SECRET_SCANNING_PUSH_PROTECTION => {
+            Some(Box::new(SecretScanningPushProtectionControl))
+        }
+        builtin::BRANCH_PROTECTION_ADMIN_ENFORCEMENT => {
+            Some(Box::new(BranchProtectionAdminEnforcementControl))
+        }
+        builtin::DISMISS_STALE_REVIEWS_ON_PUSH => {
+            Some(Box::new(DismissStaleReviewsOnPushControl))
+        }
+        builtin::ACTIONS_PINNED_DEPENDENCIES => {
+            Some(Box::new(ActionsPinnedDependenciesControl))
+        }
+        builtin::ENVIRONMENT_PROTECTION_RULES => {
+            Some(Box::new(EnvironmentProtectionRulesControl))
+        }
+        builtin::CODE_SCANNING_ALERTS_RESOLVED => {
+            Some(Box::new(CodeScanningAlertsResolvedControl))
+        }
+        builtin::DEPENDENCY_LICENSE_COMPLIANCE => {
+            Some(Box::new(DependencyLicenseComplianceControl))
+        }
+        builtin::SBOM_ATTESTATION => Some(Box::new(SbomAttestationControl)),
+        builtin::RELEASE_ASSET_ATTESTATION => Some(Box::new(ReleaseAssetAttestationControl)),
+        builtin::PRIVILEGED_WORKFLOW_DETECTION => {
+            Some(Box::new(PrivilegedWorkflowDetectionControl))
+        }
         _ => None,
     }
 }
@@ -147,6 +193,16 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(SecretScanningControl),
         Box::new(VulnerabilityScanningControl),
         Box::new(SecurityPolicyControl),
+        Box::new(SecretScanningPushProtectionControl),
+        Box::new(BranchProtectionAdminEnforcementControl),
+        Box::new(DismissStaleReviewsOnPushControl),
+        Box::new(ActionsPinnedDependenciesControl),
+        Box::new(EnvironmentProtectionRulesControl),
+        Box::new(CodeScanningAlertsResolvedControl),
+        Box::new(DependencyLicenseComplianceControl),
+        Box::new(SbomAttestationControl),
+        Box::new(ReleaseAssetAttestationControl),
+        Box::new(PrivilegedWorkflowDetectionControl),
     ]
 }
 
@@ -160,6 +216,16 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
         Box::new(SecretScanningControl),
         Box::new(VulnerabilityScanningControl),
         Box::new(SecurityPolicyControl),
+        Box::new(SecretScanningPushProtectionControl),
+        Box::new(BranchProtectionAdminEnforcementControl),
+        Box::new(DismissStaleReviewsOnPushControl),
+        Box::new(ActionsPinnedDependenciesControl),
+        Box::new(EnvironmentProtectionRulesControl),
+        Box::new(CodeScanningAlertsResolvedControl),
+        Box::new(DependencyLicenseComplianceControl),
+        Box::new(SbomAttestationControl),
+        Box::new(ReleaseAssetAttestationControl),
+        Box::new(PrivilegedWorkflowDetectionControl),
     ]
 }
 

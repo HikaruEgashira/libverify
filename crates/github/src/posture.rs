@@ -54,13 +54,15 @@ pub fn collect_repository_posture(
         vulnerability_scanning_enabled,
         code_scanning_enabled,
         default_branch_protected,
+        enforce_admins,
+        dismiss_stale_reviews,
     ) = collect_repo_settings(client, owner, repo).unwrap_or_else(|e| {
         gaps.push(EvidenceGap::CollectionFailed {
             source: "github".to_string(),
             subject: "repository settings".to_string(),
             detail: format!("{e:#}"),
         });
-        (false, false, false, false, false)
+        (false, false, false, false, false, false, false)
     });
 
     let posture = RepositoryPosture {
@@ -72,6 +74,9 @@ pub fn collect_repository_posture(
         security_policy_present,
         security_policy_has_disclosure,
         default_branch_protected,
+        enforce_admins,
+        dismiss_stale_reviews,
+        ..Default::default()
     };
 
     if gaps.is_empty() {
@@ -159,12 +164,32 @@ struct SecurityFeature {
     status: String,
 }
 
+/// Branch protection API response (subset).
+#[derive(serde::Deserialize)]
+struct BranchProtectionResponse {
+    #[serde(default)]
+    enforce_admins: Option<EnforceAdmins>,
+    #[serde(default)]
+    required_pull_request_reviews: Option<RequiredPullRequestReviews>,
+}
+
+#[derive(serde::Deserialize)]
+struct EnforceAdmins {
+    enabled: bool,
+}
+
+#[derive(serde::Deserialize)]
+struct RequiredPullRequestReviews {
+    #[serde(default)]
+    dismiss_stale_reviews: bool,
+}
+
 /// Fetch repository settings from the GitHub REST API.
 fn collect_repo_settings(
     client: &GitHubClient,
     owner: &str,
     repo: &str,
-) -> anyhow::Result<(bool, bool, bool, bool, bool)> {
+) -> anyhow::Result<(bool, bool, bool, bool, bool, bool, bool)> {
     let path = format!("/repos/{owner}/{repo}");
     let body = client.get(&path)?;
     let resp: RepoResponse = serde_json::from_str(&body)?;
@@ -196,13 +221,29 @@ fn collect_repo_settings(
         })
         .unwrap_or(false);
 
-    // Branch protection
+    // Branch protection: parse response for detailed fields
     let default_branch = &resp.default_branch;
-    let branch_protected = client
-        .get(&format!(
-            "/repos/{owner}/{repo}/branches/{default_branch}/protection"
-        ))
-        .is_ok();
+    let protection_url = format!("/repos/{owner}/{repo}/branches/{default_branch}/protection");
+    let (branch_protected, enforce_admins, dismiss_stale_reviews) =
+        match client.get(&protection_url) {
+            Ok(bp_body) => {
+                let bp: BranchProtectionResponse =
+                    serde_json::from_str(&bp_body).unwrap_or(BranchProtectionResponse {
+                        enforce_admins: None,
+                        required_pull_request_reviews: None,
+                    });
+                let enforce = bp
+                    .enforce_admins
+                    .as_ref()
+                    .is_some_and(|ea| ea.enabled);
+                let dismiss = bp
+                    .required_pull_request_reviews
+                    .as_ref()
+                    .is_some_and(|pr| pr.dismiss_stale_reviews);
+                (true, enforce, dismiss)
+            }
+            Err(_) => (false, false, false),
+        };
 
     Ok((
         secret_scanning,
@@ -210,6 +251,8 @@ fn collect_repo_settings(
         dependabot,
         code_scanning,
         branch_protected,
+        enforce_admins,
+        dismiss_stale_reviews,
     ))
 }
 

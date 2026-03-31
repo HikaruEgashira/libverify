@@ -84,7 +84,19 @@ pub mod builtin {
     pub const VULNERABILITY_SCANNING: &str = "vulnerability-scanning";
     pub const SECURITY_POLICY: &str = "security-policy";
 
-    /// All 28 built-in control IDs.
+    // Enterprise Posture
+    pub const SECRET_SCANNING_PUSH_PROTECTION: &str = "secret-scanning-push-protection";
+    pub const BRANCH_PROTECTION_ADMIN_ENFORCEMENT: &str = "branch-protection-admin-enforcement";
+    pub const DISMISS_STALE_REVIEWS_ON_PUSH: &str = "dismiss-stale-reviews-on-push";
+    pub const ACTIONS_PINNED_DEPENDENCIES: &str = "actions-pinned-dependencies";
+    pub const ENVIRONMENT_PROTECTION_RULES: &str = "environment-protection-rules";
+    pub const CODE_SCANNING_ALERTS_RESOLVED: &str = "code-scanning-alerts-resolved";
+    pub const DEPENDENCY_LICENSE_COMPLIANCE: &str = "dependency-license-compliance";
+    pub const SBOM_ATTESTATION: &str = "sbom-attestation";
+    pub const RELEASE_ASSET_ATTESTATION: &str = "release-asset-attestation";
+    pub const PRIVILEGED_WORKFLOW_DETECTION: &str = "privileged-workflow-detection";
+
+    /// All 38 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -114,6 +126,16 @@ pub mod builtin {
         SECRET_SCANNING,
         VULNERABILITY_SCANNING,
         SECURITY_POLICY,
+        SECRET_SCANNING_PUSH_PROTECTION,
+        BRANCH_PROTECTION_ADMIN_ENFORCEMENT,
+        DISMISS_STALE_REVIEWS_ON_PUSH,
+        ACTIONS_PINNED_DEPENDENCIES,
+        ENVIRONMENT_PROTECTION_RULES,
+        CODE_SCANNING_ALERTS_RESOLVED,
+        DEPENDENCY_LICENSE_COMPLIANCE,
+        SBOM_ATTESTATION,
+        RELEASE_ASSET_ATTESTATION,
+        PRIVILEGED_WORKFLOW_DETECTION,
     ];
 
     /// Returns a ControlId for a built-in constant.
@@ -299,6 +321,17 @@ pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
         builtin::DEPENDENCY_PROVENANCE_CHECK => &["CC7.1", "PI1.4"],
         builtin::DEPENDENCY_SIGNER_VERIFIED => &["CC7.1", "PI1.4"],
         builtin::DEPENDENCY_COMPLETENESS => &["CC7.1", "PI1.4"],
+        // Enterprise Posture
+        builtin::SECRET_SCANNING_PUSH_PROTECTION => &["CC6.1", "CC6.6"],
+        builtin::BRANCH_PROTECTION_ADMIN_ENFORCEMENT => &["CC6.1", "CC8.1"],
+        builtin::DISMISS_STALE_REVIEWS_ON_PUSH => &["CC8.1"],
+        builtin::ACTIONS_PINNED_DEPENDENCIES => &["CC7.1", "PI1.4"],
+        builtin::ENVIRONMENT_PROTECTION_RULES => &["CC6.1", "CC8.1"],
+        builtin::CODE_SCANNING_ALERTS_RESOLVED => &["CC7.1"],
+        builtin::DEPENDENCY_LICENSE_COMPLIANCE => &["CC7.1"],
+        builtin::SBOM_ATTESTATION => &["CC7.1"],
+        builtin::RELEASE_ASSET_ATTESTATION => &["PI1.4"],
+        builtin::PRIVILEGED_WORKFLOW_DETECTION => &["CC6.1", "CC8.1"],
         _ => &[],
     }
 }

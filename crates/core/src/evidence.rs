@@ -464,7 +464,7 @@ pub struct CodeownersEntry {
 /// Captures configuration-level signals that are independent of any single
 /// change request: code ownership, scanning settings, and security policy.
 /// Designed to be populated from GitHub REST API, GitLab API, or other platform adapters.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct RepositoryPosture {
     /// Parsed CODEOWNERS entries. Empty vec means no CODEOWNERS file found.
     pub codeowners_entries: Vec<CodeownersEntry>,
@@ -493,6 +493,47 @@ pub struct RepositoryPosture {
     /// Whether the default branch has protection rules configured.
     #[serde(default)]
     pub default_branch_protected: bool,
+
+    // --- Branch protection detail (enterprise controls) ---
+    /// Whether branch protection rules are enforced for admins (no bypass).
+    #[serde(default)]
+    pub enforce_admins: bool,
+    /// Whether stale pull request reviews are automatically dismissed on new push.
+    #[serde(default)]
+    pub dismiss_stale_reviews: bool,
+    #[serde(default)]
+    pub unpinned_action_refs: Vec<UnpinnedActionRef>,
+    #[serde(default)]
+    pub production_environment_protected: bool,
+    #[serde(default)]
+    pub open_high_severity_alerts: u32,
+    #[serde(default)]
+    pub copyleft_dependencies: Vec<CopyleftDependency>,
+    #[serde(default)]
+    pub release_has_sbom: bool,
+    #[serde(default)]
+    pub release_assets_attested: bool,
+    #[serde(default)]
+    pub privileged_workflows: Vec<PrivilegedWorkflow>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnpinnedActionRef {
+    pub workflow_file: String,
+    pub action_ref: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CopyleftDependency {
+    pub name: String,
+    pub license: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PrivilegedWorkflow {
+    pub file: String,
+    pub trigger: String,
+    pub risk: String,
 }
 
 /// Build platform evidence for Build Track L2+.

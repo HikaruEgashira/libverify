@@ -85,13 +85,7 @@ mod tests {
     fn posture(entries: Vec<CodeownersEntry>) -> RepositoryPosture {
         RepositoryPosture {
             codeowners_entries: entries,
-            secret_scanning_enabled: false,
-            secret_push_protection_enabled: false,
-            vulnerability_scanning_enabled: false,
-            code_scanning_enabled: false,
-            security_policy_present: false,
-            security_policy_has_disclosure: false,
-            default_branch_protected: false,
+            ..Default::default()
         }
     }
 

@@ -29,6 +29,9 @@ fn default_posture() -> RepositoryPosture {
         security_policy_present: false,
         security_policy_has_disclosure: false,
         default_branch_protected: false,
+        enforce_admins: false,
+        dismiss_stale_reviews: false,
+    ..Default::default()
     }
 }
 
