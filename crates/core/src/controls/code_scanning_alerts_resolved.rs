@@ -81,8 +81,8 @@ mod tests {
 
     #[test]
     fn not_applicable_when_posture_not_applicable() {
-        let findings = CodeScanningAlertsResolvedControl
-            .evaluate(&bundle(EvidenceState::not_applicable()));
+        let findings =
+            CodeScanningAlertsResolvedControl.evaluate(&bundle(EvidenceState::not_applicable()));
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
     }
 

@@ -93,9 +93,11 @@ mod tests {
         let findings = DismissStaleReviewsOnPushControl
             .evaluate(&bundle(EvidenceState::complete(posture(true, true))));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
-        assert!(findings[0]
-            .rationale
-            .contains("automatically dismissed on new push"));
+        assert!(
+            findings[0]
+                .rationale
+                .contains("automatically dismissed on new push")
+        );
     }
 
     #[test]
@@ -103,9 +105,7 @@ mod tests {
         let findings = DismissStaleReviewsOnPushControl
             .evaluate(&bundle(EvidenceState::complete(posture(true, false))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0]
-            .rationale
-            .contains("not dismissed on new push"));
+        assert!(findings[0].rationale.contains("not dismissed on new push"));
     }
 
     #[test]

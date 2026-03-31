@@ -42,7 +42,7 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 default_branch_protected: false,
                 enforce_admins: false,
                 dismiss_stale_reviews: false,
-            ..Default::default()
+                ..Default::default()
             },
         },
         // 2. core-api: private, CODEOWNERS with catch-all, secret scanning + push
@@ -74,7 +74,7 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 default_branch_protected: true,
                 enforce_admins: true,
                 dismiss_stale_reviews: true,
-            ..Default::default()
+                ..Default::default()
             },
         },
         // 3. infra-terraform: private, CODEOWNERS (2 entries only), secret scanning
@@ -102,7 +102,7 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 default_branch_protected: false,
                 enforce_admins: false,
                 dismiss_stale_reviews: false,
-            ..Default::default()
+                ..Default::default()
             },
         },
         // 4. archived-legacy: no scanning, no CODEOWNERS, no policy
@@ -120,7 +120,7 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 default_branch_protected: false,
                 enforce_admins: false,
                 dismiss_stale_reviews: false,
-            ..Default::default()
+                ..Default::default()
             },
         },
         // 5. new-microservice: Dependabot only, basic SECURITY.md, 3 CODEOWNERS entries
@@ -151,7 +151,7 @@ fn repo_profiles() -> Vec<RepoProfile> {
                 default_branch_protected: false,
                 enforce_admins: false,
                 dismiss_stale_reviews: false,
-            ..Default::default()
+                ..Default::default()
             },
         },
     ]

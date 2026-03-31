@@ -98,9 +98,8 @@ mod tests {
 
     #[test]
     fn indeterminate_when_branch_protection_missing() {
-        let findings = EnvironmentProtectionRulesControl.evaluate(&bundle(
-            EvidenceState::complete(posture(false, false)),
-        ));
+        let findings = EnvironmentProtectionRulesControl
+            .evaluate(&bundle(EvidenceState::complete(posture(false, false))));
         assert_eq!(findings[0].status, ControlStatus::Indeterminate);
         assert!(findings[0].rationale.contains("Branch protection"));
     }

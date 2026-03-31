@@ -80,7 +80,7 @@ fn startup_evidence() -> EvidenceBundle {
         default_branch_protected: false,       // no branch protection
         enforce_admins: false,
         dismiss_stale_reviews: false,
-    ..Default::default()
+        ..Default::default()
     };
 
     EvidenceBundle {

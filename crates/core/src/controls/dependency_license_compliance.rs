@@ -58,9 +58,7 @@ impl Control for DependencyLicenseComplianceControl {
 mod tests {
     use super::*;
     use crate::control::ControlStatus;
-    use crate::evidence::{
-        CopyleftDependency, EvidenceGap, EvidenceState, RepositoryPosture,
-    };
+    use crate::evidence::{CopyleftDependency, EvidenceGap, EvidenceState, RepositoryPosture};
 
     fn posture(deps: Vec<CopyleftDependency>) -> RepositoryPosture {
         RepositoryPosture {
@@ -78,8 +76,8 @@ mod tests {
 
     #[test]
     fn not_applicable_when_posture_not_applicable() {
-        let findings = DependencyLicenseComplianceControl
-            .evaluate(&bundle(EvidenceState::not_applicable()));
+        let findings =
+            DependencyLicenseComplianceControl.evaluate(&bundle(EvidenceState::not_applicable()));
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
     }
 

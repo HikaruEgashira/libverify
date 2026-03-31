@@ -82,11 +82,12 @@ mod tests {
 
     #[test]
     fn indeterminate_when_security_analysis_unavailable() {
-        let findings = SecretScanningPushProtectionControl
-            .evaluate(&bundle(EvidenceState::complete(RepositoryPosture {
+        let findings = SecretScanningPushProtectionControl.evaluate(&bundle(
+            EvidenceState::complete(RepositoryPosture {
                 security_analysis_available: false,
                 ..Default::default()
-            })));
+            }),
+        ));
         assert_eq!(findings[0].status, ControlStatus::Indeterminate);
         assert!(findings[0].rationale.contains("permissions"));
     }
@@ -124,9 +125,11 @@ mod tests {
         let findings = SecretScanningPushProtectionControl
             .evaluate(&bundle(EvidenceState::complete(posture(true, false))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0]
-            .rationale
-            .contains("push protection is not enabled"));
+        assert!(
+            findings[0]
+                .rationale
+                .contains("push protection is not enabled")
+        );
     }
 
     #[test]
@@ -134,8 +137,10 @@ mod tests {
         let findings = SecretScanningPushProtectionControl
             .evaluate(&bundle(EvidenceState::complete(posture(false, false))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0]
-            .rationale
-            .contains("Secret scanning is not enabled"));
+        assert!(
+            findings[0]
+                .rationale
+                .contains("Secret scanning is not enabled")
+        );
     }
 }

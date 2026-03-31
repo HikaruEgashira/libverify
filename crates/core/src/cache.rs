@@ -58,7 +58,13 @@ impl FsCache {
     fn path_for(&self, key: &str) -> PathBuf {
         let sanitized: String = key
             .chars()
-            .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         self.dir.join(format!("{sanitized}.json"))
     }

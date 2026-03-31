@@ -58,18 +58,16 @@ pub fn collect_repository_posture(
         enforce_admins,
         dismiss_stale_reviews,
     ) = match collect_repo_settings(client, owner, repo) {
-        Ok(settings) => {
-            (
-                settings.security_analysis_available,
-                settings.secret_scanning,
-                settings.push_protection,
-                settings.dependabot,
-                settings.code_scanning,
-                settings.branch_protected,
-                settings.enforce_admins,
-                settings.dismiss_stale_reviews,
-            )
-        }
+        Ok(settings) => (
+            settings.security_analysis_available,
+            settings.secret_scanning,
+            settings.push_protection,
+            settings.dependabot,
+            settings.code_scanning,
+            settings.branch_protected,
+            settings.enforce_admins,
+            settings.dismiss_stale_reviews,
+        ),
         Err(e) => {
             gaps.push(EvidenceGap::CollectionFailed {
                 source: "github".to_string(),
@@ -262,10 +260,7 @@ fn collect_repo_settings(
                         enforce_admins: None,
                         required_pull_request_reviews: None,
                     });
-                let enforce = bp
-                    .enforce_admins
-                    .as_ref()
-                    .is_some_and(|ea| ea.enabled);
+                let enforce = bp.enforce_admins.as_ref().is_some_and(|ea| ea.enabled);
                 let dismiss = bp
                     .required_pull_request_reviews
                     .as_ref()

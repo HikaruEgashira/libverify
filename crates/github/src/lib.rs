@@ -17,12 +17,19 @@ pub mod verify;
 pub use client::GitHubClient;
 pub use config::GitHubConfig;
 pub use verify::{
-    // Evidence collection (expensive, cacheable)
-    collect_pr_evidence, collect_pr_batch_evidence, collect_release_evidence, collect_repo_evidence,
     // Assessment (cheap, re-runnable with different policies)
-    assess_bundle, assess_repo_bundle,
-    // Convenience wrappers (collect + assess)
-    verify_pr, verify_pr_batch, verify_release, verify_repo,
+    assess_bundle,
+    assess_repo_bundle,
+    collect_pr_batch_evidence,
+    // Evidence collection (expensive, cacheable)
+    collect_pr_evidence,
+    collect_release_evidence,
+    collect_repo_evidence,
     // Utilities
     exit_if_assessment_fails,
+    // Convenience wrappers (collect + assess)
+    verify_pr,
+    verify_pr_batch,
+    verify_release,
+    verify_repo,
 };

@@ -77,14 +77,13 @@ mod tests {
 
     #[test]
     fn indeterminate_when_posture_missing() {
-        let findings =
-            BranchProtectionAdminEnforcementControl.evaluate(&bundle(EvidenceState::missing(vec![
-                EvidenceGap::CollectionFailed {
-                    source: "github".to_string(),
-                    subject: "posture".to_string(),
-                    detail: "API error".to_string(),
-                },
-            ])));
+        let findings = BranchProtectionAdminEnforcementControl.evaluate(&bundle(
+            EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
+                source: "github".to_string(),
+                subject: "posture".to_string(),
+                detail: "API error".to_string(),
+            }]),
+        ));
         assert_eq!(findings[0].status, ControlStatus::Indeterminate);
     }
 

@@ -58,9 +58,7 @@ impl Control for PrivilegedWorkflowDetectionControl {
 mod tests {
     use super::*;
     use crate::control::ControlStatus;
-    use crate::evidence::{
-        EvidenceGap, EvidenceState, PrivilegedWorkflow, RepositoryPosture,
-    };
+    use crate::evidence::{EvidenceGap, EvidenceState, PrivilegedWorkflow, RepositoryPosture};
 
     fn posture(workflows: Vec<PrivilegedWorkflow>) -> RepositoryPosture {
         RepositoryPosture {
@@ -78,15 +76,15 @@ mod tests {
 
     #[test]
     fn not_applicable_when_posture_not_applicable() {
-        let findings = PrivilegedWorkflowDetectionControl
-            .evaluate(&bundle(EvidenceState::not_applicable()));
+        let findings =
+            PrivilegedWorkflowDetectionControl.evaluate(&bundle(EvidenceState::not_applicable()));
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
     }
 
     #[test]
     fn indeterminate_when_posture_missing() {
-        let findings = PrivilegedWorkflowDetectionControl
-            .evaluate(&bundle(EvidenceState::missing(vec![
+        let findings =
+            PrivilegedWorkflowDetectionControl.evaluate(&bundle(EvidenceState::missing(vec![
                 EvidenceGap::CollectionFailed {
                     source: "github".to_string(),
                     subject: "posture".to_string(),

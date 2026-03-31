@@ -21,21 +21,81 @@ struct Preset {
 }
 
 const PRESETS: &[Preset] = &[
-    Preset { name: "default",   rego: include_str!("default.rego"),   profile_name: "opa-default" },
-    Preset { name: "oss",       rego: include_str!("oss.rego"),       profile_name: "oss" },
-    Preset { name: "aiops",     rego: include_str!("aiops.rego"),     profile_name: "aiops" },
-    Preset { name: "soc1",      rego: include_str!("soc1.rego"),      profile_name: "soc1" },
-    Preset { name: "soc2",      rego: include_str!("soc2.rego"),      profile_name: "soc2" },
-    Preset { name: "scorecard", rego: include_str!("scorecard.rego"), profile_name: "scorecard" },
-    Preset { name: "slsa-l1",   rego: include_str!("slsa-l1.rego"),   profile_name: "slsa-l1" },
-    Preset { name: "slsa-l2",   rego: include_str!("slsa-l2.rego"),   profile_name: "slsa-l2" },
-    Preset { name: "slsa-l3",   rego: include_str!("slsa-l3.rego"),   profile_name: "slsa-l3" },
-    Preset { name: "slsa-l4",   rego: include_str!("slsa-l4.rego"),   profile_name: "slsa-l4" },
-    Preset { name: "ismap",      rego: include_str!("ismap.rego"),      profile_name: "ismap" },
-    Preset { name: "pci-dss",    rego: include_str!("pci-dss.rego"),    profile_name: "pci-dss" },
-    Preset { name: "tisax",      rego: include_str!("tisax.rego"),      profile_name: "tisax" },
-    Preset { name: "nist-800-53",rego: include_str!("nist-800-53.rego"),profile_name: "nist-800-53" },
-    Preset { name: "wp29",       rego: include_str!("wp29.rego"),       profile_name: "wp29" },
+    Preset {
+        name: "default",
+        rego: include_str!("default.rego"),
+        profile_name: "opa-default",
+    },
+    Preset {
+        name: "oss",
+        rego: include_str!("oss.rego"),
+        profile_name: "oss",
+    },
+    Preset {
+        name: "aiops",
+        rego: include_str!("aiops.rego"),
+        profile_name: "aiops",
+    },
+    Preset {
+        name: "soc1",
+        rego: include_str!("soc1.rego"),
+        profile_name: "soc1",
+    },
+    Preset {
+        name: "soc2",
+        rego: include_str!("soc2.rego"),
+        profile_name: "soc2",
+    },
+    Preset {
+        name: "scorecard",
+        rego: include_str!("scorecard.rego"),
+        profile_name: "scorecard",
+    },
+    Preset {
+        name: "slsa-l1",
+        rego: include_str!("slsa-l1.rego"),
+        profile_name: "slsa-l1",
+    },
+    Preset {
+        name: "slsa-l2",
+        rego: include_str!("slsa-l2.rego"),
+        profile_name: "slsa-l2",
+    },
+    Preset {
+        name: "slsa-l3",
+        rego: include_str!("slsa-l3.rego"),
+        profile_name: "slsa-l3",
+    },
+    Preset {
+        name: "slsa-l4",
+        rego: include_str!("slsa-l4.rego"),
+        profile_name: "slsa-l4",
+    },
+    Preset {
+        name: "ismap",
+        rego: include_str!("ismap.rego"),
+        profile_name: "ismap",
+    },
+    Preset {
+        name: "pci-dss",
+        rego: include_str!("pci-dss.rego"),
+        profile_name: "pci-dss",
+    },
+    Preset {
+        name: "tisax",
+        rego: include_str!("tisax.rego"),
+        profile_name: "tisax",
+    },
+    Preset {
+        name: "nist-800-53",
+        rego: include_str!("nist-800-53.rego"),
+        profile_name: "nist-800-53",
+    },
+    Preset {
+        name: "wp29",
+        rego: include_str!("wp29.rego"),
+        profile_name: "wp29",
+    },
 ];
 
 /// Returns the names of all built-in presets.
@@ -340,7 +400,10 @@ mod tests {
     #[test]
     fn scorecard_critical_indeterminate_fails() {
         let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
-        let finding = make_finding(builtin::VULNERABILITY_SCANNING, ControlStatus::Indeterminate);
+        let finding = make_finding(
+            builtin::VULNERABILITY_SCANNING,
+            ControlStatus::Indeterminate,
+        );
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Fail);
     }
@@ -364,8 +427,10 @@ mod tests {
     #[test]
     fn scorecard_medium_indeterminate_reviews() {
         let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
-        let finding =
-            make_finding(builtin::REQUIRED_STATUS_CHECKS, ControlStatus::Indeterminate);
+        let finding = make_finding(
+            builtin::REQUIRED_STATUS_CHECKS,
+            ControlStatus::Indeterminate,
+        );
         let outcome = profile.map(&finding);
         assert_eq!(outcome.decision, GateDecision::Review);
     }

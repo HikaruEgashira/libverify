@@ -31,7 +31,7 @@ fn default_posture() -> RepositoryPosture {
         default_branch_protected: false,
         enforce_admins: false,
         dismiss_stale_reviews: false,
-    ..Default::default()
+        ..Default::default()
     }
 }
 

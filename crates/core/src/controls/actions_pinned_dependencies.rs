@@ -57,9 +57,7 @@ impl Control for ActionsPinnedDependenciesControl {
 mod tests {
     use super::*;
     use crate::control::ControlStatus;
-    use crate::evidence::{
-        EvidenceGap, EvidenceState, RepositoryPosture, UnpinnedActionRef,
-    };
+    use crate::evidence::{EvidenceGap, EvidenceState, RepositoryPosture, UnpinnedActionRef};
 
     fn posture(unpinned: Vec<UnpinnedActionRef>) -> RepositoryPosture {
         RepositoryPosture {

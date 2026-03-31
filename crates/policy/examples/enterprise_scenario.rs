@@ -147,7 +147,7 @@ fn build_evidence() -> EvidenceBundle {
         default_branch_protected: true,
         enforce_admins: true,
         dismiss_stale_reviews: true,
-    ..Default::default()
+        ..Default::default()
     };
 
     EvidenceBundle {
