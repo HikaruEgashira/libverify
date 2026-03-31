@@ -31,6 +31,11 @@ const PRESETS: &[Preset] = &[
     Preset { name: "slsa-l2",   rego: include_str!("slsa-l2.rego"),   profile_name: "slsa-l2" },
     Preset { name: "slsa-l3",   rego: include_str!("slsa-l3.rego"),   profile_name: "slsa-l3" },
     Preset { name: "slsa-l4",   rego: include_str!("slsa-l4.rego"),   profile_name: "slsa-l4" },
+    Preset { name: "ismap",      rego: include_str!("ismap.rego"),      profile_name: "ismap" },
+    Preset { name: "pci-dss",    rego: include_str!("pci-dss.rego"),    profile_name: "pci-dss" },
+    Preset { name: "tisax",      rego: include_str!("tisax.rego"),      profile_name: "tisax" },
+    Preset { name: "nist-800-53",rego: include_str!("nist-800-53.rego"),profile_name: "nist-800-53" },
+    Preset { name: "wp29",       rego: include_str!("wp29.rego"),       profile_name: "wp29" },
 ];
 
 /// Returns the names of all built-in presets.
