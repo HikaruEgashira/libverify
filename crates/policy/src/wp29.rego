@@ -54,6 +54,7 @@ wp29_csms_controls := {
 	"actions-pinned-dependencies",
 	"code-scanning-alerts-resolved",
 	"privileged-workflow-detection",
+	"security-test-in-ci",
 }
 
 # --- Supply chain mandatory (Clause 7.2.2.3) ---
@@ -103,6 +104,7 @@ wp29_recommended_controls := {
 	"repository-permissions-audit",
 	"workflow-permissions-restricted",
 	"dependency-update-tool",
+	"default-branch-settings-baseline",
 }
 
 # --- Recommended: violated -> review ---

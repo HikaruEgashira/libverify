@@ -8,6 +8,7 @@ pub mod change_request_size;
 pub mod code_scanning_alerts_resolved;
 pub mod codeowners_coverage;
 pub mod conventional_title;
+pub mod default_branch_settings_baseline;
 pub mod dependency_completeness;
 pub mod dependency_license_compliance;
 pub mod dependency_provenance;
@@ -33,6 +34,7 @@ pub mod secret_scanning;
 pub mod secret_scanning_push_protection;
 pub mod security_file_change;
 pub mod security_policy;
+pub mod security_test_in_ci;
 pub mod source_authenticity;
 pub mod stale_review;
 pub mod test_coverage;
@@ -53,6 +55,7 @@ use self::change_request_size::ChangeRequestSizeControl;
 use self::code_scanning_alerts_resolved::CodeScanningAlertsResolvedControl;
 use self::codeowners_coverage::CodeownersCoverageControl;
 use self::conventional_title::ConventionalTitleControl;
+use self::default_branch_settings_baseline::DefaultBranchSettingsBaselineControl;
 use self::dependency_completeness::DependencyCompletenessControl;
 use self::dependency_license_compliance::DependencyLicenseComplianceControl;
 use self::dependency_provenance::DependencyProvenanceControl;
@@ -78,6 +81,7 @@ use self::secret_scanning::SecretScanningControl;
 use self::secret_scanning_push_protection::SecretScanningPushProtectionControl;
 use self::security_file_change::SecurityFileChangeControl;
 use self::security_policy::SecurityPolicyControl;
+use self::security_test_in_ci::SecurityTestInCiControl;
 use self::source_authenticity::SourceAuthenticityControl;
 use self::stale_review::StaleReviewControl;
 use self::test_coverage::TestCoverageControl;
@@ -141,6 +145,10 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         }
         builtin::DEPENDENCY_UPDATE_TOOL => Some(Box::new(DependencyUpdateToolControl)),
         builtin::REPOSITORY_PERMISSIONS_AUDIT => Some(Box::new(RepositoryPermissionsAuditControl)),
+        builtin::DEFAULT_BRANCH_SETTINGS_BASELINE => {
+            Some(Box::new(DefaultBranchSettingsBaselineControl))
+        }
+        builtin::SECURITY_TEST_IN_CI => Some(Box::new(SecurityTestInCiControl)),
         _ => None,
     }
 }
@@ -209,6 +217,8 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(WorkflowPermissionsRestrictedControl),
         Box::new(DependencyUpdateToolControl),
         Box::new(RepositoryPermissionsAuditControl),
+        Box::new(DefaultBranchSettingsBaselineControl),
+        Box::new(SecurityTestInCiControl),
     ]
 }
 
@@ -235,6 +245,8 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
         Box::new(WorkflowPermissionsRestrictedControl),
         Box::new(DependencyUpdateToolControl),
         Box::new(RepositoryPermissionsAuditControl),
+        Box::new(DefaultBranchSettingsBaselineControl),
+        Box::new(SecurityTestInCiControl),
     ]
 }
 

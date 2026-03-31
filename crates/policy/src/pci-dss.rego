@@ -66,6 +66,8 @@ pcidss_mandatory_controls := {
 	"code-scanning-alerts-resolved",
 	"dependency-license-compliance",
 	"privileged-workflow-detection",
+	"default-branch-settings-baseline",
+	"security-test-in-ci",
 }
 
 # --- Development quality (advisory, violated/indeterminate -> review) ---

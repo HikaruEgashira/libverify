@@ -80,6 +80,8 @@ soc1_out_of_scope := {
 	"repository-permissions-audit",
 	"workflow-permissions-restricted",
 	"dependency-update-tool",
+	"default-branch-settings-baseline",
+	"security-test-in-ci",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

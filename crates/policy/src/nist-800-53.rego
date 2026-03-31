@@ -69,6 +69,8 @@ nist_mandatory_controls := {
 	"privileged-workflow-detection",
 	"repository-permissions-audit",
 	"workflow-permissions-restricted",
+	"default-branch-settings-baseline",
+	"security-test-in-ci",
 }
 
 # --- SR (Supply Chain Risk Management) controls ---

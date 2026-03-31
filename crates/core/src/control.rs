@@ -98,8 +98,10 @@ pub mod builtin {
     pub const WORKFLOW_PERMISSIONS_RESTRICTED: &str = "workflow-permissions-restricted";
     pub const DEPENDENCY_UPDATE_TOOL: &str = "dependency-update-tool";
     pub const REPOSITORY_PERMISSIONS_AUDIT: &str = "repository-permissions-audit";
+    pub const DEFAULT_BRANCH_SETTINGS_BASELINE: &str = "default-branch-settings-baseline";
+    pub const SECURITY_TEST_IN_CI: &str = "security-test-in-ci";
 
-    /// All 41 built-in control IDs.
+    /// All 43 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -142,6 +144,8 @@ pub mod builtin {
         WORKFLOW_PERMISSIONS_RESTRICTED,
         DEPENDENCY_UPDATE_TOOL,
         REPOSITORY_PERMISSIONS_AUDIT,
+        DEFAULT_BRANCH_SETTINGS_BASELINE,
+        SECURITY_TEST_IN_CI,
     ];
 
     /// Returns a ControlId for a built-in constant.

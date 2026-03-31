@@ -108,6 +108,7 @@ scorecard_critical_high := {
 	"secret-scanning",
 	"repository-permissions-audit",
 	"workflow-permissions-restricted",
+	"default-branch-settings-baseline",
 }
 
 # Scorecard Medium risk checks
@@ -123,4 +124,5 @@ scorecard_medium := {
 	"code-scanning-alerts-resolved",
 	"sbom-attestation",
 	"dependency-update-tool",
+	"security-test-in-ci",
 }
