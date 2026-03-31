@@ -1,25 +1,28 @@
 # OpenSSF Scorecard-compatible preset.
 #
 # Maps libverify controls to their OSSF Scorecard equivalents, using
-# Scorecard risk levels (Critical / High / Medium) to drive gate severity.
+# Scorecard risk levels (Critical / High / Medium / Low) to drive gate severity.
 #
 # Only controls that libverify can actually verify are included.
 # Scorecard checks with no libverify equivalent (License, Maintained,
 # Contributors, Fuzzing, Packaging, CII-Best-Practices, Binary-Artifacts,
-# Dangerous-Workflow, Dependency-Update-Tool, Token-Permissions) are
-# intentionally omitted — those are static repository posture checks
-# outside libverify's verification scope and should be assessed by
-# Scorecard itself.
+# Dependency-Update-Tool, Webhooks) are intentionally omitted — those are
+# static repository posture checks outside libverify's verification scope
+# and should be assessed by Scorecard itself.
 #
-# Scorecard mapping:
-#   Critical  → Vulnerabilities       → vulnerability-scanning
-#   High      → Branch-Protection     → branch-protection-enforcement
-#   High      → Code-Review           → review-independence
-#   High      → Signed-Releases       → build-provenance, provenance-authenticity
-#   Medium    → CI-Tests              → required-status-checks
-#   Medium    → Security-Policy       → security-policy
-#   Medium    → Pinned-Dependencies   → dependency-signature
-#   Medium    → SAST                  → vulnerability-scanning (code_scanning)
+# Scorecard mapping (risk level → libverify controls):
+#   Critical  → Dangerous-Workflow      → privileged-workflow-detection
+#   High      → Branch-Protection       → branch-protection-enforcement,
+#                                          branch-protection-admin-enforcement
+#   High      → Code-Review             → review-independence, two-party-review
+#   High      → Signed-Releases         → build-provenance, provenance-authenticity
+#   High      → Token-Permissions       → actions-pinned-dependencies (proxy)
+#   Medium    → CI-Tests                → required-status-checks
+#   Medium    → Security-Policy         → security-policy
+#   Medium    → Pinned-Dependencies     → dependency-signature
+#   Medium    → SAST                    → vulnerability-scanning, code-scanning-alerts-resolved
+#   Medium    → SBOM                    → sbom-attestation
+#   Low       → (no libverify mapping for CII-Best-Practices, License, etc.)
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -83,21 +86,38 @@ map := {"severity": "warning", "decision": "review"} if {
 	not input.control_id in scorecard_medium
 }
 
-# Scorecard Critical + High risk checks
-# Critical: Vulnerabilities
-# High: Branch-Protection, Code-Review, Signed-Releases
+# Scorecard Critical risk checks
+# Critical: Dangerous-Workflow → privileged-workflow-detection
+#
+# Scorecard High risk checks
+# High: Branch-Protection → branch-protection-enforcement,
+#                           branch-protection-admin-enforcement
+# High: Code-Review → review-independence, two-party-review
+# High: Signed-Releases → build-provenance, provenance-authenticity
+# High: Token-Permissions → actions-pinned-dependencies (closest proxy)
 scorecard_critical_high := {
+	"privileged-workflow-detection",
 	"vulnerability-scanning",
 	"branch-protection-enforcement",
+	"branch-protection-admin-enforcement",
 	"review-independence",
+	"two-party-review",
 	"build-provenance",
 	"provenance-authenticity",
+	"actions-pinned-dependencies",
+	"secret-scanning",
 }
 
 # Scorecard Medium risk checks
-# CI-Tests, Security-Policy, Pinned-Dependencies, SAST
+# Medium: CI-Tests → required-status-checks
+# Medium: Security-Policy → security-policy
+# Medium: Pinned-Dependencies → dependency-signature
+# Medium: SAST → code-scanning-alerts-resolved
+# Medium: SBOM → sbom-attestation
 scorecard_medium := {
 	"required-status-checks",
 	"security-policy",
 	"dependency-signature",
+	"code-scanning-alerts-resolved",
+	"sbom-attestation",
 }
