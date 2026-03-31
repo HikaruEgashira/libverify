@@ -43,7 +43,7 @@ impl Control for WorkflowPermissionsRestrictedControl {
         } else {
             vec![ControlFinding::violated(
                 self.id(),
-                &format!(
+                format!(
                     "Default workflow permissions are '{}' — should be 'read' for least privilege",
                     posture.default_workflow_permissions
                 ),

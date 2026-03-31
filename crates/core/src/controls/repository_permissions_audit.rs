@@ -49,7 +49,7 @@ impl Control for RepositoryPermissionsAuditControl {
         if issues.is_empty() {
             vec![ControlFinding::satisfied(
                 self.id(),
-                &format!(
+                format!(
                     "Repository access follows least-privilege: {} admin(s), no direct collaborators",
                     posture.admin_count
                 ),
@@ -58,7 +58,7 @@ impl Control for RepositoryPermissionsAuditControl {
         } else {
             vec![ControlFinding::violated(
                 self.id(),
-                &issues.join("; "),
+                issues.join("; "),
                 vec!["repository:permissions".into()],
             )]
         }
