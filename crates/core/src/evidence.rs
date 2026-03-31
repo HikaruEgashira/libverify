@@ -522,6 +522,25 @@ pub struct RepositoryPosture {
     pub release_assets_attested: bool,
     #[serde(default)]
     pub privileged_workflows: Vec<PrivilegedWorkflow>,
+
+    // --- Workflow permissions (CC6.8 / least privilege) ---
+    /// Default workflow permissions for the repository ("read" or "write").
+    /// Empty string means the field could not be collected.
+    #[serde(default)]
+    pub default_workflow_permissions: String,
+
+    // --- Dependency update tool (Scorecard Dependency-Update-Tool) ---
+    /// Whether a dependency update tool config exists (Dependabot or Renovate).
+    #[serde(default)]
+    pub dependency_update_tool_configured: bool,
+
+    // --- Repository permissions audit (CC6.1 / least privilege) ---
+    /// Number of users with admin access to the repository.
+    #[serde(default)]
+    pub admin_count: u32,
+    /// Number of direct (non-team) collaborators with write or admin access.
+    #[serde(default)]
+    pub direct_collaborator_count: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -77,6 +77,9 @@ soc1_out_of_scope := {
 	"sbom-attestation",
 	"release-asset-attestation",
 	"privileged-workflow-detection",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
+	"dependency-update-tool",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

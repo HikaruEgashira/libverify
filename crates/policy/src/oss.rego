@@ -71,6 +71,9 @@ oss_review_on_violated := {
 	"sbom-attestation",
 	"release-asset-attestation",
 	"privileged-workflow-detection",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
+	"dependency-update-tool",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
@@ -119,6 +122,9 @@ oss_review_on_indeterminate := {
 	"sbom-attestation",
 	"release-asset-attestation",
 	"privileged-workflow-detection",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
+	"dependency-update-tool",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

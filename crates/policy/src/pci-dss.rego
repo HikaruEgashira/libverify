@@ -84,6 +84,9 @@ pcidss_advisory_controls := {
 	"release-traceability",
 	"security-policy",
 	"security-file-change",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
+	"dependency-update-tool",
 }
 
 # --- Dependency controls (violated -> fail, indeterminate -> review) ---

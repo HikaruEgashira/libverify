@@ -100,6 +100,9 @@ wp29_recommended_controls := {
 	"dismiss-stale-reviews-on-push",
 	"environment-protection-rules",
 	"dependency-license-compliance",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
+	"dependency-update-tool",
 }
 
 # --- Recommended: violated -> review ---

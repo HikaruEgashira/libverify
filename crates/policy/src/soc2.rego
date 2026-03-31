@@ -82,6 +82,7 @@ soc2_enterprise_advisory_controls := {
 	"sbom-attestation",
 	"release-asset-attestation",
 	"dismiss-stale-reviews-on-push",
+	"dependency-update-tool",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

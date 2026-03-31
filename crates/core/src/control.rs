@@ -95,8 +95,11 @@ pub mod builtin {
     pub const SBOM_ATTESTATION: &str = "sbom-attestation";
     pub const RELEASE_ASSET_ATTESTATION: &str = "release-asset-attestation";
     pub const PRIVILEGED_WORKFLOW_DETECTION: &str = "privileged-workflow-detection";
+    pub const WORKFLOW_PERMISSIONS_RESTRICTED: &str = "workflow-permissions-restricted";
+    pub const DEPENDENCY_UPDATE_TOOL: &str = "dependency-update-tool";
+    pub const REPOSITORY_PERMISSIONS_AUDIT: &str = "repository-permissions-audit";
 
-    /// All 38 built-in control IDs.
+    /// All 41 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -136,6 +139,9 @@ pub mod builtin {
         SBOM_ATTESTATION,
         RELEASE_ASSET_ATTESTATION,
         PRIVILEGED_WORKFLOW_DETECTION,
+        WORKFLOW_PERMISSIONS_RESTRICTED,
+        DEPENDENCY_UPDATE_TOOL,
+        REPOSITORY_PERMISSIONS_AUDIT,
     ];
 
     /// Returns a ControlId for a built-in constant.

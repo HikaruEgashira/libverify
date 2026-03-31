@@ -106,6 +106,8 @@ scorecard_critical_high := {
 	"provenance-authenticity",
 	"actions-pinned-dependencies",
 	"secret-scanning",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
 }
 
 # Scorecard Medium risk checks
@@ -120,4 +122,5 @@ scorecard_medium := {
 	"dependency-signature",
 	"code-scanning-alerts-resolved",
 	"sbom-attestation",
+	"dependency-update-tool",
 }

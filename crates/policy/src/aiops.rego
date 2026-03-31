@@ -46,6 +46,8 @@ aiops_devquality_controls := {
 	"scoped-change",
 	"merge-commit-policy",
 	"issue-linkage",
+	"workflow-permissions-restricted",
+	"dependency-update-tool",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

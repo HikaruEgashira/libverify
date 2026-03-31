@@ -66,6 +66,8 @@ tisax_mandatory_controls := {
 	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
 	"privileged-workflow-detection",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
 }
 
 # --- Development environment (VDA ISA 3.1.2) ---
@@ -96,6 +98,7 @@ tisax_recommended_controls := {
 	"dependency-license-compliance",
 	"sbom-attestation",
 	"release-asset-attestation",
+	"dependency-update-tool",
 }
 
 # --- Recommended: violated -> review ---

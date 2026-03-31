@@ -78,6 +78,28 @@ pub fn collect_repository_posture(
         }
     };
 
+    // --- Dependency update tool ---
+    let dependency_update_tool_configured =
+        collect_dependency_update_tool(client, owner, repo, ref_sha);
+
+    // --- Workflow permissions & collaborator audit ---
+    let (default_workflow_permissions, admin_count, direct_collaborator_count) =
+        match collect_permissions_info(client, owner, repo) {
+            Ok(info) => (
+                info.default_workflow_permissions,
+                info.admin_count,
+                info.direct_collaborator_count,
+            ),
+            Err(e) => {
+                gaps.push(EvidenceGap::CollectionFailed {
+                    source: "github".to_string(),
+                    subject: "permissions info".to_string(),
+                    detail: format!("{e:#}"),
+                });
+                (String::new(), 0, 0)
+            }
+        };
+
     let posture = RepositoryPosture {
         codeowners_entries,
         security_analysis_available,
@@ -90,6 +112,10 @@ pub fn collect_repository_posture(
         default_branch_protected,
         enforce_admins,
         dismiss_stale_reviews,
+        dependency_update_tool_configured,
+        default_workflow_permissions,
+        admin_count,
+        direct_collaborator_count,
         ..Default::default()
     };
 
@@ -279,6 +305,89 @@ fn collect_repo_settings(
         branch_protected,
         enforce_admins,
         dismiss_stale_reviews,
+    })
+}
+
+/// Dependency update tool config file paths to check.
+const DEPENDABOT_PATH: &str = ".github/dependabot.yml";
+const RENOVATE_PATHS: &[&str] = &[
+    "renovate.json",
+    "renovate.json5",
+    ".renovaterc",
+    ".renovaterc.json",
+];
+
+/// Check whether a dependency update tool is configured.
+fn collect_dependency_update_tool(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    ref_sha: &str,
+) -> bool {
+    // Check Dependabot
+    if client
+        .get_file_content(owner, repo, DEPENDABOT_PATH, ref_sha)
+        .is_ok()
+    {
+        return true;
+    }
+    // Check Renovate
+    for path in RENOVATE_PATHS {
+        if client.get_file_content(owner, repo, path, ref_sha).is_ok() {
+            return true;
+        }
+    }
+    false
+}
+
+/// Permissions info collected from the GitHub API.
+struct PermissionsInfo {
+    default_workflow_permissions: String,
+    admin_count: u32,
+    direct_collaborator_count: u32,
+}
+
+/// Collect workflow permissions and collaborator info.
+fn collect_permissions_info(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+) -> anyhow::Result<PermissionsInfo> {
+    // GET /repos/{owner}/{repo} includes default_branch_permissions in some API versions
+    // For workflow permissions, we use the Actions permissions endpoint
+    let default_workflow_permissions = client
+        .get(&format!(
+            "/repos/{owner}/{repo}/actions/permissions/workflow"
+        ))
+        .ok()
+        .and_then(|body| {
+            serde_json::from_str::<serde_json::Value>(&body)
+                .ok()
+                .and_then(|v| v["default_workflow_permissions"].as_str().map(String::from))
+        })
+        .unwrap_or_default();
+
+    // GET /repos/{owner}/{repo}/collaborators?affiliation=direct
+    let (admin_count, direct_collaborator_count) = client
+        .get(&format!(
+            "/repos/{owner}/{repo}/collaborators?affiliation=direct&per_page=100"
+        ))
+        .ok()
+        .and_then(|body| serde_json::from_str::<Vec<serde_json::Value>>(&body).ok())
+        .map(|collabs| {
+            let admins = collabs
+                .iter()
+                .filter(|c| c["permissions"]["admin"].as_bool().unwrap_or(false))
+                .count() as u32;
+            let direct = collabs.len() as u32;
+            (admins, direct)
+        })
+        .unwrap_or((0, 0));
+
+    Ok(PermissionsInfo {
+        default_workflow_permissions,
+        admin_count,
+        direct_collaborator_count,
     })
 }
 

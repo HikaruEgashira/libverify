@@ -67,6 +67,8 @@ nist_mandatory_controls := {
 	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
 	"privileged-workflow-detection",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
 }
 
 # --- SR (Supply Chain Risk Management) controls ---
@@ -107,6 +109,7 @@ nist_devquality_controls := {
 	"dependency-license-compliance",
 	"sbom-attestation",
 	"release-asset-attestation",
+	"dependency-update-tool",
 }
 
 # --- Audit recommended: violated -> review ---

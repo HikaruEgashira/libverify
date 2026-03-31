@@ -13,6 +13,7 @@ pub mod dependency_license_compliance;
 pub mod dependency_provenance;
 pub mod dependency_signature;
 pub mod dependency_signer_verified;
+pub mod dependency_update_tool;
 pub mod description_quality;
 pub mod dismiss_stale_reviews_on_push;
 pub mod environment_protection_rules;
@@ -23,6 +24,7 @@ pub mod privileged_workflow_detection;
 pub mod provenance_authenticity;
 pub mod release_asset_attestation;
 pub mod release_traceability;
+pub mod repository_permissions_audit;
 pub mod required_status_checks;
 pub mod review_independence;
 pub mod sbom_attestation;
@@ -36,6 +38,7 @@ pub mod stale_review;
 pub mod test_coverage;
 pub mod two_party_review;
 pub mod vulnerability_scanning;
+pub mod workflow_permissions_restricted;
 
 use crate::control::{Control, builtin};
 use crate::slsa::{SlsaLevel, SlsaTrack};
@@ -55,6 +58,7 @@ use self::dependency_license_compliance::DependencyLicenseComplianceControl;
 use self::dependency_provenance::DependencyProvenanceControl;
 use self::dependency_signature::DependencySignatureControl;
 use self::dependency_signer_verified::DependencySignerVerifiedControl;
+use self::dependency_update_tool::DependencyUpdateToolControl;
 use self::description_quality::DescriptionQualityControl;
 use self::dismiss_stale_reviews_on_push::DismissStaleReviewsOnPushControl;
 use self::environment_protection_rules::EnvironmentProtectionRulesControl;
@@ -65,6 +69,7 @@ use self::privileged_workflow_detection::PrivilegedWorkflowDetectionControl;
 use self::provenance_authenticity::ProvenanceAuthenticityControl;
 use self::release_asset_attestation::ReleaseAssetAttestationControl;
 use self::release_traceability::ReleaseTraceabilityControl;
+use self::repository_permissions_audit::RepositoryPermissionsAuditControl;
 use self::required_status_checks::RequiredStatusChecksControl;
 use self::review_independence::ReviewIndependenceControl;
 use self::sbom_attestation::SbomAttestationControl;
@@ -78,6 +83,7 @@ use self::stale_review::StaleReviewControl;
 use self::test_coverage::TestCoverageControl;
 use self::two_party_review::TwoPartyReviewControl;
 use self::vulnerability_scanning::VulnerabilityScanningControl;
+use self::workflow_permissions_restricted::WorkflowPermissionsRestrictedControl;
 
 /// Instantiates a control by its string ID.
 fn instantiate(id: &str) -> Option<Box<dyn Control>> {
@@ -130,6 +136,11 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::PRIVILEGED_WORKFLOW_DETECTION => {
             Some(Box::new(PrivilegedWorkflowDetectionControl))
         }
+        builtin::WORKFLOW_PERMISSIONS_RESTRICTED => {
+            Some(Box::new(WorkflowPermissionsRestrictedControl))
+        }
+        builtin::DEPENDENCY_UPDATE_TOOL => Some(Box::new(DependencyUpdateToolControl)),
+        builtin::REPOSITORY_PERMISSIONS_AUDIT => Some(Box::new(RepositoryPermissionsAuditControl)),
         _ => None,
     }
 }
@@ -195,6 +206,9 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(SbomAttestationControl),
         Box::new(ReleaseAssetAttestationControl),
         Box::new(PrivilegedWorkflowDetectionControl),
+        Box::new(WorkflowPermissionsRestrictedControl),
+        Box::new(DependencyUpdateToolControl),
+        Box::new(RepositoryPermissionsAuditControl),
     ]
 }
 
@@ -218,6 +232,9 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
         Box::new(SbomAttestationControl),
         Box::new(ReleaseAssetAttestationControl),
         Box::new(PrivilegedWorkflowDetectionControl),
+        Box::new(WorkflowPermissionsRestrictedControl),
+        Box::new(DependencyUpdateToolControl),
+        Box::new(RepositoryPermissionsAuditControl),
     ]
 }
 

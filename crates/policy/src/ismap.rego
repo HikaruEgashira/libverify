@@ -59,6 +59,8 @@ ismap_mandatory_controls := {
 	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
 	"privileged-workflow-detection",
+	"repository-permissions-audit",
+	"workflow-permissions-restricted",
 }
 
 # --- Recommended controls (violated -> review) ---
@@ -79,6 +81,7 @@ ismap_recommended_controls := {
 	"dependency-license-compliance",
 	"sbom-attestation",
 	"release-asset-attestation",
+	"dependency-update-tool",
 }
 
 # --- Build/dependency-track controls ---
