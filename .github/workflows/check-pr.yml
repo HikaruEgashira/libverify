@@ -19,6 +19,7 @@ jobs:
         timeout-minutes: 5
         with:
           persist-credentials: false
+          ref: ${{ github.sha }}
       - uses: HikaruEgashira/gh-verify@56e71f28c2b47c77519afca5c2bf63e2bb8976f4 # v0.14
         timeout-minutes: 5
         with:
