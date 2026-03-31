@@ -71,6 +71,7 @@ nist_mandatory_controls := {
 	"workflow-permissions-restricted",
 	"default-branch-settings-baseline",
 	"security-test-in-ci",
+	"protected-tags",
 }
 
 # --- SR (Supply Chain Risk Management) controls ---

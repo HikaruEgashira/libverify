@@ -109,6 +109,7 @@ scorecard_critical_high := {
 	"repository-permissions-audit",
 	"workflow-permissions-restricted",
 	"default-branch-settings-baseline",
+	"protected-tags",
 }
 
 # Scorecard Medium risk checks

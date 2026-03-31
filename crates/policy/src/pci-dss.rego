@@ -89,6 +89,7 @@ pcidss_advisory_controls := {
 	"repository-permissions-audit",
 	"workflow-permissions-restricted",
 	"dependency-update-tool",
+	"protected-tags",
 }
 
 # --- Dependency controls (violated -> fail, indeterminate -> review) ---

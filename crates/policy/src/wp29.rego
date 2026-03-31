@@ -105,6 +105,7 @@ wp29_recommended_controls := {
 	"workflow-permissions-restricted",
 	"dependency-update-tool",
 	"default-branch-settings-baseline",
+	"protected-tags",
 }
 
 # --- Recommended: violated -> review ---

@@ -70,6 +70,7 @@ tisax_mandatory_controls := {
 	"workflow-permissions-restricted",
 	"default-branch-settings-baseline",
 	"security-test-in-ci",
+	"protected-tags",
 }
 
 # --- Development environment (VDA ISA 3.1.2) ---

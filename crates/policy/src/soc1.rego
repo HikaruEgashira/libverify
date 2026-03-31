@@ -82,6 +82,7 @@ soc1_out_of_scope := {
 	"dependency-update-tool",
 	"default-branch-settings-baseline",
 	"security-test-in-ci",
+	"protected-tags",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

@@ -116,6 +116,7 @@ pub fn collect_repository_posture(
         default_workflow_permissions,
         admin_count,
         direct_collaborator_count,
+        tag_protection_enabled: collect_tag_protection(client, owner, repo),
         ..Default::default()
     };
 
@@ -389,6 +390,16 @@ fn collect_permissions_info(
         admin_count,
         direct_collaborator_count,
     })
+}
+
+/// Check whether tag protection rules exist.
+fn collect_tag_protection(client: &GitHubClient, owner: &str, repo: &str) -> bool {
+    // Tag protection rules API requires admin access; returns 404 if no rules or no permission
+    client
+        .get(&format!("/repos/{owner}/{repo}/tags/protection"))
+        .ok()
+        .and_then(|body| serde_json::from_str::<Vec<serde_json::Value>>(&body).ok())
+        .is_some_and(|rules| !rules.is_empty())
 }
 
 #[cfg(test)]

@@ -22,6 +22,7 @@ pub mod hosted_build_platform;
 pub mod issue_linkage;
 pub mod merge_commit_policy;
 pub mod privileged_workflow_detection;
+pub mod protected_tags;
 pub mod provenance_authenticity;
 pub mod release_asset_attestation;
 pub mod release_traceability;
@@ -69,6 +70,7 @@ use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
 use self::merge_commit_policy::MergeCommitPolicyControl;
 use self::privileged_workflow_detection::PrivilegedWorkflowDetectionControl;
+use self::protected_tags::ProtectedTagsControl;
 use self::provenance_authenticity::ProvenanceAuthenticityControl;
 use self::release_asset_attestation::ReleaseAssetAttestationControl;
 use self::release_traceability::ReleaseTraceabilityControl;
@@ -149,6 +151,7 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
             Some(Box::new(DefaultBranchSettingsBaselineControl))
         }
         builtin::SECURITY_TEST_IN_CI => Some(Box::new(SecurityTestInCiControl)),
+        builtin::PROTECTED_TAGS => Some(Box::new(ProtectedTagsControl)),
         _ => None,
     }
 }
@@ -219,6 +222,7 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(RepositoryPermissionsAuditControl),
         Box::new(DefaultBranchSettingsBaselineControl),
         Box::new(SecurityTestInCiControl),
+        Box::new(ProtectedTagsControl),
     ]
 }
 
@@ -247,6 +251,7 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
         Box::new(RepositoryPermissionsAuditControl),
         Box::new(DefaultBranchSettingsBaselineControl),
         Box::new(SecurityTestInCiControl),
+        Box::new(ProtectedTagsControl),
     ]
 }
 

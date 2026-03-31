@@ -100,8 +100,9 @@ pub mod builtin {
     pub const REPOSITORY_PERMISSIONS_AUDIT: &str = "repository-permissions-audit";
     pub const DEFAULT_BRANCH_SETTINGS_BASELINE: &str = "default-branch-settings-baseline";
     pub const SECURITY_TEST_IN_CI: &str = "security-test-in-ci";
+    pub const PROTECTED_TAGS: &str = "protected-tags";
 
-    /// All 43 built-in control IDs.
+    /// All 44 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -146,6 +147,7 @@ pub mod builtin {
         REPOSITORY_PERMISSIONS_AUDIT,
         DEFAULT_BRANCH_SETTINGS_BASELINE,
         SECURITY_TEST_IN_CI,
+        PROTECTED_TAGS,
     ];
 
     /// Returns a ControlId for a built-in constant.

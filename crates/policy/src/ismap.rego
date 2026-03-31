@@ -63,6 +63,7 @@ ismap_mandatory_controls := {
 	"workflow-permissions-restricted",
 	"default-branch-settings-baseline",
 	"security-test-in-ci",
+	"protected-tags",
 }
 
 # --- Recommended controls (violated -> review) ---

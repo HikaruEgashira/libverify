@@ -541,6 +541,11 @@ pub struct RepositoryPosture {
     /// Number of direct (non-team) collaborators with write or admin access.
     #[serde(default)]
     pub direct_collaborator_count: u32,
+
+    // --- Tag protection (SA-10 / release integrity) ---
+    /// Whether at least one tag protection rule exists.
+    #[serde(default)]
+    pub tag_protection_enabled: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
