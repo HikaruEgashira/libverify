@@ -2,17 +2,17 @@
 # Tolerates unsigned commits, self-reviewed merges, and dev-quality conventions
 # that are common in open-source and personal projects.
 #
-# Relaxations:
-#   - source-authenticity: unsigned commits → review (common in OSS)
-#   - review-independence: solo self-merge → review (indeterminate)
-#   - two-party-review: single reviewer → review (OSS norm is 1 approver)
-#   - required-status-checks: CI may not exist → review (indeterminate)
-#   - issue-linkage: trivial fixes/docs skip issues → review
-#   - conventional-title: most OSS don't use conventional commits → review
-#   - ASPM posture: codeowners, secret-scanning, vuln-scanning → review
-#   - security-policy: small projects may not have SECURITY.md → review
-#   - stale-review: solo developers self-merge; stale reviews are expected → review
-#   - security-file-change: OSS repos may not have security-sensitive file tracking → review
+# Relaxations (violated/indeterminate → review instead of fail):
+#   Source:     unsigned commits, self-merge, solo review, stale review
+#   CI/CD:      missing CI, no status checks
+#   Posture:    codeowners, secret/vuln scanning, security-policy
+#   Dev-quality: PR size, scoped change, descriptions, conventional titles
+#   Enterprise: GHAS features (push protection, admin enforcement, code scanning, etc.)
+#   Build/Dep:  attestation infra (provenance, signatures) typically absent in OSS
+#
+# Only controls that are strict (violated → fail):
+#   - test-coverage: basic code hygiene even for OSS
+#   - source-authenticity: violated (distinct from indeterminate) still reviewed
 #
 # Input (set per finding):
 #   input.control_id  - kebab-case control identifier (e.g. "review-independence")
@@ -54,6 +54,23 @@ oss_review_on_violated := {
 	"security-policy",
 	"stale-review",
 	"security-file-change",
+	# Dev-quality controls (style, not security)
+	"change-request-size",
+	"scoped-change",
+	"description-quality",
+	"merge-commit-policy",
+	"release-traceability",
+	# Enterprise posture controls (require GHAS/Enterprise, not available in most OSS)
+	"secret-scanning-push-protection",
+	"branch-protection-admin-enforcement",
+	"dismiss-stale-reviews-on-push",
+	"actions-pinned-dependencies",
+	"environment-protection-rules",
+	"code-scanning-alerts-resolved",
+	"dependency-license-compliance",
+	"sbom-attestation",
+	"release-asset-attestation",
+	"privileged-workflow-detection",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
@@ -76,6 +93,32 @@ oss_review_on_indeterminate := {
 	"security-policy",
 	"stale-review",
 	"security-file-change",
+	# Dev-quality controls
+	"change-request-size",
+	"scoped-change",
+	"description-quality",
+	"merge-commit-policy",
+	"release-traceability",
+	# Build/dependency controls (attestation infra typically absent in OSS)
+	"build-provenance",
+	"hosted-build-platform",
+	"provenance-authenticity",
+	"build-isolation",
+	"dependency-signature",
+	"dependency-provenance",
+	"dependency-signer-verified",
+	"dependency-completeness",
+	# Enterprise posture controls
+	"secret-scanning-push-protection",
+	"branch-protection-admin-enforcement",
+	"dismiss-stale-reviews-on-push",
+	"actions-pinned-dependencies",
+	"environment-protection-rules",
+	"code-scanning-alerts-resolved",
+	"dependency-license-compliance",
+	"sbom-attestation",
+	"release-asset-attestation",
+	"privileged-workflow-detection",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
