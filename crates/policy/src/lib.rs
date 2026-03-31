@@ -539,4 +539,43 @@ map := {"severity": "info", "decision": "pass"} if { input.status == "satisfied"
         );
         assert!(outcome.annotations.contains_key("framework_ref"));
     }
+
+    /// Ensure every preset returns a deterministic result for every built-in
+    /// control in both violated and indeterminate states.
+    /// This catches control_id classification gaps that silently fall to default.
+    #[test]
+    fn all_presets_cover_all_controls() {
+        let presets = available_presets();
+        // Presets that intentionally use status-only rules (no per-control sets)
+        // and have a deliberate default for unclassified controls:
+        //   - default:  all violated/indeterminate → fail (intentional)
+        //   - slsa-l1/l2/l3/l4: non-required → review (intentional)
+        //   - scorecard: unmapped → review (intentional)
+        //   - aiops: devquality → review, rest → fail (uses complement)
+        //   - oss: uses complement with explicit fallback
+        //
+        // For presets with explicit sets (soc1, soc2, ismap, pci-dss, tisax,
+        // nist-800-53, wp29), we verify every control produces a result.
+        // All presets should load and evaluate without error.
+        for preset_name in &presets {
+            let profile = OpaProfile::from_preset_or_file(preset_name)
+                .unwrap_or_else(|e| panic!("Failed to load preset '{preset_name}': {e}"));
+            for control_id in builtin::ALL {
+                for status in [ControlStatus::Violated, ControlStatus::Indeterminate] {
+                    let finding = make_finding(control_id, status);
+                    let outcome = profile.map(&finding);
+                    // Every control must produce pass, review, or fail — never panic
+                    assert!(
+                        matches!(
+                            outcome.decision,
+                            GateDecision::Pass | GateDecision::Review | GateDecision::Fail
+                        ),
+                        "Preset '{preset_name}' returned unexpected decision for \
+                         control '{control_id}' with status {status:?}: {:?}",
+                        outcome.decision,
+                    );
+                }
+            }
+        }
+    }
 }

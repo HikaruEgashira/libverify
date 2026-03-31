@@ -73,6 +73,27 @@ map := {"severity": "warning", "decision": "review"} if {
 # --- Advisory controls (dev quality / style, not SOC2-critical) ---
 # These improve hygiene but no SOC2 auditor will issue an exception for
 # non-conventional commit titles or large PRs.
+# --- Enterprise posture controls not directly TSC-critical → advisory ---
+# These are good security practices but SOC2 auditors assess them via
+# alternative evidence (GRC platforms, security tooling dashboards).
+soc2_enterprise_advisory_controls := {
+	"actions-pinned-dependencies",
+	"dependency-license-compliance",
+	"sbom-attestation",
+	"release-asset-attestation",
+	"dismiss-stale-reviews-on-push",
+}
+
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "violated"
+	input.control_id in soc2_enterprise_advisory_controls
+}
+
+map := {"severity": "warning", "decision": "review"} if {
+	input.status == "indeterminate"
+	input.control_id in soc2_enterprise_advisory_controls
+}
+
 soc2_advisory_controls := {
 	"change-request-size",
 	"scoped-change",
@@ -121,6 +142,7 @@ map := {"severity": "error", "decision": "fail"} if {
 	not input.control_id in soc2_dependency_controls
 	not input.control_id in soc2_advisory_controls
 	not input.control_id in soc2_non_tsc_controls
+	not input.control_id in soc2_enterprise_advisory_controls
 }
 
 # --- All other violated → fail (SOC2-critical controls) ---
@@ -128,4 +150,5 @@ map := {"severity": "error", "decision": "fail"} if {
 	input.status == "violated"
 	not input.control_id in soc2_advisory_controls
 	not input.control_id in soc2_non_tsc_controls
+	not input.control_id in soc2_enterprise_advisory_controls
 }

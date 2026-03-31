@@ -52,6 +52,7 @@ map := {"severity": "info", "decision": "pass"} if {
 # --- CM + SA + SI mandatory controls (violated -> fail) ---
 nist_mandatory_controls := {
 	"branch-protection-enforcement",
+	"branch-history-integrity",
 	"codeowners-coverage",
 	"source-authenticity",
 	"review-independence",
@@ -101,6 +102,7 @@ nist_devquality_controls := {
 	"description-quality",
 	"merge-commit-policy",
 	"conventional-title",
+	"stale-review",
 	"dismiss-stale-reviews-on-push",
 	"dependency-license-compliance",
 	"sbom-attestation",

@@ -93,6 +93,8 @@ wp29_recommended_controls := {
 	"two-party-review",
 	"codeowners-coverage",
 	"secret-scanning",
+	"security-policy",
+	"branch-history-integrity",
 	"secret-scanning-push-protection",
 	"branch-protection-admin-enforcement",
 	"dismiss-stale-reviews-on-push",

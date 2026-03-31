@@ -45,7 +45,9 @@ map := {"severity": "info", "decision": "pass"} if {
 # ISMAP Ch.14.2.9 (System acceptance testing): test-coverage
 ismap_mandatory_controls := {
 	"review-independence",
+	"two-party-review",
 	"branch-protection-enforcement",
+	"branch-history-integrity",
 	"source-authenticity",
 	"required-status-checks",
 	"vulnerability-scanning",
@@ -68,6 +70,11 @@ ismap_recommended_controls := {
 	"merge-commit-policy",
 	"conventional-title",
 	"issue-linkage",
+	"stale-review",
+	"codeowners-coverage",
+	"release-traceability",
+	"security-file-change",
+	"security-policy",
 	"actions-pinned-dependencies",
 	"dependency-license-compliance",
 	"sbom-attestation",
