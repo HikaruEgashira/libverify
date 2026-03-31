@@ -50,6 +50,13 @@ pcidss_mandatory_controls := {
 	"issue-linkage",
 	"build-provenance",
 	"source-authenticity",
+	"secret-scanning-push-protection",
+	"branch-protection-admin-enforcement",
+	"actions-pinned-dependencies",
+	"environment-protection-rules",
+	"code-scanning-alerts-resolved",
+	"dependency-license-compliance",
+	"privileged-workflow-detection",
 }
 
 # --- Development quality (advisory, violated -> review) ---
@@ -58,6 +65,9 @@ pcidss_advisory_controls := {
 	"scoped-change",
 	"conventional-title",
 	"merge-commit-policy",
+	"dismiss-stale-reviews-on-push",
+	"sbom-attestation",
+	"release-asset-attestation",
 }
 
 # --- Dependency controls (violated -> fail, indeterminate -> review) ---

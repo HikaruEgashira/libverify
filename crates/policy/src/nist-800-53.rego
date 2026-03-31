@@ -61,6 +61,12 @@ nist_mandatory_controls := {
 	"dependency-provenance",
 	"dependency-signer-verified",
 	"dependency-completeness",
+	"secret-scanning-push-protection",
+	"branch-protection-admin-enforcement",
+	"actions-pinned-dependencies",
+	"environment-protection-rules",
+	"code-scanning-alerts-resolved",
+	"privileged-workflow-detection",
 }
 
 # --- AU (Audit) recommended controls (violated -> review) ---
@@ -76,6 +82,10 @@ nist_devquality_controls := {
 	"description-quality",
 	"merge-commit-policy",
 	"conventional-title",
+	"dismiss-stale-reviews-on-push",
+	"dependency-license-compliance",
+	"sbom-attestation",
+	"release-asset-attestation",
 }
 
 # --- Build/dependency-track controls (indeterminate -> review) ---

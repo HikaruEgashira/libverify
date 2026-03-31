@@ -57,6 +57,16 @@ tisax_mandatory_controls := {
 	"dependency-signer-verified",
 	"dependency-completeness",
 	"vulnerability-scanning",
+	"secret-scanning-push-protection",
+	"branch-protection-admin-enforcement",
+	"dismiss-stale-reviews-on-push",
+	"actions-pinned-dependencies",
+	"environment-protection-rules",
+	"code-scanning-alerts-resolved",
+	"dependency-license-compliance",
+	"sbom-attestation",
+	"release-asset-attestation",
+	"privileged-workflow-detection",
 }
 
 # --- Development environment (VDA ISA 3.1.2) ---

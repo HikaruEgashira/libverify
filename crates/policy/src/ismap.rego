@@ -41,6 +41,12 @@ ismap_mandatory_controls := {
 	"vulnerability-scanning",
 	"secret-scanning",
 	"test-coverage",
+	"secret-scanning-push-protection",
+	"branch-protection-admin-enforcement",
+	"dismiss-stale-reviews-on-push",
+	"environment-protection-rules",
+	"code-scanning-alerts-resolved",
+	"privileged-workflow-detection",
 }
 
 # --- Recommended controls (violated -> review) ---
@@ -51,6 +57,10 @@ ismap_recommended_controls := {
 	"merge-commit-policy",
 	"conventional-title",
 	"issue-linkage",
+	"actions-pinned-dependencies",
+	"dependency-license-compliance",
+	"sbom-attestation",
+	"release-asset-attestation",
 }
 
 # --- Build/dependency-track controls ---

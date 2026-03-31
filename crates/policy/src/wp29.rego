@@ -50,6 +50,9 @@ wp29_csms_controls := {
 	"review-independence",
 	"required-status-checks",
 	"test-coverage",
+	"actions-pinned-dependencies",
+	"code-scanning-alerts-resolved",
+	"privileged-workflow-detection",
 }
 
 # --- Supply chain mandatory (Clause 7.2.2.3) ---
@@ -66,6 +69,8 @@ wp29_software_controls := {
 	"build-provenance",
 	"provenance-authenticity",
 	"release-traceability",
+	"sbom-attestation",
+	"release-asset-attestation",
 }
 
 # --- Development environment (violated -> fail, indeterminate -> review) ---
@@ -86,6 +91,11 @@ wp29_recommended_controls := {
 	"two-party-review",
 	"codeowners-coverage",
 	"secret-scanning",
+	"secret-scanning-push-protection",
+	"branch-protection-admin-enforcement",
+	"dismiss-stale-reviews-on-push",
+	"environment-protection-rules",
+	"dependency-license-compliance",
 }
 
 # --- Recommended: violated -> review ---
