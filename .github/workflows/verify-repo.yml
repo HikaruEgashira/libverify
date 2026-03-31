@@ -1,24 +1,25 @@
 name: verify-repo
-
 on:
   push:
     branches: [main]
   schedule:
     - cron: "23 3 * * 1" # Mon 03:23 UTC
   workflow_dispatch:
-
 permissions:
   contents: read
   security-events: read
-
 jobs:
   verify:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - uses: HikaruEgashira/gh-verify@v0.14
+        timeout-minutes: 5
+        with:
+          persist-credentials: false
+      - uses: HikaruEgashira/gh-verify@56e71f28c2b47c77519afca5c2bf63e2bb8976f4 # v0.14
         id: verify
+        timeout-minutes: 5
         with:
           command: repo
           format: json

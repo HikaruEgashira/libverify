@@ -1,41 +1,53 @@
 name: Publish to crates.io
-
 on:
   push:
     tags: ["v*"]
-
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
 jobs:
   publish:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      attestations: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - uses: dtolnay/rust-toolchain@stable
+        timeout-minutes: 5
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # stable
+        timeout-minutes: 5
       - uses: rust-lang/crates-io-auth-action@bbd81622f20ce9e2dd9622e3218b975523e45bbe # v1.0.4
         id: auth
+        timeout-minutes: 5
       - name: Publish libverify-core
+        timeout-minutes: 5
         run: cargo publish -p libverify-core
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       - name: Wait for crates.io index
+        timeout-minutes: 2
         run: sleep 30
       - name: Publish libverify-policy
+        timeout-minutes: 5
         run: cargo publish -p libverify-policy
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       - name: Publish libverify-output
+        timeout-minutes: 5
         run: cargo publish -p libverify-output
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       - name: Wait for crates.io index
+        timeout-minutes: 2
         run: sleep 30
       - name: Publish libverify-github
+        timeout-minutes: 5
         run: cargo publish -p libverify-github
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       - name: Generate SLSA build provenance attestation
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        timeout-minutes: 5
         with:
           subject-path: Cargo.toml

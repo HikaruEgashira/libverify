@@ -1,28 +1,26 @@
 name: check-pr
-
 on:
   pull_request:
     types: [opened, synchronize, reopened]
   pull_request_review:
     types: [submitted]
-
 concurrency:
   group: check-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
-
 permissions:
   contents: read
   pull-requests: read
-
 jobs:
   verify:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        timeout-minutes: 5
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - uses: HikaruEgashira/gh-verify@v0.14
+          persist-credentials: false
+      - uses: HikaruEgashira/gh-verify@56e71f28c2b47c77519afca5c2bf63e2bb8976f4 # v0.14
+        timeout-minutes: 5
         with:
           command: pr
           argument: ${{ github.event.pull_request.number }}

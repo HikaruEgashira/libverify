@@ -1,31 +1,30 @@
 name: scorecard
-
 on:
   branch_protection_rule:
   schedule:
     - cron: "41 1 * * 1" # Mon 01:41 UTC
   push:
     branches: [main]
-
 permissions: read-all
-
 jobs:
   analysis:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:
       id-token: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        timeout-minutes: 5
         with:
           persist-credentials: false
-
       - uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        timeout-minutes: 5
         with:
           results_file: results.sarif
           results_format: sarif
           publish_results: true
-
       - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        timeout-minutes: 5
         with:
           name: scorecard-results
           path: results.sarif
