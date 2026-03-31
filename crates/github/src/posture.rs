@@ -49,6 +49,7 @@ pub fn collect_repository_posture(
 
     // --- Repository settings (secret scanning, vulnerability scanning, branch protection) ---
     let (
+        security_analysis_available,
         secret_scanning_enabled,
         secret_push_protection_enabled,
         vulnerability_scanning_enabled,
@@ -56,17 +57,32 @@ pub fn collect_repository_posture(
         default_branch_protected,
         enforce_admins,
         dismiss_stale_reviews,
-    ) = collect_repo_settings(client, owner, repo).unwrap_or_else(|e| {
-        gaps.push(EvidenceGap::CollectionFailed {
-            source: "github".to_string(),
-            subject: "repository settings".to_string(),
-            detail: format!("{e:#}"),
-        });
-        (false, false, false, false, false, false, false)
-    });
+    ) = match collect_repo_settings(client, owner, repo) {
+        Ok(settings) => {
+            (
+                settings.security_analysis_available,
+                settings.secret_scanning,
+                settings.push_protection,
+                settings.dependabot,
+                settings.code_scanning,
+                settings.branch_protected,
+                settings.enforce_admins,
+                settings.dismiss_stale_reviews,
+            )
+        }
+        Err(e) => {
+            gaps.push(EvidenceGap::CollectionFailed {
+                source: "github".to_string(),
+                subject: "repository settings".to_string(),
+                detail: format!("{e:#}"),
+            });
+            (false, false, false, false, false, false, false, false)
+        }
+    };
 
     let posture = RepositoryPosture {
         codeowners_entries,
+        security_analysis_available,
         secret_scanning_enabled,
         secret_push_protection_enabled,
         vulnerability_scanning_enabled,
@@ -184,15 +200,29 @@ struct RequiredPullRequestReviews {
     dismiss_stale_reviews: bool,
 }
 
+/// Result of collecting repository settings, including any evidence gaps
+/// that occurred during collection (e.g. insufficient API permissions).
+struct RepoSettingsResult {
+    security_analysis_available: bool,
+    secret_scanning: bool,
+    push_protection: bool,
+    dependabot: bool,
+    code_scanning: bool,
+    branch_protected: bool,
+    enforce_admins: bool,
+    dismiss_stale_reviews: bool,
+}
+
 /// Fetch repository settings from the GitHub REST API.
 fn collect_repo_settings(
     client: &GitHubClient,
     owner: &str,
     repo: &str,
-) -> anyhow::Result<(bool, bool, bool, bool, bool, bool, bool)> {
+) -> anyhow::Result<RepoSettingsResult> {
     let path = format!("/repos/{owner}/{repo}");
     let body = client.get(&path)?;
     let resp: RepoResponse = serde_json::from_str(&body)?;
+    let security_analysis_available = resp.security_and_analysis.is_some();
 
     let (secret_scanning, push_protection, dependabot) = match resp.security_and_analysis.as_ref() {
         Some(sa) => (
@@ -245,7 +275,8 @@ fn collect_repo_settings(
             Err(_) => (false, false, false),
         };
 
-    Ok((
+    Ok(RepoSettingsResult {
+        security_analysis_available,
         secret_scanning,
         push_protection,
         dependabot,
@@ -253,7 +284,7 @@ fn collect_repo_settings(
         branch_protected,
         enforce_admins,
         dismiss_stale_reviews,
-    ))
+    })
 }
 
 #[cfg(test)]

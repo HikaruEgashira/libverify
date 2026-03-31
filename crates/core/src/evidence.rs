@@ -469,6 +469,13 @@ pub struct RepositoryPosture {
     /// Parsed CODEOWNERS entries. Empty vec means no CODEOWNERS file found.
     pub codeowners_entries: Vec<CodeownersEntry>,
 
+    // --- Security analysis availability ---
+    /// Whether the security_and_analysis API field was available.
+    /// `false` means the API token lacked permission to read security settings,
+    /// so `secret_scanning_enabled` / `vulnerability_scanning_enabled` etc. may be inaccurate.
+    #[serde(default = "default_true")]
+    pub security_analysis_available: bool,
+
     // --- Secret scanning (CC6.1 / CC6.6) ---
     /// Whether secret scanning is enabled (detection).
     pub secret_scanning_enabled: bool,

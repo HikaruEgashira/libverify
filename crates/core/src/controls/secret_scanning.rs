@@ -28,6 +28,15 @@ impl Control for SecretScanningControl {
             Err(findings) => return findings,
         };
 
+        if !posture.security_analysis_available {
+            return vec![ControlFinding::indeterminate(
+                self.id(),
+                "Cannot determine secret scanning status — API token may lack sufficient permissions",
+                vec!["repository".to_string()],
+                vec![],
+            )];
+        }
+
         if !posture.secret_scanning_enabled {
             return vec![ControlFinding::violated(
                 self.id(),
@@ -64,6 +73,7 @@ mod tests {
 
     fn posture(secret_scanning: bool) -> RepositoryPosture {
         RepositoryPosture {
+            security_analysis_available: true,
             secret_scanning_enabled: secret_scanning,
             ..Default::default()
         }
@@ -74,6 +84,17 @@ mod tests {
             repository_posture: state,
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn indeterminate_when_security_analysis_unavailable() {
+        let findings =
+            SecretScanningControl.evaluate(&bundle(EvidenceState::complete(RepositoryPosture {
+                security_analysis_available: false,
+                ..Default::default()
+            })));
+        assert_eq!(findings[0].status, ControlStatus::Indeterminate);
+        assert!(findings[0].rationale.contains("permissions"));
     }
 
     #[test]
