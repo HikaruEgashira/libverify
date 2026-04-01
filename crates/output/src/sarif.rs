@@ -6,7 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp
 /// (e.g. `"2026-03-24T12:34:56Z"`). Uses only `std` — no external crates.
-fn utc_now_rfc3339() -> String {
+pub fn utc_now_rfc3339() -> String {
     let secs = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -23,7 +23,7 @@ fn utc_now_rfc3339() -> String {
 }
 
 /// Convert days since 1970-01-01 (UTC) to (year, month, day).
-fn days_to_ymd(days: u64) -> (u64, u64, u64) {
+pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {
     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)
     let z = days + 719468;
     let era = z / 146097;

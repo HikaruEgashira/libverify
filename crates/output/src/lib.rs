@@ -1,6 +1,8 @@
 pub mod json;
 pub mod sarif;
 
+pub use sarif::utc_now_rfc3339;
+
 use anyhow::Result;
 use libverify_core::assessment::{BatchReport, VerificationResult};
 

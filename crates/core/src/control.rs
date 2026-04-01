@@ -293,8 +293,140 @@ pub trait Control: Send + Sync {
         builtin_tsc_mapping(self.id().as_str())
     }
 
+    /// Actionable remediation hint shown when the control fails or needs review.
+    fn remediation_hint(&self) -> Option<&'static str> {
+        builtin_remediation_hint(self.id().as_str())
+    }
+
     /// Evaluates the evidence bundle and returns one finding per subject.
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding>;
+}
+
+/// Returns an actionable remediation hint for a built-in control ID.
+pub fn builtin_remediation_hint(id: &str) -> Option<&'static str> {
+    match id {
+        builtin::SOURCE_AUTHENTICITY => Some("Sign commits: git config commit.gpgsign true"),
+        builtin::REVIEW_INDEPENDENCE => {
+            Some("Ensure PRs are reviewed by someone other than the author")
+        }
+        builtin::BRANCH_HISTORY_INTEGRITY => {
+            Some("Use linear history (rebase/squash, avoid merge commits)")
+        }
+        builtin::BRANCH_PROTECTION_ENFORCEMENT => {
+            Some("Enable branch protection rules at Settings > Branches")
+        }
+        builtin::TWO_PARTY_REVIEW => {
+            Some("Require at least 2 reviewers in branch protection rules")
+        }
+        builtin::REQUIRED_STATUS_CHECKS => {
+            Some("Add required status checks in branch protection rules")
+        }
+        builtin::BUILD_PROVENANCE => {
+            Some("Generate SLSA provenance with slsa-framework/slsa-github-generator")
+        }
+        builtin::HOSTED_BUILD_PLATFORM => Some("Use GitHub-hosted runners instead of self-hosted"),
+        builtin::PROVENANCE_AUTHENTICITY => {
+            Some("Verify build provenance signatures with cosign/slsa-verifier")
+        }
+        builtin::BUILD_ISOLATION => Some("Ensure builds run in ephemeral, isolated environments"),
+        builtin::DEPENDENCY_SIGNATURE => {
+            Some("Use signed dependencies; verify with cosign or sigstore")
+        }
+        builtin::DEPENDENCY_PROVENANCE_CHECK => {
+            Some("Ensure dependencies publish SLSA provenance attestations")
+        }
+        builtin::DEPENDENCY_SIGNER_VERIFIED => {
+            Some("Verify dependency signers against a trusted list")
+        }
+        builtin::DEPENDENCY_COMPLETENESS => {
+            Some("Ensure all transitive dependencies have provenance")
+        }
+        builtin::CHANGE_REQUEST_SIZE => Some(
+            "Keep PRs small and focused; split large changes. Monorepo cross-package PRs may false-positive here -- use --exclude change-request-size",
+        ),
+        builtin::TEST_COVERAGE => Some(
+            "Add or update tests for changed source files. Dependency-only PRs may false-positive here -- use --exclude test-coverage",
+        ),
+        builtin::SCOPED_CHANGE => Some(
+            "Limit PR to a single logical change; split unrelated changes. In monorepos, features spanning multiple packages are expected -- use --exclude scoped-change",
+        ),
+        builtin::ISSUE_LINKAGE => Some(
+            "Reference an issue in the PR body: Fixes #123 or Closes #456. Bot PRs (Dependabot/Renovate) don't link issues -- use --exclude issue-linkage",
+        ),
+        builtin::DESCRIPTION_QUALITY => {
+            Some("Add a meaningful PR description explaining the change")
+        }
+        builtin::MERGE_COMMIT_POLICY => {
+            Some("Use squash or rebase merge strategy instead of merge commits")
+        }
+        builtin::CONVENTIONAL_TITLE => Some(
+            "Use Conventional Commits format: type(scope): description. Bot PRs use their own title format -- use --exclude conventional-title",
+        ),
+        builtin::STALE_REVIEW => Some("Re-request review if changes were pushed after approval"),
+        builtin::SECURITY_FILE_CHANGE => {
+            Some("Security-sensitive file changes require additional review")
+        }
+        builtin::RELEASE_TRACEABILITY => Some("Link release to merged PRs and resolved issues"),
+        builtin::CODEOWNERS_COVERAGE => Some("Add a CODEOWNERS file to define code ownership"),
+        builtin::SECRET_SCANNING => {
+            Some("Enable secret scanning at Settings > Code security and analysis")
+        }
+        builtin::VULNERABILITY_SCANNING => {
+            Some("Enable Dependabot alerts at Settings > Code security and analysis")
+        }
+        builtin::SECURITY_POLICY => {
+            Some("Add a SECURITY.md file with vulnerability reporting instructions")
+        }
+        builtin::SECRET_SCANNING_PUSH_PROTECTION => {
+            Some("Enable push protection at Settings > Code security > Secret scanning")
+        }
+        builtin::BRANCH_PROTECTION_ADMIN_ENFORCEMENT => {
+            Some("Enable 'Include administrators' in branch protection rules")
+        }
+        builtin::DISMISS_STALE_REVIEWS_ON_PUSH => {
+            Some("Enable 'Dismiss stale pull request approvals when new commits are pushed'")
+        }
+        builtin::ACTIONS_PINNED_DEPENDENCIES => {
+            Some("Pin GitHub Actions to full commit SHAs instead of tags")
+        }
+        builtin::ENVIRONMENT_PROTECTION_RULES => {
+            Some("Configure environment protection rules at Settings > Environments")
+        }
+        builtin::CODE_SCANNING_ALERTS_RESOLVED => {
+            Some("Resolve open code scanning alerts at Security > Code scanning alerts")
+        }
+        builtin::DEPENDENCY_LICENSE_COMPLIANCE => {
+            Some("Review dependency licenses; remove or replace copyleft dependencies")
+        }
+        builtin::SBOM_ATTESTATION => {
+            Some("Generate SBOM with gh attestation or anchore/sbom-action in CI")
+        }
+        builtin::RELEASE_ASSET_ATTESTATION => {
+            Some("Attest release assets with gh attestation or sigstore/cosign")
+        }
+        builtin::PRIVILEGED_WORKFLOW_DETECTION => {
+            Some("Avoid pull_request_target with checkout of PR code in workflows")
+        }
+        builtin::WORKFLOW_PERMISSIONS_RESTRICTED => {
+            Some("Set default workflow permissions to 'Read' at Settings > Actions > General")
+        }
+        builtin::DEPENDENCY_UPDATE_TOOL => Some(
+            "Add .github/dependabot.yml or renovate.json to enable automated dependency updates",
+        ),
+        builtin::REPOSITORY_PERMISSIONS_AUDIT => {
+            Some("Reduce admin count (<= 3), use team-based access instead of direct collaborators")
+        }
+        builtin::DEFAULT_BRANCH_SETTINGS_BASELINE => Some(
+            "Enable branch protection, admin enforcement, and stale review dismissal on default branch",
+        ),
+        builtin::SECURITY_TEST_IN_CI => {
+            Some("Add CodeQL or Semgrep to GitHub Actions: github/codeql-action/analyze")
+        }
+        builtin::PROTECTED_TAGS => {
+            Some("Add tag protection rules at Settings > Tags to prevent unauthorized releases")
+        }
+        _ => None,
+    }
 }
 
 /// Returns SOC2 Trust Services Criteria for a built-in control ID.
@@ -375,6 +507,16 @@ mod tests {
     fn control_id_from_str() {
         let id: ControlId = "source-authenticity".into();
         assert_eq!(id.as_str(), "source-authenticity");
+    }
+
+    #[test]
+    fn all_builtins_have_remediation_hints() {
+        for id in builtin::ALL {
+            assert!(
+                builtin_remediation_hint(id).is_some(),
+                "missing remediation hint for built-in control: {id}"
+            );
+        }
     }
 
     #[test]
