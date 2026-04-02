@@ -40,14 +40,29 @@ pub fn collect_repository_posture(
 ) -> EvidenceState<RepositoryPosture> {
     let mut gaps = Vec::new();
 
-    // --- CODEOWNERS ---
-    let codeowners_entries = collect_codeowners(client, owner, repo, ref_sha);
+    // Run independent API calls concurrently using scoped threads.
+    // Each call hits different endpoints so there's no contention.
+    let (codeowners_entries, security_policy, settings_result, dep_tool, permissions_result, tag_protection) =
+        std::thread::scope(|s| {
+            let h_codeowners = s.spawn(|| collect_codeowners(client, owner, repo, ref_sha));
+            let h_security = s.spawn(|| collect_security_policy(client, owner, repo, ref_sha));
+            let h_settings = s.spawn(|| collect_repo_settings(client, owner, repo));
+            let h_dep_tool = s.spawn(|| collect_dependency_update_tool(client, owner, repo, ref_sha));
+            let h_permissions = s.spawn(|| collect_permissions_info(client, owner, repo));
+            let h_tag = s.spawn(|| collect_tag_protection(client, owner, repo));
 
-    // --- SECURITY.md ---
-    let (security_policy_present, security_policy_has_disclosure) =
-        collect_security_policy(client, owner, repo, ref_sha);
+            (
+                h_codeowners.join().unwrap(),
+                h_security.join().unwrap(),
+                h_settings.join().unwrap(),
+                h_dep_tool.join().unwrap(),
+                h_permissions.join().unwrap(),
+                h_tag.join().unwrap(),
+            )
+        });
 
-    // --- Repository settings (secret scanning, vulnerability scanning, branch protection) ---
+    let (security_policy_present, security_policy_has_disclosure) = security_policy;
+
     let (
         security_analysis_available,
         secret_scanning_enabled,
@@ -57,7 +72,7 @@ pub fn collect_repository_posture(
         default_branch_protected,
         enforce_admins,
         dismiss_stale_reviews,
-    ) = match collect_repo_settings(client, owner, repo) {
+    ) = match settings_result {
         Ok(settings) => (
             settings.security_analysis_available,
             settings.secret_scanning,
@@ -78,13 +93,8 @@ pub fn collect_repository_posture(
         }
     };
 
-    // --- Dependency update tool ---
-    let dependency_update_tool_configured =
-        collect_dependency_update_tool(client, owner, repo, ref_sha);
-
-    // --- Workflow permissions & collaborator audit ---
     let (default_workflow_permissions, admin_count, direct_collaborator_count) =
-        match collect_permissions_info(client, owner, repo) {
+        match permissions_result {
             Ok(info) => (
                 info.default_workflow_permissions,
                 info.admin_count,
@@ -112,11 +122,11 @@ pub fn collect_repository_posture(
         default_branch_protected,
         enforce_admins,
         dismiss_stale_reviews,
-        dependency_update_tool_configured,
+        dependency_update_tool_configured: dep_tool,
         default_workflow_permissions,
         admin_count,
         direct_collaborator_count,
-        tag_protection_enabled: collect_tag_protection(client, owner, repo),
+        tag_protection_enabled: tag_protection,
         ..Default::default()
     };
 

@@ -29,6 +29,18 @@ impl fmt::Display for ControlId {
     }
 }
 
+impl AsRef<str> for ControlId {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::borrow::Borrow<str> for ControlId {
+    fn borrow(&self) -> &str {
+        &self.0
+    }
+}
+
 impl From<&str> for ControlId {
     fn from(s: &str) -> Self {
         Self(s.to_string())

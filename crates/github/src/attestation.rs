@@ -186,66 +186,86 @@ pub fn collect_release_attestations(
         }
     };
 
+    // Download and verify all assets concurrently — each asset writes to a
+    // unique path in the same tmp_dir and spawns independent subprocesses.
+    let tmp_path = tmp_dir.path();
+    let per_asset_results: Vec<(Vec<ArtifactAttestation>, Vec<EvidenceGap>)> =
+        std::thread::scope(|s| {
+            let handles: Vec<_> = assets
+                .iter()
+                .map(|asset| {
+                    s.spawn(|| {
+                        let mut atts = Vec::new();
+                        let mut g = Vec::new();
+                        let asset_path = tmp_path.join(&asset.name);
+
+                        match download_asset(owner, repo, tag, &asset.name, &asset_path) {
+                            Ok(()) => {}
+                            Err(e) => {
+                                g.push(EvidenceGap::CollectionFailed {
+                                    source: "gh-release-download".to_string(),
+                                    subject: asset.name.clone(),
+                                    detail: format!("failed to download asset: {e}"),
+                                });
+                                atts.push(ArtifactAttestation {
+                                    subject: asset.name.clone(),
+                                    subject_digest: None,
+                                    predicate_type: String::new(),
+                                    signer_workflow: None,
+                                    source_repo: None,
+                                    verification: VerificationOutcome::Failed {
+                                        detail: format!("download failed: {e}"),
+                                    },
+                                });
+                                return (atts, g);
+                            }
+                        }
+
+                        let digest = sha256_file(&asset_path).ok();
+                        let path_str = asset_path.to_string_lossy().to_string();
+                        match verify_artifact(&path_str, None, Some(&repo_full)) {
+                            Ok(results) if !results.is_empty() => {
+                                atts.extend(to_artifact_attestations(
+                                    &asset.name, &results, digest,
+                                ));
+                            }
+                            Ok(_) => {
+                                atts.push(ArtifactAttestation {
+                                    subject: asset.name.clone(),
+                                    subject_digest: digest,
+                                    predicate_type: String::new(),
+                                    signer_workflow: None,
+                                    source_repo: None,
+                                    verification: VerificationOutcome::AttestationAbsent {
+                                        detail: "no attestation found".to_string(),
+                                    },
+                                });
+                            }
+                            Err(e) => {
+                                let detail = format!("{e}");
+                                let outcome = classify_verification_error(&detail);
+                                atts.push(ArtifactAttestation {
+                                    subject: asset.name.clone(),
+                                    subject_digest: digest,
+                                    predicate_type: String::new(),
+                                    signer_workflow: None,
+                                    source_repo: None,
+                                    verification: outcome,
+                                });
+                            }
+                        }
+                        (atts, g)
+                    })
+                })
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+
     let mut attestations: Vec<ArtifactAttestation> = Vec::new();
     let mut gaps: Vec<EvidenceGap> = Vec::new();
-
-    for asset in assets {
-        let asset_path = tmp_dir.path().join(&asset.name);
-
-        match download_asset(owner, repo, tag, &asset.name, &asset_path) {
-            Ok(()) => {}
-            Err(e) => {
-                gaps.push(EvidenceGap::CollectionFailed {
-                    source: "gh-release-download".to_string(),
-                    subject: asset.name.clone(),
-                    detail: format!("failed to download asset: {e}"),
-                });
-                attestations.push(ArtifactAttestation {
-                    subject: asset.name.clone(),
-                    subject_digest: None,
-                    predicate_type: String::new(),
-                    signer_workflow: None,
-                    source_repo: None,
-                    verification: VerificationOutcome::Failed {
-                        detail: format!("download failed: {e}"),
-                    },
-                });
-                continue;
-            }
-        }
-
-        let digest = sha256_file(&asset_path).ok();
-
-        let path_str = asset_path.to_string_lossy().to_string();
-        match verify_artifact(&path_str, None, Some(&repo_full)) {
-            Ok(results) if !results.is_empty() => {
-                attestations.extend(to_artifact_attestations(&asset.name, &results, digest));
-            }
-            Ok(_) => {
-                attestations.push(ArtifactAttestation {
-                    subject: asset.name.clone(),
-                    subject_digest: digest,
-                    predicate_type: String::new(),
-                    signer_workflow: None,
-                    source_repo: None,
-                    verification: VerificationOutcome::AttestationAbsent {
-                        detail: "no attestation found".to_string(),
-                    },
-                });
-            }
-            Err(e) => {
-                let detail = format!("{e}");
-                let outcome = classify_verification_error(&detail);
-                attestations.push(ArtifactAttestation {
-                    subject: asset.name.clone(),
-                    subject_digest: digest,
-                    predicate_type: String::new(),
-                    signer_workflow: None,
-                    source_repo: None,
-                    verification: outcome,
-                });
-            }
-        }
+    for (atts, g) in per_asset_results {
+        attestations.extend(atts);
+        gaps.extend(g);
     }
 
     if gaps.is_empty() {

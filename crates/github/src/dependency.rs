@@ -124,8 +124,22 @@ pub fn collect_repo_dependency_signatures(
 
     let lock_paths = &tree_result.paths;
 
-    for lock_path in lock_paths {
-        match client.get_file_content(owner, repo, lock_path, reference) {
+    // Fetch and parse lock files concurrently (significant for monorepos with many lock files)
+    let results: Vec<_> = std::thread::scope(|s| {
+        let handles: Vec<_> = lock_paths
+            .iter()
+            .map(|lock_path| {
+                s.spawn(|| {
+                    let content = client.get_file_content(owner, repo, lock_path, reference);
+                    (lock_path.as_str(), content)
+                })
+            })
+            .collect();
+        handles.into_iter().map(|h| h.join().unwrap()).collect()
+    });
+
+    for (lock_path, fetch_result) in results {
+        match fetch_result {
             Ok(content) => {
                 let result = if lock_path.ends_with("Cargo.lock") {
                     parse_cargo_lock(&content)
