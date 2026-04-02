@@ -25,6 +25,10 @@ pub use verify::{
     collect_pr_evidence,
     collect_release_evidence,
     collect_repo_evidence,
+    // Phased release evidence collection (for progressive output)
+    collect_release_attestation_evidence,
+    collect_release_pr_evidence,
+    collect_release_repo_evidence,
     // Utilities
     exit_if_assessment_fails,
     // Convenience wrappers (collect + assess)

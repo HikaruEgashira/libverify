@@ -76,8 +76,14 @@ pub fn collect_pr_batch_evidence(
         .collect()
 }
 
-/// Collect evidence for a release (tag range).
-pub fn collect_release_evidence(
+/// Phase 1: Collect PR and commit evidence for a release range.
+///
+/// Resolves commits between tags, maps them to PRs via GraphQL, and fetches
+/// full PR data (reviews, files, check runs). Returns a bundle with
+/// `change_requests`, `promotion_batches`, `check_runs`, and `build_platform`
+/// populated. Other fields (`repository_posture`, `artifact_attestations`)
+/// are left as defaults for subsequent phases.
+pub fn collect_release_pr_evidence(
     client: &GitHubClient,
     owner: &str,
     repo: &str,
@@ -106,17 +112,6 @@ pub fn collect_release_evidence(
         })
         .collect();
 
-    // Collect build-provenance attestations for release assets
-    let release_assets = crate::release_api::get_release_assets(client, owner, repo, head_tag)
-        .unwrap_or_else(|err| {
-            eprintln!("Warning: failed to fetch release assets: {err}");
-            vec![]
-        });
-
-    let artifact_attestations =
-        crate::attestation::collect_release_attestations(owner, repo, head_tag, &release_assets);
-
-    // Deduplicate PRs and fetch full evidence for each
     let unique_pr_numbers: Vec<u32> = {
         let mut seen = std::collections::HashSet::new();
         commit_pr_map
@@ -128,7 +123,6 @@ pub fn collect_release_evidence(
     };
 
     let repo_full = format!("{owner}/{repo}");
-
     let mut change_requests = Vec::new();
     let mut all_check_runs = Vec::new();
 
@@ -161,13 +155,10 @@ pub fn collect_release_evidence(
         head_tag,
         &commits,
         &commit_prs,
-        artifact_attestations,
+        EvidenceState::default(),
     );
     bundle.change_requests = change_requests;
-    bundle.repository_posture =
-        crate::posture::collect_repository_posture(client, owner, repo, head_tag);
 
-    // Aggregate check runs from all PRs for build platform evidence
     let check_run_evidence = adapter::map_check_runs_evidence(&all_check_runs, None);
     bundle.check_runs = EvidenceState::complete(check_run_evidence);
     if let Some(cr_list) = bundle.check_runs.value() {
@@ -177,6 +168,60 @@ pub fn collect_release_evidence(
         }
     }
 
+    Ok(bundle)
+}
+
+/// Phase 2: Collect repository security posture and merge into the bundle.
+///
+/// Queries branch protection, secret scanning, code scanning, CODEOWNERS,
+/// workflow permissions, tag protection rules, etc.
+pub fn collect_release_repo_evidence(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    head_tag: &str,
+    bundle: &mut libverify_core::evidence::EvidenceBundle,
+) {
+    bundle.repository_posture =
+        crate::posture::collect_repository_posture(client, owner, repo, head_tag);
+}
+
+/// Phase 3: Check release asset attestations via the GitHub API and merge
+/// into the bundle.
+///
+/// Downloads only `.sha256` sidecar files (a few KB), then queries the
+/// Attestations REST API for each asset digest. No binary downloads needed.
+pub fn collect_release_attestation_evidence(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    head_tag: &str,
+    bundle: &mut libverify_core::evidence::EvidenceBundle,
+) {
+    let release_assets = crate::release_api::get_release_assets(client, owner, repo, head_tag)
+        .unwrap_or_else(|err| {
+            eprintln!("Warning: failed to fetch release assets: {err}");
+            vec![]
+        });
+
+    bundle.artifact_attestations =
+        crate::attestation::collect_release_attestations(owner, repo, head_tag, &release_assets, client);
+}
+
+/// Collect all evidence for a release (backward-compatible convenience wrapper).
+///
+/// Calls all three phases sequentially. Prefer the individual phase functions
+/// when progressive output is desired.
+pub fn collect_release_evidence(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+    base_tag: &str,
+    head_tag: &str,
+) -> Result<libverify_core::evidence::EvidenceBundle> {
+    let mut bundle = collect_release_pr_evidence(client, owner, repo, base_tag, head_tag)?;
+    collect_release_repo_evidence(client, owner, repo, head_tag, &mut bundle);
+    collect_release_attestation_evidence(client, owner, repo, head_tag, &mut bundle);
     Ok(bundle)
 }
 
