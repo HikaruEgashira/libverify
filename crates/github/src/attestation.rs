@@ -210,7 +210,9 @@ fn verify_dsse_signature(envelope: &DsseEnvelope, cert_der: &[u8]) -> Result<()>
         .context("no signatures in DSSE envelope")?
         .sig;
 
-    let sig_bytes = BASE64.decode(sig_b64).context("invalid base64 in signature")?;
+    let sig_bytes = BASE64
+        .decode(sig_b64)
+        .context("invalid base64 in signature")?;
 
     let payload_bytes = BASE64
         .decode(&envelope.payload)
@@ -340,11 +342,10 @@ fn verify_bundle(
     };
 
     // 2. Check that the expected digest appears in the attestation subjects
-    let digest_matched = stmt.subject.iter().any(|s| {
-        s.digest
-            .get("sha256")
-            .is_some_and(|d| d == expected_digest)
-    });
+    let digest_matched = stmt
+        .subject
+        .iter()
+        .any(|s| s.digest.get("sha256").is_some_and(|d| d == expected_digest));
 
     if !digest_matched {
         return (
@@ -388,9 +389,8 @@ fn verify_bundle(
 
     let error_detail = match &verification {
         VerificationOutcome::Verified => None,
-        VerificationOutcome::SignatureInvalid { detail } | VerificationOutcome::Failed { detail } => {
-            Some(detail.clone())
-        }
+        VerificationOutcome::SignatureInvalid { detail }
+        | VerificationOutcome::Failed { detail } => Some(detail.clone()),
         _ => None,
     };
 
@@ -625,11 +625,15 @@ mod tests {
     #[test]
     fn parse_sha256_line_formats() {
         assert_eq!(
-            parse_sha256_line("e573cdb504fce521af501cc16b7018fb6560ac0e7af5d05056c942b3a1ad5a79  ruff-aarch64-apple-darwin.tar.gz"),
+            parse_sha256_line(
+                "e573cdb504fce521af501cc16b7018fb6560ac0e7af5d05056c942b3a1ad5a79  ruff-aarch64-apple-darwin.tar.gz"
+            ),
             Some("e573cdb504fce521af501cc16b7018fb6560ac0e7af5d05056c942b3a1ad5a79")
         );
         assert_eq!(
-            parse_sha256_line("beb2eb063e52f197694fb79045cef276735a7becbbd8f8f79e1c99613a12d7e7 *ruff-aarch64-pc-windows-msvc.zip"),
+            parse_sha256_line(
+                "beb2eb063e52f197694fb79045cef276735a7becbbd8f8f79e1c99613a12d7e7 *ruff-aarch64-pc-windows-msvc.zip"
+            ),
             Some("beb2eb063e52f197694fb79045cef276735a7becbbd8f8f79e1c99613a12d7e7")
         );
         assert_eq!(parse_sha256_line("not-a-hash  file.txt"), None);

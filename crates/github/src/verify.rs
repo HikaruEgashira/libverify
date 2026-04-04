@@ -58,7 +58,10 @@ impl PlatformAdapter for GitHubAdapter<'_> {
         owner: &str,
         repo: &str,
         pr_numbers: &[u32],
-    ) -> Vec<(String, libverify_core::adapter::AdapterResult<libverify_core::evidence::EvidenceBundle>)> {
+    ) -> Vec<(
+        String,
+        libverify_core::adapter::AdapterResult<libverify_core::evidence::EvidenceBundle>,
+    )> {
         collect_pr_batch_evidence(self.client, owner, repo, pr_numbers)
             .into_iter()
             .map(|(id, r)| (id, r.map_err(Into::into)))
@@ -272,8 +275,13 @@ pub fn collect_release_attestation_evidence(
             vec![]
         });
 
-    bundle.artifact_attestations =
-        crate::attestation::collect_release_attestations(owner, repo, head_tag, &release_assets, client);
+    bundle.artifact_attestations = crate::attestation::collect_release_attestations(
+        owner,
+        repo,
+        head_tag,
+        &release_assets,
+        client,
+    );
 }
 
 /// Collect all evidence for a release (backward-compatible convenience wrapper).

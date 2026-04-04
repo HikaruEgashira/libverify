@@ -42,24 +42,30 @@ pub fn collect_repository_posture(
 
     // Run independent API calls concurrently using scoped threads.
     // Each call hits different endpoints so there's no contention.
-    let (codeowners_entries, security_policy, settings_result, dep_tool, permissions_result, tag_protection) =
-        std::thread::scope(|s| {
-            let h_codeowners = s.spawn(|| collect_codeowners(client, owner, repo, ref_sha));
-            let h_security = s.spawn(|| collect_security_policy(client, owner, repo, ref_sha));
-            let h_settings = s.spawn(|| collect_repo_settings(client, owner, repo));
-            let h_dep_tool = s.spawn(|| collect_dependency_update_tool(client, owner, repo, ref_sha));
-            let h_permissions = s.spawn(|| collect_permissions_info(client, owner, repo));
-            let h_tag = s.spawn(|| collect_tag_protection(client, owner, repo));
+    let (
+        codeowners_entries,
+        security_policy,
+        settings_result,
+        dep_tool,
+        permissions_result,
+        tag_protection,
+    ) = std::thread::scope(|s| {
+        let h_codeowners = s.spawn(|| collect_codeowners(client, owner, repo, ref_sha));
+        let h_security = s.spawn(|| collect_security_policy(client, owner, repo, ref_sha));
+        let h_settings = s.spawn(|| collect_repo_settings(client, owner, repo));
+        let h_dep_tool = s.spawn(|| collect_dependency_update_tool(client, owner, repo, ref_sha));
+        let h_permissions = s.spawn(|| collect_permissions_info(client, owner, repo));
+        let h_tag = s.spawn(|| collect_tag_protection(client, owner, repo));
 
-            (
-                h_codeowners.join().unwrap(),
-                h_security.join().unwrap(),
-                h_settings.join().unwrap(),
-                h_dep_tool.join().unwrap(),
-                h_permissions.join().unwrap(),
-                h_tag.join().unwrap(),
-            )
-        });
+        (
+            h_codeowners.join().unwrap(),
+            h_security.join().unwrap(),
+            h_settings.join().unwrap(),
+            h_dep_tool.join().unwrap(),
+            h_permissions.join().unwrap(),
+            h_tag.join().unwrap(),
+        )
+    });
 
     let (security_policy_present, security_policy_has_disclosure) = security_policy;
 

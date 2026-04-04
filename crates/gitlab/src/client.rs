@@ -1,10 +1,10 @@
 use std::thread;
 use std::time::Duration;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
+use reqwest::StatusCode;
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
-use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 
 use crate::config::GitLabConfig;
@@ -111,8 +111,7 @@ impl GitLabClient {
         let mut current_page = 1u32;
 
         for _ in 0..MAX_PAGES {
-            let paged_path =
-                format!("{path}{separator}per_page=100&page={current_page}");
+            let paged_path = format!("{path}{separator}per_page=100&page={current_page}");
             let url = format!("{}{}", self.base_url, paged_path);
 
             let mut delay = Duration::from_millis(INITIAL_RETRY_DELAY_MS);
@@ -124,9 +123,7 @@ impl GitLabClient {
                         .send()
                         .context("HTTP request failed")?;
 
-                    if r.status() == StatusCode::TOO_MANY_REQUESTS
-                        && attempt < MAX_HTTP_ATTEMPTS
-                    {
+                    if r.status() == StatusCode::TOO_MANY_REQUESTS && attempt < MAX_HTTP_ATTEMPTS {
                         let wait = r
                             .headers()
                             .get("retry-after")
@@ -147,9 +144,7 @@ impl GitLabClient {
 
                     break 'retry r;
                 }
-                bail!(
-                    "paginate request failed after {MAX_HTTP_ATTEMPTS} attempts"
-                );
+                bail!("paginate request failed after {MAX_HTTP_ATTEMPTS} attempts");
             };
 
             if !resp.status().is_success() {
@@ -198,9 +193,8 @@ impl GitLabClient {
         ref_sha: &str,
     ) -> Result<String> {
         let encoded_path = file_path.replace('/', "%2F");
-        let api_path = format!(
-            "/projects/{project}/repository/files/{encoded_path}/raw?ref={ref_sha}"
-        );
+        let api_path =
+            format!("/projects/{project}/repository/files/{encoded_path}/raw?ref={ref_sha}");
         self.get(&api_path)
     }
 }

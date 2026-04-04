@@ -6,9 +6,7 @@ use libverify_core::evidence::{
     PromotionBatch, SourceRevision, WorkItemRef,
 };
 
-use crate::types::{
-    CompareCommit, MrApprovals, MrChange, MrCommit, MrMetadata, PipelineJob,
-};
+use crate::types::{CompareCommit, MrApprovals, MrChange, MrCommit, MrMetadata, PipelineJob};
 
 /// Maps a GitLab merge request to a platform-neutral `GovernedChange`.
 pub fn map_merge_request_evidence(
@@ -358,13 +356,8 @@ mod tests {
 
     #[test]
     fn approval_decisions_mapped() {
-        let evidence = map_merge_request_evidence(
-            "owner/repo",
-            &sample_mr(),
-            &[],
-            &sample_approvals(),
-            &[],
-        );
+        let evidence =
+            map_merge_request_evidence("owner/repo", &sample_mr(), &[], &sample_approvals(), &[]);
 
         if let EvidenceState::Complete { value } = &evidence.approval_decisions {
             assert_eq!(value.len(), 1);
@@ -424,7 +417,10 @@ mod tests {
         );
 
         if let EvidenceState::Complete { value } = &evidence.work_item_refs {
-            assert!(!value.is_empty(), "should extract issue references from description");
+            assert!(
+                !value.is_empty(),
+                "should extract issue references from description"
+            );
         } else {
             panic!("expected Complete");
         }
@@ -524,7 +520,8 @@ mod tests {
             ("aaa".to_string(), vec![1, 3]), // MR !1 appears twice
         ];
 
-        let bundle = build_release_bundle("owner/repo", "v0.1.0", "v0.2.0", &commits, &commit_mr_iids);
+        let bundle =
+            build_release_bundle("owner/repo", "v0.1.0", "v0.2.0", &commits, &commit_mr_iids);
 
         assert_eq!(bundle.promotion_batches.len(), 1);
         let batch = &bundle.promotion_batches[0];
@@ -557,7 +554,9 @@ mod tests {
 
         let bundle = build_release_bundle("owner/repo", "v1", "v2", &commits, &commit_mr_iids);
 
-        if let EvidenceState::Complete { value } = &bundle.promotion_batches[0].linked_change_requests {
+        if let EvidenceState::Complete { value } =
+            &bundle.promotion_batches[0].linked_change_requests
+        {
             assert_eq!(value.len(), 1);
             assert_eq!(value[0].value, "owner/repo!1");
         } else {

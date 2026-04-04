@@ -131,11 +131,7 @@ pub fn collect_repository_posture(
 // ---------------------------------------------------------------------------
 
 /// Parse CODEOWNERS file content into entries.
-fn collect_codeowners(
-    client: &GitLabClient,
-    project: &str,
-    ref_sha: &str,
-) -> Vec<CodeownersEntry> {
+fn collect_codeowners(client: &GitLabClient, project: &str, ref_sha: &str) -> Vec<CodeownersEntry> {
     for path in CODEOWNERS_PATHS {
         if let Ok(content) = client.get_file_content(project, path, ref_sha) {
             return parse_codeowners(&content);
@@ -167,11 +163,7 @@ fn parse_codeowners(content: &str) -> Vec<CodeownersEntry> {
 }
 
 /// Check for SECURITY.md and whether it describes a disclosure process.
-fn collect_security_policy(
-    client: &GitLabClient,
-    project: &str,
-    ref_sha: &str,
-) -> (bool, bool) {
+fn collect_security_policy(client: &GitLabClient, project: &str, ref_sha: &str) -> (bool, bool) {
     for path in SECURITY_POLICY_PATHS {
         if let Ok(content) = client.get_file_content(project, path, ref_sha) {
             let lower = content.to_lowercase();
@@ -183,10 +175,7 @@ fn collect_security_policy(
 }
 
 /// Check if the default branch is listed among protected branches.
-fn collect_branch_protection(
-    client: &GitLabClient,
-    project: &str,
-) -> anyhow::Result<bool> {
+fn collect_branch_protection(client: &GitLabClient, project: &str) -> anyhow::Result<bool> {
     let branches: Vec<ProtectedBranch> =
         client.get_json(&format!("/projects/{project}/protected_branches"))?;
     // Consider the default branch protected if any protected branch rule
@@ -197,10 +186,7 @@ fn collect_branch_protection(
 }
 
 /// Check whether tag protection rules exist.
-fn collect_tag_protection(
-    client: &GitLabClient,
-    project: &str,
-) -> anyhow::Result<bool> {
+fn collect_tag_protection(client: &GitLabClient, project: &str) -> anyhow::Result<bool> {
     let tags: Vec<ProtectedTag> =
         client.get_json(&format!("/projects/{project}/protected_tags"))?;
     Ok(!tags.is_empty())
@@ -209,12 +195,8 @@ fn collect_tag_protection(
 /// Count members by access level.
 /// Returns (admin_count, direct_collaborator_count).
 /// GitLab access levels: 50 = Owner, 40 = Maintainer, 30 = Developer.
-fn collect_members(
-    client: &GitLabClient,
-    project: &str,
-) -> anyhow::Result<(u32, u32)> {
-    let members: Vec<ProjectMember> =
-        client.paginate(&format!("/projects/{project}/members"))?;
+fn collect_members(client: &GitLabClient, project: &str) -> anyhow::Result<(u32, u32)> {
+    let members: Vec<ProjectMember> = client.paginate(&format!("/projects/{project}/members"))?;
     let admin_count = members.iter().filter(|m| m.access_level >= 50).count() as u32;
     let maintainer_plus = members.iter().filter(|m| m.access_level >= 40).count() as u32;
     Ok((admin_count, maintainer_plus))

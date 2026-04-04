@@ -76,9 +76,7 @@ fn collect_mr_evidence(
     // Fetch MR data concurrently.
     let (metadata, changes_resp, approvals, commits, pipelines) = std::thread::scope(|s| {
         let h_meta = s.spawn(|| {
-            client.get_json::<MrMetadata>(&format!(
-                "/projects/{project}/merge_requests/{mr_iid}"
-            ))
+            client.get_json::<MrMetadata>(&format!("/projects/{project}/merge_requests/{mr_iid}"))
         });
         let h_changes = s.spawn(|| {
             client.get_json::<MrChangesResponse>(&format!(
@@ -117,27 +115,22 @@ fn collect_mr_evidence(
     });
     let commits = commits.unwrap_or_default();
 
-    let mut bundle = adapter::build_merge_request_bundle(
-        &repo_full,
-        &metadata,
-        &changes,
-        &approvals,
-        &commits,
-    );
+    let mut bundle =
+        adapter::build_merge_request_bundle(&repo_full, &metadata, &changes, &approvals, &commits);
 
     // Fetch pipeline jobs for the latest pipeline.
-    if let Ok(pipelines) = pipelines {
-        if let Some(latest) = pipelines.first() {
-            let pipeline_id = latest.id;
-            if let Ok(jobs) = client.paginate::<PipelineJob>(&format!(
-                "/projects/{project}/pipelines/{pipeline_id}/jobs"
-            )) {
-                let check_run_evidence = adapter::map_pipeline_jobs_evidence(&jobs);
-                let build_platforms = adapter::map_build_platform_evidence(&check_run_evidence);
-                bundle.check_runs = EvidenceState::complete(check_run_evidence);
-                if !build_platforms.is_empty() {
-                    bundle.build_platform = EvidenceState::complete(build_platforms);
-                }
+    if let Ok(pipelines) = pipelines
+        && let Some(latest) = pipelines.first()
+    {
+        let pipeline_id = latest.id;
+        if let Ok(jobs) = client
+            .paginate::<PipelineJob>(&format!("/projects/{project}/pipelines/{pipeline_id}/jobs"))
+        {
+            let check_run_evidence = adapter::map_pipeline_jobs_evidence(&jobs);
+            let build_platforms = adapter::map_build_platform_evidence(&check_run_evidence);
+            bundle.check_runs = EvidenceState::complete(check_run_evidence);
+            if !build_platforms.is_empty() {
+                bundle.build_platform = EvidenceState::complete(build_platforms);
             }
         }
     }
@@ -200,9 +193,8 @@ fn collect_release_evidence(
     let mut change_requests = Vec::new();
     for iid in &unique_mr_iids {
         let mr_result: anyhow::Result<_> = (|| {
-            let metadata: MrMetadata = client.get_json(&format!(
-                "/projects/{project}/merge_requests/{iid}"
-            ))?;
+            let metadata: MrMetadata =
+                client.get_json(&format!("/projects/{project}/merge_requests/{iid}"))?;
             let changes = client
                 .get_json::<MrChangesResponse>(&format!(
                     "/projects/{project}/merge_requests/{iid}/changes"
@@ -217,9 +209,7 @@ fn collect_release_evidence(
                     approved_by: Vec::new(),
                 });
             let commits = client
-                .paginate::<MrCommit>(&format!(
-                    "/projects/{project}/merge_requests/{iid}/commits"
-                ))
+                .paginate::<MrCommit>(&format!("/projects/{project}/merge_requests/{iid}/commits"))
                 .unwrap_or_default();
 
             Ok(adapter::map_merge_request_evidence(
@@ -230,9 +220,7 @@ fn collect_release_evidence(
         match mr_result {
             Ok(governed_change) => change_requests.push(governed_change),
             Err(e) => {
-                eprintln!(
-                    "Warning: failed to fetch MR !{iid} for release verification: {e:#}"
-                );
+                eprintln!("Warning: failed to fetch MR !{iid} for release verification: {e:#}");
             }
         }
     }

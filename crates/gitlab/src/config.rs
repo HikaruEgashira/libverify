@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 pub struct GitLabConfig {
     pub token: String,
@@ -8,8 +8,7 @@ pub struct GitLabConfig {
 impl GitLabConfig {
     pub fn load() -> Result<Self> {
         let token = resolve_token()?;
-        let host =
-            std::env::var("GITLAB_HOST").unwrap_or_else(|_| "gitlab.com".to_string());
+        let host = std::env::var("GITLAB_HOST").unwrap_or_else(|_| "gitlab.com".to_string());
         validate_host(&host)?;
         Ok(Self { token, host })
     }
@@ -22,9 +21,7 @@ fn resolve_token() -> Result<String> {
             return Ok(normalize_secret(&val));
         }
     }
-    bail!(
-        "GitLab token not found. Set one of: GITLAB_TOKEN, GL_TOKEN, CI_JOB_TOKEN"
-    )
+    bail!("GitLab token not found. Set one of: GITLAB_TOKEN, GL_TOKEN, CI_JOB_TOKEN")
 }
 
 /// Strip surrounding whitespace and remove common copy-paste artifacts.
