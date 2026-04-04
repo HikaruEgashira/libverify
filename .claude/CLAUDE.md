@@ -8,6 +8,7 @@ Shared verification library. Platform-specific shells (CLI extensions, IDE plugi
 cargo test --workspace --exclude libverify-verif
 cargo check --workspace                             # Type check
 cargo clippy --workspace --exclude libverify-verif  # Lint
+cargo mutants -p libverify-core -- --lib            # Mutation testing (core)
 ```
 
 ## Architecture

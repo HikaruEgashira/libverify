@@ -1,0 +1,21 @@
+# cargo-mutants configuration
+# https://mutants.rs/mutants-toml.html
+
+timeout_multiplier = 3.0
+
+# Exclude crates that don't benefit from mutation testing
+exclude_globs = [
+    "crates/verif/**",      # Creusot formal verification targets
+    "crates/gen-docs/**",   # Documentation generator
+]
+
+# Exclude trait impl boilerplate where mutations are noise
+exclude_re = [
+    "::fmt$",               # Display/Debug::fmt
+    "::as_ref$",            # AsRef impls
+    "::borrow$",            # Borrow impls
+    "::description$",       # Control::description (static metadata)
+    "::tsc_criteria$",      # Control::tsc_criteria (static metadata)
+    "::remediation_hint$",  # Control::remediation_hint (static metadata)
+    "control_description$", # control_description helper (static metadata)
+]

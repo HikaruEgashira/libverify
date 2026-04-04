@@ -4,8 +4,11 @@ on:
     branches: [main]
     paths:
       - "crates/core/src/**"
+      - "crates/policy/src/**"
+      - "crates/output/src/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - ".cargo/mutants.toml"
   workflow_dispatch:
 concurrency:
   group: mutants-${{ github.ref }}
@@ -16,6 +19,9 @@ jobs:
   mutants:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [libverify-core, libverify-policy, libverify-output]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         timeout-minutes: 5
@@ -30,13 +36,13 @@ jobs:
       - name: Install cargo-mutants
         timeout-minutes: 5
         run: cargo install cargo-mutants
-      - name: Run mutation testing on core crate
+      - name: Run mutation testing
         timeout-minutes: 20
-        run: cargo mutants -p libverify-core --timeout 60 -- --lib
+        run: cargo mutants -p ${{ matrix.package }} -- --lib
       - name: Upload mutation report
         if: always()
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         timeout-minutes: 5
         with:
-          name: mutation-report
+          name: mutation-report-${{ matrix.package }}
           path: mutants.out/
