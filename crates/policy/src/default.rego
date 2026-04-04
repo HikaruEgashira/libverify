@@ -1,4 +1,5 @@
-# Default OPA policy: all controls are strict (Indeterminate → Fail).
+# Default OPA policy: advisory-only (no failures).
+# All violations and indeterminate results surface as reviews, never blocking.
 # Copy and modify this file to customize gate decisions per organization.
 #
 # Input (set per finding):
@@ -15,7 +16,7 @@ package verify.profile
 
 import rego.v1
 
-default map := {"severity": "error", "decision": "fail"}
+default map := {"severity": "warning", "decision": "review"}
 
 map := {"severity": "info", "decision": "pass"} if {
 	input.status == "satisfied"
@@ -25,10 +26,10 @@ map := {"severity": "info", "decision": "pass"} if {
 	input.status == "not_applicable"
 }
 
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "warning", "decision": "review"} if {
 	input.status == "indeterminate"
 }
 
-map := {"severity": "error", "decision": "fail"} if {
+map := {"severity": "warning", "decision": "review"} if {
 	input.status == "violated"
 }

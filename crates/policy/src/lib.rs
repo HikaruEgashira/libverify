@@ -280,11 +280,11 @@ mod tests {
     }
 
     #[test]
-    fn default_policy_violated_fails() {
+    fn default_policy_violated_reviews() {
         let profile = OpaProfile::from_preset_or_file("default").unwrap();
         let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
         let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
+        assert_eq!(outcome.decision, GateDecision::Review);
     }
 
     #[test]
