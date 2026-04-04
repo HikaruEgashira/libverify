@@ -270,6 +270,13 @@ mod tests {
     }
 
     #[test]
+    fn available_presets_is_non_empty() {
+        let presets = available_presets();
+        assert!(!presets.is_empty(), "available_presets must not be empty");
+        assert!(presets.contains(&"default"), "must contain 'default' preset");
+    }
+
+    #[test]
     fn all_presets_load() {
         for name in available_presets() {
             assert!(
@@ -277,6 +284,15 @@ mod tests {
                 "preset '{name}' failed to load"
             );
         }
+    }
+
+    #[test]
+    fn profile_name_matches_preset() {
+        let profile = OpaProfile::from_preset_or_file("default").unwrap();
+        assert_eq!(profile.name(), "opa-default");
+
+        let profile = OpaProfile::from_preset_or_file("oss").unwrap();
+        assert_eq!(profile.name(), "oss");
     }
 
     #[test]
