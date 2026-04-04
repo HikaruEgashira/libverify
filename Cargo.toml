@@ -17,7 +17,7 @@ libverify-gitlab = { path = "crates/gitlab", version = "0.10.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls-native-roots"] }
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls-native-certs"] }
 sha2 = "0.11"
 base64 = "0.22"
 tempfile = "3"
