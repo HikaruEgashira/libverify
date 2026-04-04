@@ -16,6 +16,7 @@ pub mod verify;
 
 pub use client::GitHubClient;
 pub use config::GitHubConfig;
+pub use verify::GitHubAdapter;
 pub use verify::{
     // Assessment (cheap, re-runnable with different policies)
     assess_bundle,

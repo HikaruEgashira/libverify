@@ -2,6 +2,7 @@ use std::process;
 
 use anyhow::{Context, Result, bail};
 
+use libverify_core::adapter::PlatformAdapter;
 use libverify_core::assessment::{
     AssessmentReport, BatchEntry, BatchReport, SkippedEntry, VerificationResult,
 };
@@ -16,6 +17,73 @@ use crate::client::GitHubClient;
 use crate::dependency;
 use crate::graphql::{self, PrData};
 use crate::types::{CombinedStatusResponse, CommitStatusItem};
+
+// ---------------------------------------------------------------------------
+// GitHubAdapter — PlatformAdapter implementation for GitHub
+// ---------------------------------------------------------------------------
+
+/// GitHub implementation of [`PlatformAdapter`].
+///
+/// Wraps a [`GitHubClient`] and delegates to the existing evidence-collection
+/// functions. Platform-specific optimisations (batch GraphQL, phased release)
+/// are preserved internally.
+pub struct GitHubAdapter<'a> {
+    client: &'a GitHubClient,
+}
+
+impl<'a> GitHubAdapter<'a> {
+    pub fn new(client: &'a GitHubClient) -> Self {
+        Self { client }
+    }
+
+    /// Access the underlying GitHub client for platform-specific operations
+    /// (e.g. phased release evidence collection, range utilities).
+    pub fn client(&self) -> &GitHubClient {
+        self.client
+    }
+}
+
+impl PlatformAdapter for GitHubAdapter<'_> {
+    fn collect_pr_evidence(
+        &self,
+        owner: &str,
+        repo: &str,
+        pr_number: u32,
+    ) -> libverify_core::adapter::AdapterResult<libverify_core::evidence::EvidenceBundle> {
+        collect_pr_evidence(self.client, owner, repo, pr_number).map_err(Into::into)
+    }
+
+    fn collect_pr_batch_evidence(
+        &self,
+        owner: &str,
+        repo: &str,
+        pr_numbers: &[u32],
+    ) -> Vec<(String, libverify_core::adapter::AdapterResult<libverify_core::evidence::EvidenceBundle>)> {
+        collect_pr_batch_evidence(self.client, owner, repo, pr_numbers)
+            .into_iter()
+            .map(|(id, r)| (id, r.map_err(Into::into)))
+            .collect()
+    }
+
+    fn collect_release_evidence(
+        &self,
+        owner: &str,
+        repo: &str,
+        base_tag: &str,
+        head_tag: &str,
+    ) -> libverify_core::adapter::AdapterResult<libverify_core::evidence::EvidenceBundle> {
+        collect_release_evidence(self.client, owner, repo, base_tag, head_tag).map_err(Into::into)
+    }
+
+    fn collect_repo_evidence(
+        &self,
+        owner: &str,
+        repo: &str,
+        reference: &str,
+    ) -> libverify_core::adapter::AdapterResult<libverify_core::evidence::EvidenceBundle> {
+        collect_repo_evidence(self.client, owner, repo, reference).map_err(Into::into)
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Evidence collection (API calls happen here — expensive, cacheable)
