@@ -38,7 +38,7 @@ use libverify_output::{OutputOptions, Format, render};
 // 1. Collect evidence from your platform
 let evidence = EvidenceBundle { /* ... */ };
 
-// 2. Run all 28 built-in controls with an OPA policy
+// 2. Run all 46 built-in controls with an OPA policy
 let registry = ControlRegistry::builtin();
 let profile = OpaProfile::from_preset_or_file("soc2")?;
 let report = assess_with_registry(&evidence, &registry, &profile);
@@ -61,7 +61,7 @@ let sarif = render(&opts, &report.into())?;
 
 | Crate | Purpose |
 |-------|---------|
-| `libverify-core` | Evidence model, `Control` trait, 28 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks), profile system. Pure logic, serde only. |
+| `libverify-core` | Evidence model, `Control` trait, 46 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks), profile system. Pure logic, serde only. |
 | `libverify-policy` | OPA Rego policy engine ([regorus](https://github.com/nicholasbishop/regorus)). Built-in presets + custom `.rego` support. See [Policy presets](#policy-presets). |
 | `libverify-output` | SARIF 2.1.0 / JSON formatters. Tool name/version configurable per consumer. |
 | `libverify-github` | GitHub API client, evidence adapter, PR/release/repo verification orchestration. |
@@ -70,7 +70,7 @@ let sarif = render(&opts, &report.into())?;
 
 ## Controls
 
-28 built-in controls covering SLSA v1.2, SOC2 CC7/CC8, and ASPM repository posture.
+46 built-in controls covering SLSA v1.2, SOC2 CC7/CC8, ASPM repository posture, enterprise posture, and AI-ops agent execution verification.
 
 ### SLSA v1.2
 
@@ -101,14 +101,43 @@ let sarif = render(&opts, &report.into())?;
 | CC7.2 (Anomaly detection) | `stale-review`, `security-file-change` |
 | CC8.1 (Change management) | `change-request-size`, `test-coverage`, `scoped-change`, `description-quality`, `merge-commit-policy`, `conventional-title` |
 
-### ASPM / Repository Posture
+### Repository Posture
+
+| Control | SOC2 TSC | Purpose |
+|---------|----------|---------|
+| `codeowners-coverage` | CC6.1 | CODEOWNERS file covers critical paths |
+| `secret-scanning` | CC6.1, CC6.6 | Secret scanning enabled on the repository |
+| `vulnerability-scanning` | CC7.1 | Vulnerability/Dependabot scanning enabled |
+| `security-policy` | CC7.3, CC7.4 | SECURITY.md or equivalent policy exists |
+| `secret-scanning-push-protection` | CC6.1, CC6.6 | Push protection blocks secrets before they reach the repository |
+| `branch-protection-admin-enforcement` | CC6.1, CC8.1 | Administrators cannot bypass branch protection rules |
+| `dismiss-stale-reviews-on-push` | CC8.1 | Stale review approvals dismissed when new commits are pushed |
+| `environment-protection-rules` | CC6.1, CC8.1 | Deployment environments have protection rules configured |
+| `code-scanning-alerts-resolved` | CC7.1 | Code scanning alerts are resolved before merge |
+| `privileged-workflow-detection` | CC6.1, CC8.1 | Dangerous workflow patterns (`pull_request_target` with PR checkout) detected |
+| `release-asset-attestation` | PI1.4 | Release assets have provenance attestations |
+| `actions-pinned-dependencies` | — | GitHub Actions pinned to full commit SHAs |
+| `workflow-permissions-restricted` | — | Default workflow permissions set to read-only |
+| `dependency-update-tool` | — | Automated dependency update tool (Dependabot/Renovate) configured |
+| `dependency-license-compliance` | — | Dependency licenses reviewed for compliance |
+| `repository-permissions-audit` | — | Repository access permissions follow least-privilege |
+| `default-branch-settings-baseline` | — | Default branch has protection, admin enforcement, and stale review dismissal |
+| `security-test-in-ci` | — | Security testing (CodeQL/Semgrep) integrated in CI |
+| `sbom-attestation` | — | SBOM attestation generated for releases |
+| `protected-tags` | — | Tag protection rules prevent unauthorized releases |
+
+Controls with a TSC mapping have a defensible SOC2 justification. Controls marked "—" are security best practices without direct regulatory mapping.
+
+### AI-ops (Agent Execution Verification)
+
+Verification unit is the agent execution, not just the commit. See [ADR-0001](docs/adr/0001-verification-unit-is-agent-execution.md).
 
 | Control | Purpose |
 |---------|---------|
-| `codeowners-coverage` | CODEOWNERS file covers critical paths |
-| `secret-scanning` | Secret scanning enabled on the repository |
-| `vulnerability-scanning` | Vulnerability/Dependabot scanning enabled |
-| `security-policy` | SECURITY.md or equivalent policy exists |
+| `agent-spec-conformance` | Agent execution conformed to spec (allowed paths, tools, token budget) |
+| `privileged-operation-audit` | Privileged git operations (force push, admin bypass, tag deletion) and notable destructive commands (`rm -rf`, `terraform destroy`, etc.) detected in action log |
+
+These controls are **verifiers, not enforcers** — they surface what happened during an agent execution from structured logs. Runtime gating is the responsibility of the agent framework. Evidence is collected post-execution, pre-promotion (before outputs are merged/released/deployed).
 
 > **SOC2 scope:** libverify covers **technical control evidence** for CC7/CC8 (change management, traceability, review independence). It does NOT cover: access provisioning (CC6.1), physical security (CC6.4), incident response processes, or management's risk assessment. SOC2 Type II requires continuous monitoring over a 6-12 month period; libverify provides point-in-time checks that must be run on every PR and aggregated externally for period coverage.
 
@@ -121,8 +150,12 @@ let sarif = render(&opts, &report.into())?;
 | `aiops` | Escalates all indeterminate to human review instead of fail |
 | `soc1` | Strict on ICFR-relevant controls; advisory on dev-quality controls |
 | `soc2` | Strict on all CC6/CC7/CC8 controls; review on build-track indeterminate |
-| `scorecard` | OSSF Scorecard risk-level mapping. Critical/High → fail, Medium → fail/review. Non-Scorecard controls are advisory |
 | `slsa-l1`..`slsa-l4` | SLSA level enforcement (Source + Build + Dependencies tracks) |
+| `ismap` | ISMAP (Japan government cloud security) control mapping |
+| `pci-dss` | PCI DSS payment card security control mapping |
+| `tisax` | TISAX automotive information security control mapping |
+| `nist-800-53` | NIST SP 800-53 federal security control mapping |
+| `wp29` | WP.29/R155 automotive cybersecurity regulation mapping |
 
 Custom OPA Rego policies are supported via `OpaProfile::from_file()`.
 

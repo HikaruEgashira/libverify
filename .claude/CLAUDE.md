@@ -13,13 +13,15 @@ cargo mutants -p libverify-core -- --lib            # Mutation testing (core)
 
 ## Architecture
 
-Five-crate workspace:
+Seven-crate workspace:
 
-- `libverify-core` — evidence model, Control trait, built-in controls, assessment engine. Pure logic, serde only.
+- `libverify-core` — evidence model, Control trait, 46 built-in controls, assessment engine. Pure logic, serde only.
 - `libverify-policy` — OPA Rego policy engine (regorus).
 - `libverify-output` — SARIF/JSON output formatters.
 - `libverify-github` — GitHub API client, evidence adapter, verification orchestration.
+- `libverify-gitlab` — GitLab API client, evidence adapter.
 - `libverify-verif` — Creusot formal verification targets.
+- `gen-docs` — Rule specification static site generator.
 
 ## Adding a new control
 
@@ -29,4 +31,4 @@ Five-crate workspace:
 3. Register in `crates/core/src/controls/mod.rs`: `pub mod`, `use`, `instantiate()` match arm, and collection function (`compliance_controls()`, `posture_controls()`, `aiops_controls()`, or SLSA group)
 4. If SLSA-mapped, add to `crates/core/src/slsa.rs::control_slsa_mapping()` and `ALL_SLSA_CONTROLS`. If compliance-only, no changes needed in slsa.rs. If agent-safety, add to `aiops_controls()`.
 5. Add Creusot spec if the predicate is verifiable
-6. Add remediation hint in `control.rs::builtin_remediation_hint()` and TSC mapping in `builtin_tsc_mapping()`
+6. Add remediation hint in `control.rs::builtin_remediation_hint()`. Add TSC mapping in `builtin_tsc_mapping()` only if the control has a defensible SOC2 justification — do not map best-practice-only controls

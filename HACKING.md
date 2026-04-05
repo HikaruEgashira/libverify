@@ -17,7 +17,7 @@ cargo fmt --all                                     # Format
 
 ## Architecture
 
-Six-crate workspace.
+Seven-crate workspace.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -50,10 +50,10 @@ Six-crate workspace.
 │  │                                                   │   │
 │  │  libverify-core                                   │   │
 │  │  ├─ EvidenceBundle    (platform-neutral model)    │   │
-│  │  ├─ Control trait     (28 built-in controls)      │   │
+│  │  ├─ Control trait     (46 built-in controls)      │   │
 │  │  ├─ ControlRegistry   (dynamic collection)        │   │
 │  │  ├─ assessment        (evidence → findings)       │   │
-│  │  └─ SLSA v1.2 + SOC2 CC7/CC8 + ASPM mapping      │   │
+│  │  └─ SLSA v1.2 + SOC2 CC7/CC8 + posture + AI-ops   │   │
 │  └──────────────────────┬───────────────────────────┘   │
 │                         │                               │
 │              ┌──────────┴──────────┐                    │
@@ -114,8 +114,8 @@ GitHub API ──→ GitHubClient ──→ adapter ──→ EvidenceBundle
 | `PromotionBatch` | core | A release / deployment batch |
 | `EvidenceState<T>` | core | Tri-state: complete, partial (with gaps), missing, or N/A |
 | `Control` trait | core | Evaluates evidence → `Vec<ControlFinding>` |
-| `ControlId` | core | String-based open ID (`builtin::` constants for 28 built-in) |
-| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 28 |
+| `ControlId` | core | String-based open ID (`builtin::` constants for 46 built-in) |
+| `ControlRegistry` | core | Dynamic control collection. `::builtin()` for all 46 |
 | `ControlProfile` trait | core | Maps findings → severity + gate decision |
 | `OpaProfile` | policy | Rego-based profile. Data-driven preset table (`PRESETS`) + custom file support |
 | `AssessmentReport` | core | Assessment result with findings + profile outcomes |

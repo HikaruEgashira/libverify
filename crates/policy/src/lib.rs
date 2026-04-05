@@ -13,7 +13,7 @@ const RULE_PATH: &str = "data.verify.profile.map";
 /// To add a preset: append one entry here and create the `.rego` file.
 /// Everything else (lookup, error messages, tests) derives from this table.
 struct Preset {
-    /// CLI-facing name (e.g. "scorecard")
+    /// CLI-facing name (e.g. "soc2")
     name: &'static str,
     /// Rego source (embedded at compile time)
     rego: &'static str,
@@ -46,11 +46,6 @@ const PRESETS: &[Preset] = &[
         name: "soc2",
         rego: include_str!("soc2.rego"),
         profile_name: "soc2",
-    },
-    Preset {
-        name: "scorecard",
-        rego: include_str!("scorecard.rego"),
-        profile_name: "scorecard",
     },
     Preset {
         name: "slsa-l1",
@@ -281,7 +276,6 @@ mod tests {
                 "aiops",
                 "soc1",
                 "soc2",
-                "scorecard",
                 "slsa-l1",
                 "slsa-l2",
                 "slsa-l3",
@@ -313,7 +307,6 @@ mod tests {
             ("aiops", "aiops"),
             ("soc1", "soc1"),
             ("soc2", "soc2"),
-            ("scorecard", "scorecard"),
             ("slsa-l1", "slsa-l1"),
             ("slsa-l2", "slsa-l2"),
             ("slsa-l3", "slsa-l3"),
@@ -478,49 +471,6 @@ default map := {"severity": "error", "decision": "fail"}
                 Indeterminate,
                 D::Fail,
                 S::Error,
-            ),
-            // scorecard: tiered severity — critical violated → fail/error
-            (
-                "scorecard",
-                builtin::VULNERABILITY_SCANNING,
-                Violated,
-                D::Fail,
-                S::Error,
-            ),
-            (
-                "scorecard",
-                builtin::VULNERABILITY_SCANNING,
-                Indeterminate,
-                D::Fail,
-                S::Error,
-            ),
-            (
-                "scorecard",
-                builtin::REVIEW_INDEPENDENCE,
-                Violated,
-                D::Fail,
-                S::Error,
-            ),
-            (
-                "scorecard",
-                builtin::REQUIRED_STATUS_CHECKS,
-                Violated,
-                D::Fail,
-                S::Error,
-            ),
-            (
-                "scorecard",
-                builtin::REQUIRED_STATUS_CHECKS,
-                Indeterminate,
-                D::Review,
-                S::Warning,
-            ),
-            (
-                "scorecard",
-                builtin::CHANGE_REQUEST_SIZE,
-                Violated,
-                D::Review,
-                S::Warning,
             ),
             // soc1: change-request-size is advisory
             (

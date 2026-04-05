@@ -493,11 +493,8 @@ pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
         builtin::SECRET_SCANNING_PUSH_PROTECTION => &["CC6.1", "CC6.6"],
         builtin::BRANCH_PROTECTION_ADMIN_ENFORCEMENT => &["CC6.1", "CC8.1"],
         builtin::DISMISS_STALE_REVIEWS_ON_PUSH => &["CC8.1"],
-        builtin::ACTIONS_PINNED_DEPENDENCIES => &["CC7.1", "PI1.4"],
         builtin::ENVIRONMENT_PROTECTION_RULES => &["CC6.1", "CC8.1"],
         builtin::CODE_SCANNING_ALERTS_RESOLVED => &["CC7.1"],
-        builtin::DEPENDENCY_LICENSE_COMPLIANCE => &["CC7.1"],
-        builtin::SBOM_ATTESTATION => &["CC7.1"],
         builtin::RELEASE_ASSET_ATTESTATION => &["PI1.4"],
         builtin::PRIVILEGED_WORKFLOW_DETECTION => &["CC6.1", "CC8.1"],
         // AI-ops (agent execution verification)
