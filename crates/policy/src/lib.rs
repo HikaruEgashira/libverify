@@ -269,258 +269,187 @@ mod tests {
         }
     }
 
+    // ── Preset registry ─────────────────────────────────────────────
+
     #[test]
-    fn available_presets_is_non_empty() {
-        let presets = available_presets();
-        assert!(!presets.is_empty(), "available_presets must not be empty");
-        assert!(presets.contains(&"default"), "must contain 'default' preset");
+    fn available_presets_returns_exact_list() {
+        assert_eq!(
+            available_presets(),
+            vec![
+                "default",
+                "oss",
+                "aiops",
+                "soc1",
+                "soc2",
+                "scorecard",
+                "slsa-l1",
+                "slsa-l2",
+                "slsa-l3",
+                "slsa-l4",
+                "ismap",
+                "pci-dss",
+                "tisax",
+                "nist-800-53",
+                "wp29",
+            ]
+        );
     }
 
     #[test]
-    fn all_presets_load() {
+    fn all_presets_load_valid_rego() {
         for name in available_presets() {
-            assert!(
-                OpaProfile::from_preset_or_file(name).is_ok(),
-                "preset '{name}' failed to load"
-            );
+            OpaProfile::from_preset_or_file(name)
+                .unwrap_or_else(|e| panic!("preset '{name}' failed to load: {e}"));
+        }
+    }
+
+    // ── Profile identity ────────────────────────────────────────────
+
+    #[test]
+    fn profile_name_matches_preset_for_all_presets() {
+        let expected: &[(&str, &str)] = &[
+            ("default", "opa-default"),
+            ("oss", "oss"),
+            ("aiops", "aiops"),
+            ("soc1", "soc1"),
+            ("soc2", "soc2"),
+            ("scorecard", "scorecard"),
+            ("slsa-l1", "slsa-l1"),
+            ("slsa-l2", "slsa-l2"),
+            ("slsa-l3", "slsa-l3"),
+            ("slsa-l4", "slsa-l4"),
+            ("ismap", "ismap"),
+            ("pci-dss", "pci-dss"),
+            ("tisax", "tisax"),
+            ("nist-800-53", "nist-800-53"),
+            ("wp29", "wp29"),
+        ];
+        for &(preset, expected_name) in expected {
+            let profile = OpaProfile::from_preset_or_file(preset).unwrap();
+            assert_eq!(profile.name(), expected_name, "preset '{preset}'");
         }
     }
 
     #[test]
-    fn profile_name_matches_preset() {
-        let profile = OpaProfile::from_preset_or_file("default").unwrap();
-        assert_eq!(profile.name(), "opa-default");
-
-        let profile = OpaProfile::from_preset_or_file("oss").unwrap();
-        assert_eq!(profile.name(), "oss");
+    fn custom_rego_profile_name_is_opa_custom() {
+        let rego = r#"
+package verify.profile
+import rego.v1
+default map := {"severity": "error", "decision": "fail"}
+"#;
+        let profile = OpaProfile::from_rego("test.rego", rego).unwrap();
+        assert_eq!(profile.name(), "opa-custom");
     }
 
-    #[test]
-    fn default_policy_violated_reviews() {
-        let profile = OpaProfile::from_preset_or_file("default").unwrap();
-        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
+    // ── Severity labels ─────────────────────────────────────────────
 
     #[test]
-    fn default_policy_satisfied_passes() {
-        let profile = OpaProfile::from_preset_or_file("default").unwrap();
-        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Satisfied);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Pass);
-    }
-
-    #[test]
-    fn oss_preset_source_authenticity_violated_is_review() {
-        let profile = OpaProfile::from_preset_or_file("oss").unwrap();
-        let finding = make_finding(builtin::SOURCE_AUTHENTICITY, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
-    fn soc1_preset_returns_soc1_severity_labels() {
+    fn severity_labels_soc1_returns_all_custom_labels() {
         let profile = OpaProfile::from_preset_or_file("soc1").unwrap();
         let labels = profile.severity_labels();
+        assert_eq!(labels.info, "effective");
+        assert_eq!(labels.warning, "deficiency");
         assert_eq!(labels.error, "material_weakness");
     }
 
     #[test]
-    fn slsa_l1_required_indeterminate_fails() {
-        // SLSA v1.2: Build L1 requires build-provenance
-        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
-        let finding = make_finding(builtin::BUILD_PROVENANCE, ControlStatus::Indeterminate);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
+    fn severity_labels_non_soc1_presets_return_default() {
+        let defaults = SeverityLabels::default();
+        for name in available_presets().into_iter().filter(|n| *n != "soc1") {
+            let profile = OpaProfile::from_preset_or_file(name).unwrap();
+            assert_eq!(
+                profile.severity_labels(),
+                defaults,
+                "preset '{name}' should use default severity labels"
+            );
+        }
     }
 
+    // ── Policy decision matrix ──────────────────────────────────────
+    // Each row: (preset, control, status, expected_decision, expected_severity)
+
     #[test]
-    fn slsa_l1_review_independence_not_required() {
-        // SLSA v1.2: Source L1 only requires version control, not review independence
-        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
-        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Indeterminate);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
+    fn preset_control_decision_matrix() {
+        use ControlStatus::*;
+        use FindingSeverity as S;
+        use GateDecision as D;
+
+        let cases: &[(&str, &str, ControlStatus, D, S)] = &[
+            // default: advisory-only — violated → review, satisfied → pass
+            ("default", builtin::REVIEW_INDEPENDENCE, Violated, D::Review, S::Warning),
+            ("default", builtin::REVIEW_INDEPENDENCE, Satisfied, D::Pass, S::Info),
+            // oss: complement-based — source-authenticity violated → review
+            ("oss", builtin::SOURCE_AUTHENTICITY, Violated, D::Review, S::Warning),
+            // slsa-l1: build-provenance required, review-independence optional
+            ("slsa-l1", builtin::BUILD_PROVENANCE, Indeterminate, D::Fail, S::Error),
+            ("slsa-l1", builtin::REVIEW_INDEPENDENCE, Indeterminate, D::Review, S::Warning),
+            ("slsa-l1", builtin::BRANCH_HISTORY_INTEGRITY, Indeterminate, D::Review, S::Warning),
+            ("slsa-l1", builtin::DEPENDENCY_SIGNATURE, Indeterminate, D::Fail, S::Error),
+            ("slsa-l1", builtin::DEPENDENCY_PROVENANCE_CHECK, Indeterminate, D::Review, S::Warning),
+            ("slsa-l1", builtin::CHANGE_REQUEST_SIZE, Indeterminate, D::Review, S::Warning),
+            // slsa-l2: branch-history + vuln-scanning required, dep-provenance not yet
+            ("slsa-l2", builtin::BRANCH_HISTORY_INTEGRITY, Indeterminate, D::Fail, S::Error),
+            ("slsa-l2", builtin::VULNERABILITY_SCANNING, Indeterminate, D::Fail, S::Error),
+            ("slsa-l2", builtin::DEPENDENCY_PROVENANCE_CHECK, Indeterminate, D::Review, S::Warning),
+            // slsa-l3: dep-signer-verified required
+            ("slsa-l3", builtin::DEPENDENCY_SIGNER_VERIFIED, Indeterminate, D::Fail, S::Error),
+            // slsa-l4: dep-completeness required
+            ("slsa-l4", builtin::DEPENDENCY_COMPLETENESS, Indeterminate, D::Fail, S::Error),
+            // scorecard: tiered severity — critical violated → fail/error
+            ("scorecard", builtin::VULNERABILITY_SCANNING, Violated, D::Fail, S::Error),
+            ("scorecard", builtin::VULNERABILITY_SCANNING, Indeterminate, D::Fail, S::Error),
+            ("scorecard", builtin::REVIEW_INDEPENDENCE, Violated, D::Fail, S::Error),
+            ("scorecard", builtin::REQUIRED_STATUS_CHECKS, Violated, D::Fail, S::Error),
+            ("scorecard", builtin::REQUIRED_STATUS_CHECKS, Indeterminate, D::Review, S::Warning),
+            ("scorecard", builtin::CHANGE_REQUEST_SIZE, Violated, D::Review, S::Warning),
+            // soc1: change-request-size is advisory
+            ("soc1", builtin::CHANGE_REQUEST_SIZE, Violated, D::Review, S::Warning),
+        ];
+
+        for &(preset, control, status, exp_decision, exp_severity) in cases {
+            let profile = OpaProfile::from_preset_or_file(preset).unwrap();
+            let outcome = profile.map(&make_finding(control, status));
+            assert_eq!(
+                outcome.decision, exp_decision,
+                "{preset}/{control}/{status:?}: expected decision {exp_decision:?}, got {:?}",
+                outcome.decision,
+            );
+            assert_eq!(
+                outcome.severity, exp_severity,
+                "{preset}/{control}/{status:?}: expected severity {exp_severity:?}, got {:?}",
+                outcome.severity,
+            );
+        }
     }
 
-    #[test]
-    fn slsa_l1_optional_indeterminate_reviews() {
-        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
-        let finding = make_finding(
-            builtin::BRANCH_HISTORY_INTEGRITY,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
+    // ── Custom Rego ─────────────────────────────────────────────────
 
     #[test]
-    fn slsa_l2_branch_history_required() {
-        let profile = OpaProfile::from_preset_or_file("slsa-l2").unwrap();
-        let finding = make_finding(
-            builtin::BRANCH_HISTORY_INTEGRITY,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn slsa_l1_non_slsa_control_indeterminate_reviews() {
-        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
-        let finding = make_finding(builtin::CHANGE_REQUEST_SIZE, ControlStatus::Indeterminate);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
-    fn slsa_l1_dependency_signature_required() {
-        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
-        let finding = make_finding(builtin::DEPENDENCY_SIGNATURE, ControlStatus::Indeterminate);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn slsa_l2_vulnerability_scanning_required() {
-        // SLSA v1.2: Dep L2 requires known vulnerabilities triaged
-        let profile = OpaProfile::from_preset_or_file("slsa-l2").unwrap();
-        let finding = make_finding(
-            builtin::VULNERABILITY_SCANNING,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn slsa_l2_dependency_provenance_not_required() {
-        // SLSA v1.2: dependency-provenance is Dep L3, not L2
-        let profile = OpaProfile::from_preset_or_file("slsa-l2").unwrap();
-        let finding = make_finding(
-            builtin::DEPENDENCY_PROVENANCE_CHECK,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
-    fn slsa_l3_dependency_signer_verified_required() {
-        let profile = OpaProfile::from_preset_or_file("slsa-l3").unwrap();
-        let finding = make_finding(
-            builtin::DEPENDENCY_SIGNER_VERIFIED,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn slsa_l4_dependency_completeness_required() {
-        let profile = OpaProfile::from_preset_or_file("slsa-l4").unwrap();
-        let finding = make_finding(
-            builtin::DEPENDENCY_COMPLETENESS,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn slsa_l1_dependency_provenance_optional() {
-        let profile = OpaProfile::from_preset_or_file("slsa-l1").unwrap();
-        let finding = make_finding(
-            builtin::DEPENDENCY_PROVENANCE_CHECK,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
-    fn soc1_change_request_size_advisory() {
-        let profile = OpaProfile::from_preset_or_file("soc1").unwrap();
-        let finding = make_finding(builtin::CHANGE_REQUEST_SIZE, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    // --- Scorecard preset tests ---
-
-    #[test]
-    fn scorecard_critical_violated_fails() {
-        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
-        let finding = make_finding(builtin::VULNERABILITY_SCANNING, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-        assert_eq!(outcome.severity, FindingSeverity::Error);
-    }
-
-    #[test]
-    fn scorecard_critical_indeterminate_fails() {
-        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
-        let finding = make_finding(
-            builtin::VULNERABILITY_SCANNING,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn scorecard_high_violated_fails() {
-        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
-        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn scorecard_medium_violated_fails() {
-        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
-        let finding = make_finding(builtin::REQUIRED_STATUS_CHECKS, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Fail);
-    }
-
-    #[test]
-    fn scorecard_medium_indeterminate_reviews() {
-        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
-        let finding = make_finding(
-            builtin::REQUIRED_STATUS_CHECKS,
-            ControlStatus::Indeterminate,
-        );
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
-    fn scorecard_unmapped_violated_reviews() {
-        let profile = OpaProfile::from_preset_or_file("scorecard").unwrap();
-        let finding = make_finding(builtin::CHANGE_REQUEST_SIZE, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
-    }
-
-    #[test]
-    fn custom_policy_from_string() {
-        let custom_rego = r#"
+    fn custom_policy_maps_all_statuses() {
+        let rego = r#"
 package verify.profile
 import rego.v1
 default map := {"severity": "error", "decision": "fail"}
 map := {"severity": "info", "decision": "pass"} if { input.status == "satisfied" }
 map := {"severity": "warning", "decision": "review"} if { input.status == "indeterminate" }
 "#;
-        let profile = OpaProfile::from_rego("custom.rego", custom_rego).unwrap();
-        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Indeterminate);
-        let outcome = profile.map(&finding);
-        assert_eq!(outcome.decision, GateDecision::Review);
+        let profile = OpaProfile::from_rego("custom.rego", rego).unwrap();
+        let cases = [
+            (ControlStatus::Satisfied, GateDecision::Pass, FindingSeverity::Info),
+            (ControlStatus::Indeterminate, GateDecision::Review, FindingSeverity::Warning),
+            (ControlStatus::Violated, GateDecision::Fail, FindingSeverity::Error),
+        ];
+        for (status, exp_decision, exp_severity) in cases {
+            let outcome = profile.map(&make_finding(builtin::REVIEW_INDEPENDENCE, status));
+            assert_eq!(outcome.decision, exp_decision, "status {status:?}");
+            assert_eq!(outcome.severity, exp_severity, "status {status:?}");
+        }
     }
 
+    // ── Annotations ─────────────────────────────────────────────────
+
     #[test]
-    fn annotations_extracted_from_rego() {
+    fn annotations_extracted_with_correct_key_value() {
         let rego = r#"
 package verify.profile
 import rego.v1
@@ -528,66 +457,47 @@ default map := {"severity": "error", "decision": "fail", "annotations": {"framew
 map := {"severity": "info", "decision": "pass"} if { input.status == "satisfied" }
 "#;
         let profile = OpaProfile::from_rego("ann.rego", rego).unwrap();
-        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
-        assert_eq!(
-            outcome.annotations.get("framework_ref").map(|s| s.as_str()),
-            Some("TEST-1")
-        );
+        let outcome = profile.map(&make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated));
+        assert_eq!(outcome.annotations.len(), 1);
+        assert_eq!(outcome.annotations["framework_ref"], "TEST-1");
     }
 
     #[test]
-    fn annotations_empty_when_absent() {
+    fn annotations_empty_when_rego_omits_them() {
         let profile = OpaProfile::from_preset_or_file("default").unwrap();
-        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
+        let outcome = profile.map(&make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated));
         assert!(outcome.annotations.is_empty());
     }
 
     #[test]
-    fn ismap_annotations_present() {
+    fn ismap_annotations_contain_framework_ref() {
         let profile = OpaProfile::from_preset_or_file("ismap").unwrap();
-        let finding = make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated);
-        let outcome = profile.map(&finding);
+        let outcome = profile.map(&make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated));
         assert!(
-            !outcome.annotations.is_empty(),
-            "ISMAP violated finding should have annotations"
+            outcome.annotations.contains_key("framework_ref"),
+            "ISMAP annotations: {:?}",
+            outcome.annotations,
         );
-        assert!(outcome.annotations.contains_key("framework_ref"));
     }
 
-    /// Ensure every preset returns a deterministic result for every built-in
-    /// control in both violated and indeterminate states.
-    /// This catches control_id classification gaps that silently fall to default.
+    // ── Exhaustive coverage ─────────────────────────────────────────
+
+    /// Every preset × every control × {violated, indeterminate} must produce
+    /// a valid decision without panic. Catches Rego classification gaps.
     #[test]
     fn all_presets_cover_all_controls() {
-        let presets = available_presets();
-        // Presets that intentionally use status-only rules (no per-control sets)
-        // and have a deliberate default for unclassified controls:
-        //   - default:  all violated/indeterminate → fail (intentional)
-        //   - slsa-l1/l2/l3/l4: non-required → review (intentional)
-        //   - scorecard: unmapped → review (intentional)
-        //   - aiops: devquality → review, rest → fail (uses complement)
-        //   - oss: uses complement with explicit fallback
-        //
-        // For presets with explicit sets (soc1, soc2, ismap, pci-dss, tisax,
-        // nist-800-53, wp29), we verify every control produces a result.
-        // All presets should load and evaluate without error.
-        for preset_name in &presets {
+        for preset_name in &available_presets() {
             let profile = OpaProfile::from_preset_or_file(preset_name)
-                .unwrap_or_else(|e| panic!("Failed to load preset '{preset_name}': {e}"));
+                .unwrap_or_else(|e| panic!("preset '{preset_name}': {e}"));
             for control_id in builtin::ALL {
                 for status in [ControlStatus::Violated, ControlStatus::Indeterminate] {
-                    let finding = make_finding(control_id, status);
-                    let outcome = profile.map(&finding);
-                    // Every control must produce pass, review, or fail — never panic
+                    let outcome = profile.map(&make_finding(control_id, status));
                     assert!(
                         matches!(
                             outcome.decision,
                             GateDecision::Pass | GateDecision::Review | GateDecision::Fail
                         ),
-                        "Preset '{preset_name}' returned unexpected decision for \
-                         control '{control_id}' with status {status:?}: {:?}",
+                        "{preset_name}/{control_id}/{status:?}: {:?}",
                         outcome.decision,
                     );
                 }
