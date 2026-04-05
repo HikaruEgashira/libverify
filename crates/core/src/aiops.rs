@@ -201,4 +201,73 @@ mod tests {
         // harness-result is NotApplicable (no check_runs) -> Pass
         assert!(fail_count >= 3, "At least 3 controls should fail, got {fail_count}");
     }
+
+    #[test]
+    fn build_evidence_includes_check_runs() {
+        let input = SessionInput {
+            agent_id: "a".into(),
+            session_id: "s".into(),
+            actions: vec![],
+            spec: AgentSpec::default(),
+            files_touched: vec![],
+            tools_used: vec![],
+            steps_taken: 0,
+            cost_cents: 0,
+            check_runs: vec![
+                CheckRunEvidence { name: "ci/build".into(), conclusion: CheckConclusion::Success, app_slug: None },
+            ],
+            privileged_events: vec![],
+        };
+        let evidence = build_evidence(&input);
+        let runs = evidence.check_runs.value().expect("check_runs should be Complete");
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0].name, "ci/build");
+    }
+
+    #[test]
+    fn build_evidence_empty_check_runs_is_not_applicable() {
+        let input = SessionInput {
+            agent_id: "a".into(),
+            session_id: "s".into(),
+            actions: vec![],
+            spec: AgentSpec::default(),
+            files_touched: vec![],
+            tools_used: vec![],
+            steps_taken: 0,
+            cost_cents: 0,
+            check_runs: vec![],
+            privileged_events: vec![],
+        };
+        let evidence = build_evidence(&input);
+        assert!(evidence.check_runs.value().is_none(), "empty check_runs should be NotApplicable");
+    }
+
+    #[test]
+    fn build_evidence_includes_privileged_events() {
+        use crate::evidence::{PrivilegedAction, PrivilegedGitEvent};
+        let input = SessionInput {
+            agent_id: "a".into(),
+            session_id: "s".into(),
+            actions: vec![],
+            spec: AgentSpec::default(),
+            files_touched: vec![],
+            tools_used: vec![],
+            steps_taken: 0,
+            cost_cents: 0,
+            check_runs: vec![],
+            privileged_events: vec![PrivilegedGitEvent {
+                actor: "bot".into(),
+                action: PrivilegedAction::ForcePush,
+                branch: Some("main".into()),
+                tag: None,
+                timestamp: None,
+                commit_sha: None,
+                detail: None,
+            }],
+        };
+        let evidence = build_evidence(&input);
+        let events = evidence.privileged_git_events.value().expect("events should be Complete");
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].action, PrivilegedAction::ForcePush);
+    }
 }
