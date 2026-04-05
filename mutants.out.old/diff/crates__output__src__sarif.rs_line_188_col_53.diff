@@ -1,0 +1,21 @@
+--- crates/output/src/sarif.rs
++++ replace == with != in filter_sarif_runs
+@@ -180,17 +180,17 @@
+ }
+ 
+ fn filter_sarif_runs(sarif: &mut serde_json::Value) {
+     if let Some(runs) = sarif["runs"].as_array_mut() {
+         for run in runs.iter_mut() {
+             if let Some(results) = run["results"].as_array() {
+                 let filtered: Vec<serde_json::Value> = results
+                     .iter()
+-                    .filter(|r| r["level"].as_str() == Some("error"))
++                    .filter(|r| r["level"].as_str() != /* ~ changed by cargo-mutants ~ */ Some("error"))
+                     .cloned()
+                     .collect();
+                 run["results"] = serde_json::Value::Array(filtered);
+             }
+         }
+     }
+ }
+ 

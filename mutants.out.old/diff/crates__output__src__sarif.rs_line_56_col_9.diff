@@ -1,0 +1,21 @@
+--- crates/output/src/sarif.rs
++++ replace && with || in render
+@@ -48,17 +48,17 @@
+     tool_name: &str,
+     tool_version: &str,
+ ) -> Result<String> {
+     let mut sarif = build_sarif(&result.report, tool_name, tool_version);
+     if only_failures {
+         filter_sarif_runs(&mut sarif);
+     }
+     if let Some(evidence) = &result.evidence
+-        && let Some(run) = sarif["runs"].as_array_mut().and_then(|a| a.first_mut())
++        || /* ~ changed by cargo-mutants ~ */ let Some(run) = sarif["runs"].as_array_mut().and_then(|a| a.first_mut())
+     {
+         run["properties"]["evidence"] = serde_json::to_value(evidence)?;
+     }
+     Ok(serde_json::to_string_pretty(&sarif)?)
+ }
+ 
+ pub fn render_batch(
+     batch: &BatchReport,

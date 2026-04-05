@@ -1,0 +1,3618 @@
+[
+  {
+    "diff": "--- crates/output/src/lib.rs\n+++ replace parse_format -> Result<Format> with Ok(Default::default())\n@@ -17,21 +17,17 @@\n     pub only_failures: bool,\n     /// Tool name for SARIF output (e.g. \"gh-verify\", \"atlassian-verify\").\n     pub tool_name: String,\n     /// Tool version for SARIF output.\n     pub tool_version: String,\n }\n \n pub fn parse_format(s: &str) -> Result<Format> {\n-    match s {\n-        \"json\" => Ok(Format::Json),\n-        \"sarif\" => Ok(Format::Sarif),\n-        _ => anyhow::bail!(\"invalid format: {s} (use 'json' or 'sarif')\"),\n-    }\n+    Ok(Default::default()) /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {\n     match opts.format {\n         Format::Json => json::render(result, opts.only_failures),\n         Format::Sarif => sarif::render(\n             result,\n             opts.only_failures,\n",
+    "file": "crates/output/src/lib.rs",
+    "function": {
+      "function_name": "parse_format",
+      "return_type": "-> Result<Format>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 30
+        },
+        "start": {
+          "column": 1,
+          "line": 24
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/lib.rs:25:5: replace parse_format -> Result<Format> with Ok(Default::default())",
+    "package": "libverify-output",
+    "replacement": "Ok(Default::default())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 29
+      },
+      "start": {
+        "column": 5,
+        "line": 25
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/lib.rs\n+++ delete match arm \"json\" in parse_format\n@@ -18,17 +18,17 @@\n     /// Tool name for SARIF output (e.g. \"gh-verify\", \"atlassian-verify\").\n     pub tool_name: String,\n     /// Tool version for SARIF output.\n     pub tool_version: String,\n }\n \n pub fn parse_format(s: &str) -> Result<Format> {\n     match s {\n-        \"json\" => Ok(Format::Json),\n+         /* ~ changed by cargo-mutants ~ */\n         \"sarif\" => Ok(Format::Sarif),\n         _ => anyhow::bail!(\"invalid format: {s} (use 'json' or 'sarif')\"),\n     }\n }\n \n pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {\n     match opts.format {\n         Format::Json => json::render(result, opts.only_failures),\n",
+    "file": "crates/output/src/lib.rs",
+    "function": {
+      "function_name": "parse_format",
+      "return_type": "-> Result<Format>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 30
+        },
+        "start": {
+          "column": 1,
+          "line": 24
+        }
+      }
+    },
+    "genre": "MatchArm",
+    "name": "crates/output/src/lib.rs:26:9: delete match arm \"json\" in parse_format",
+    "package": "libverify-output",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 36,
+        "line": 26
+      },
+      "start": {
+        "column": 9,
+        "line": 26
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/lib.rs\n+++ delete match arm \"sarif\" in parse_format\n@@ -19,17 +19,17 @@\n     pub tool_name: String,\n     /// Tool version for SARIF output.\n     pub tool_version: String,\n }\n \n pub fn parse_format(s: &str) -> Result<Format> {\n     match s {\n         \"json\" => Ok(Format::Json),\n-        \"sarif\" => Ok(Format::Sarif),\n+         /* ~ changed by cargo-mutants ~ */\n         _ => anyhow::bail!(\"invalid format: {s} (use 'json' or 'sarif')\"),\n     }\n }\n \n pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {\n     match opts.format {\n         Format::Json => json::render(result, opts.only_failures),\n         Format::Sarif => sarif::render(\n",
+    "file": "crates/output/src/lib.rs",
+    "function": {
+      "function_name": "parse_format",
+      "return_type": "-> Result<Format>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 30
+        },
+        "start": {
+          "column": 1,
+          "line": 24
+        }
+      }
+    },
+    "genre": "MatchArm",
+    "name": "crates/output/src/lib.rs:27:9: delete match arm \"sarif\" in parse_format",
+    "package": "libverify-output",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 38,
+        "line": 27
+      },
+      "start": {
+        "column": 9,
+        "line": 27
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/lib.rs\n+++ replace render -> Result<String> with Ok(String::new())\n@@ -25,25 +25,17 @@\n     match s {\n         \"json\" => Ok(Format::Json),\n         \"sarif\" => Ok(Format::Sarif),\n         _ => anyhow::bail!(\"invalid format: {s} (use 'json' or 'sarif')\"),\n     }\n }\n \n pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {\n-    match opts.format {\n-        Format::Json => json::render(result, opts.only_failures),\n-        Format::Sarif => sarif::render(\n-            result,\n-            opts.only_failures,\n-            &opts.tool_name,\n-            &opts.tool_version,\n-        ),\n-    }\n+    Ok(String::new()) /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render_batch(opts: &OutputOptions, batch: &BatchReport) -> Result<String> {\n     match opts.format {\n         Format::Json => json::render_batch(batch, opts.only_failures),\n         Format::Sarif => sarif::render_batch(\n             batch,\n             opts.only_failures,\n",
+    "file": "crates/output/src/lib.rs",
+    "function": {
+      "function_name": "render",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 42
+        },
+        "start": {
+          "column": 1,
+          "line": 32
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/lib.rs:33:5: replace render -> Result<String> with Ok(String::new())",
+    "package": "libverify-output",
+    "replacement": "Ok(String::new())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 41
+      },
+      "start": {
+        "column": 5,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/lib.rs\n+++ replace render -> Result<String> with Ok(\"xyzzy\".into())\n@@ -25,25 +25,17 @@\n     match s {\n         \"json\" => Ok(Format::Json),\n         \"sarif\" => Ok(Format::Sarif),\n         _ => anyhow::bail!(\"invalid format: {s} (use 'json' or 'sarif')\"),\n     }\n }\n \n pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {\n-    match opts.format {\n-        Format::Json => json::render(result, opts.only_failures),\n-        Format::Sarif => sarif::render(\n-            result,\n-            opts.only_failures,\n-            &opts.tool_name,\n-            &opts.tool_version,\n-        ),\n-    }\n+    Ok(\"xyzzy\".into()) /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render_batch(opts: &OutputOptions, batch: &BatchReport) -> Result<String> {\n     match opts.format {\n         Format::Json => json::render_batch(batch, opts.only_failures),\n         Format::Sarif => sarif::render_batch(\n             batch,\n             opts.only_failures,\n",
+    "file": "crates/output/src/lib.rs",
+    "function": {
+      "function_name": "render",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 42
+        },
+        "start": {
+          "column": 1,
+          "line": 32
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/lib.rs:33:5: replace render -> Result<String> with Ok(\"xyzzy\".into())",
+    "package": "libverify-output",
+    "replacement": "Ok(\"xyzzy\".into())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 41
+      },
+      "start": {
+        "column": 5,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/lib.rs\n+++ replace render_batch -> Result<String> with Ok(String::new())\n@@ -37,25 +37,17 @@\n             opts.only_failures,\n             &opts.tool_name,\n             &opts.tool_version,\n         ),\n     }\n }\n \n pub fn render_batch(opts: &OutputOptions, batch: &BatchReport) -> Result<String> {\n-    match opts.format {\n-        Format::Json => json::render_batch(batch, opts.only_failures),\n-        Format::Sarif => sarif::render_batch(\n-            batch,\n-            opts.only_failures,\n-            &opts.tool_name,\n-            &opts.tool_version,\n-        ),\n-    }\n+    Ok(String::new()) /* ~ changed by cargo-mutants ~ */\n }\n \n #[cfg(test)]\n mod tests {\n     use super::*;\n     use libverify_core::assessment::AssessmentReport;\n     use libverify_core::control::{ControlFinding, builtin};\n     use libverify_core::profile::{FindingSeverity, GateDecision, ProfileOutcome};\n",
+    "file": "crates/output/src/lib.rs",
+    "function": {
+      "function_name": "render_batch",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 54
+        },
+        "start": {
+          "column": 1,
+          "line": 44
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/lib.rs:45:5: replace render_batch -> Result<String> with Ok(String::new())",
+    "package": "libverify-output",
+    "replacement": "Ok(String::new())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 53
+      },
+      "start": {
+        "column": 5,
+        "line": 45
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/lib.rs\n+++ replace render_batch -> Result<String> with Ok(\"xyzzy\".into())\n@@ -37,25 +37,17 @@\n             opts.only_failures,\n             &opts.tool_name,\n             &opts.tool_version,\n         ),\n     }\n }\n \n pub fn render_batch(opts: &OutputOptions, batch: &BatchReport) -> Result<String> {\n-    match opts.format {\n-        Format::Json => json::render_batch(batch, opts.only_failures),\n-        Format::Sarif => sarif::render_batch(\n-            batch,\n-            opts.only_failures,\n-            &opts.tool_name,\n-            &opts.tool_version,\n-        ),\n-    }\n+    Ok(\"xyzzy\".into()) /* ~ changed by cargo-mutants ~ */\n }\n \n #[cfg(test)]\n mod tests {\n     use super::*;\n     use libverify_core::assessment::AssessmentReport;\n     use libverify_core::control::{ControlFinding, builtin};\n     use libverify_core::profile::{FindingSeverity, GateDecision, ProfileOutcome};\n",
+    "file": "crates/output/src/lib.rs",
+    "function": {
+      "function_name": "render_batch",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 54
+        },
+        "start": {
+          "column": 1,
+          "line": 44
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/lib.rs:45:5: replace render_batch -> Result<String> with Ok(\"xyzzy\".into())",
+    "package": "libverify-output",
+    "replacement": "Ok(\"xyzzy\".into())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 53
+      },
+      "start": {
+        "column": 5,
+        "line": 45
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/json.rs\n+++ replace render -> Result<String> with Ok(String::new())\n@@ -1,19 +1,14 @@\n use anyhow::Result;\n use libverify_core::assessment::{AssessmentReport, BatchEntry, BatchReport, VerificationResult};\n use libverify_core::profile::GateDecision;\n \n pub fn render(result: &VerificationResult, only_failures: bool) -> Result<String> {\n-    if only_failures {\n-        let filtered = filter_result(result);\n-        Ok(serde_json::to_string_pretty(&filtered)?)\n-    } else {\n-        Ok(serde_json::to_string_pretty(result)?)\n-    }\n+    Ok(String::new()) /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render_batch(batch: &BatchReport, only_failures: bool) -> Result<String> {\n     if only_failures {\n         let filtered = filter_batch(batch);\n         Ok(serde_json::to_string_pretty(&filtered)?)\n     } else {\n         Ok(serde_json::to_string_pretty(batch)?)\n",
+    "file": "crates/output/src/json.rs",
+    "function": {
+      "function_name": "render",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 12
+        },
+        "start": {
+          "column": 1,
+          "line": 5
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/json.rs:6:5: replace render -> Result<String> with Ok(String::new())",
+    "package": "libverify-output",
+    "replacement": "Ok(String::new())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 11
+      },
+      "start": {
+        "column": 5,
+        "line": 6
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/json.rs\n+++ replace render -> Result<String> with Ok(\"xyzzy\".into())\n@@ -1,19 +1,14 @@\n use anyhow::Result;\n use libverify_core::assessment::{AssessmentReport, BatchEntry, BatchReport, VerificationResult};\n use libverify_core::profile::GateDecision;\n \n pub fn render(result: &VerificationResult, only_failures: bool) -> Result<String> {\n-    if only_failures {\n-        let filtered = filter_result(result);\n-        Ok(serde_json::to_string_pretty(&filtered)?)\n-    } else {\n-        Ok(serde_json::to_string_pretty(result)?)\n-    }\n+    Ok(\"xyzzy\".into()) /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render_batch(batch: &BatchReport, only_failures: bool) -> Result<String> {\n     if only_failures {\n         let filtered = filter_batch(batch);\n         Ok(serde_json::to_string_pretty(&filtered)?)\n     } else {\n         Ok(serde_json::to_string_pretty(batch)?)\n",
+    "file": "crates/output/src/json.rs",
+    "function": {
+      "function_name": "render",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 12
+        },
+        "start": {
+          "column": 1,
+          "line": 5
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/json.rs:6:5: replace render -> Result<String> with Ok(\"xyzzy\".into())",
+    "package": "libverify-output",
+    "replacement": "Ok(\"xyzzy\".into())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 11
+      },
+      "start": {
+        "column": 5,
+        "line": 6
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/json.rs\n+++ replace render_batch -> Result<String> with Ok(String::new())\n@@ -7,22 +7,17 @@\n         let filtered = filter_result(result);\n         Ok(serde_json::to_string_pretty(&filtered)?)\n     } else {\n         Ok(serde_json::to_string_pretty(result)?)\n     }\n }\n \n pub fn render_batch(batch: &BatchReport, only_failures: bool) -> Result<String> {\n-    if only_failures {\n-        let filtered = filter_batch(batch);\n-        Ok(serde_json::to_string_pretty(&filtered)?)\n-    } else {\n-        Ok(serde_json::to_string_pretty(batch)?)\n-    }\n+    Ok(String::new()) /* ~ changed by cargo-mutants ~ */\n }\n \n fn filter_result(result: &VerificationResult) -> VerificationResult {\n     let report = &result.report;\n     let mut filtered_findings = Vec::new();\n     let mut filtered_outcomes = Vec::new();\n \n     for (finding, outcome) in report.findings.iter().zip(report.outcomes.iter()) {\n",
+    "file": "crates/output/src/json.rs",
+    "function": {
+      "function_name": "render_batch",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 21
+        },
+        "start": {
+          "column": 1,
+          "line": 14
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/json.rs:15:5: replace render_batch -> Result<String> with Ok(String::new())",
+    "package": "libverify-output",
+    "replacement": "Ok(String::new())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 20
+      },
+      "start": {
+        "column": 5,
+        "line": 15
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/json.rs\n+++ replace render_batch -> Result<String> with Ok(\"xyzzy\".into())\n@@ -7,22 +7,17 @@\n         let filtered = filter_result(result);\n         Ok(serde_json::to_string_pretty(&filtered)?)\n     } else {\n         Ok(serde_json::to_string_pretty(result)?)\n     }\n }\n \n pub fn render_batch(batch: &BatchReport, only_failures: bool) -> Result<String> {\n-    if only_failures {\n-        let filtered = filter_batch(batch);\n-        Ok(serde_json::to_string_pretty(&filtered)?)\n-    } else {\n-        Ok(serde_json::to_string_pretty(batch)?)\n-    }\n+    Ok(\"xyzzy\".into()) /* ~ changed by cargo-mutants ~ */\n }\n \n fn filter_result(result: &VerificationResult) -> VerificationResult {\n     let report = &result.report;\n     let mut filtered_findings = Vec::new();\n     let mut filtered_outcomes = Vec::new();\n \n     for (finding, outcome) in report.findings.iter().zip(report.outcomes.iter()) {\n",
+    "file": "crates/output/src/json.rs",
+    "function": {
+      "function_name": "render_batch",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 21
+        },
+        "start": {
+          "column": 1,
+          "line": 14
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/json.rs:15:5: replace render_batch -> Result<String> with Ok(\"xyzzy\".into())",
+    "package": "libverify-output",
+    "replacement": "Ok(\"xyzzy\".into())",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 20
+      },
+      "start": {
+        "column": 5,
+        "line": 15
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/json.rs\n+++ replace filter_result -> VerificationResult with Default::default()\n@@ -16,36 +16,17 @@\n         let filtered = filter_batch(batch);\n         Ok(serde_json::to_string_pretty(&filtered)?)\n     } else {\n         Ok(serde_json::to_string_pretty(batch)?)\n     }\n }\n \n fn filter_result(result: &VerificationResult) -> VerificationResult {\n-    let report = &result.report;\n-    let mut filtered_findings = Vec::new();\n-    let mut filtered_outcomes = Vec::new();\n-\n-    for (finding, outcome) in report.findings.iter().zip(report.outcomes.iter()) {\n-        if outcome.decision == GateDecision::Fail {\n-            filtered_findings.push(finding.clone());\n-            filtered_outcomes.push(outcome.clone());\n-        }\n-    }\n-\n-    VerificationResult {\n-        report: AssessmentReport {\n-            profile_name: report.profile_name.clone(),\n-            findings: filtered_findings,\n-            outcomes: filtered_outcomes,\n-            severity_labels: report.severity_labels.clone(),\n-        },\n-        evidence: result.evidence.clone(),\n-    }\n+    Default::default() /* ~ changed by cargo-mutants ~ */\n }\n \n fn filter_batch(batch: &BatchReport) -> BatchReport {\n     BatchReport {\n         reports: batch\n             .reports\n             .iter()\n             .map(|entry| BatchEntry {\n",
+    "file": "crates/output/src/json.rs",
+    "function": {
+      "function_name": "filter_result",
+      "return_type": "-> VerificationResult",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 44
+        },
+        "start": {
+          "column": 1,
+          "line": 23
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/json.rs:24:5: replace filter_result -> VerificationResult with Default::default()",
+    "package": "libverify-output",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 43
+      },
+      "start": {
+        "column": 5,
+        "line": 24
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/json.rs\n+++ replace == with != in filter_result\n@@ -21,17 +21,17 @@\n }\n \n fn filter_result(result: &VerificationResult) -> VerificationResult {\n     let report = &result.report;\n     let mut filtered_findings = Vec::new();\n     let mut filtered_outcomes = Vec::new();\n \n     for (finding, outcome) in report.findings.iter().zip(report.outcomes.iter()) {\n-        if outcome.decision == GateDecision::Fail {\n+        if outcome.decision != /* ~ changed by cargo-mutants ~ */ GateDecision::Fail {\n             filtered_findings.push(finding.clone());\n             filtered_outcomes.push(outcome.clone());\n         }\n     }\n \n     VerificationResult {\n         report: AssessmentReport {\n             profile_name: report.profile_name.clone(),\n",
+    "file": "crates/output/src/json.rs",
+    "function": {
+      "function_name": "filter_result",
+      "return_type": "-> VerificationResult",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 44
+        },
+        "start": {
+          "column": 1,
+          "line": 23
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/json.rs:29:29: replace == with != in filter_result",
+    "package": "libverify-output",
+    "replacement": "!=",
+    "span": {
+      "end": {
+        "column": 31,
+        "line": 29
+      },
+      "start": {
+        "column": 29,
+        "line": 29
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/json.rs\n+++ replace filter_batch -> BatchReport with Default::default()\n@@ -39,30 +39,17 @@\n             outcomes: filtered_outcomes,\n             severity_labels: report.severity_labels.clone(),\n         },\n         evidence: result.evidence.clone(),\n     }\n }\n \n fn filter_batch(batch: &BatchReport) -> BatchReport {\n-    BatchReport {\n-        reports: batch\n-            .reports\n-            .iter()\n-            .map(|entry| BatchEntry {\n-                subject_id: entry.subject_id.clone(),\n-                result: filter_result(&entry.result),\n-            })\n-            .collect(),\n-        total_pass: batch.total_pass,\n-        total_review: batch.total_review,\n-        total_fail: batch.total_fail,\n-        skipped: batch.skipped.clone(),\n-    }\n+    Default::default() /* ~ changed by cargo-mutants ~ */\n }\n \n #[cfg(test)]\n mod tests {\n     use super::*;\n     use libverify_core::assessment::AssessmentReport;\n     use libverify_core::control::{ControlFinding, builtin};\n     use libverify_core::profile::{FindingSeverity, ProfileOutcome};\n",
+    "file": "crates/output/src/json.rs",
+    "function": {
+      "function_name": "filter_batch",
+      "return_type": "-> BatchReport",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 61
+        },
+        "start": {
+          "column": 1,
+          "line": 46
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/json.rs:47:5: replace filter_batch -> BatchReport with Default::default()",
+    "package": "libverify-output",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 60
+      },
+      "start": {
+        "column": 5,
+        "line": 47
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace utc_now_rfc3339 -> String with String::new()\n@@ -2,29 +2,17 @@\n use libverify_core::assessment::{AssessmentReport, BatchReport, VerificationResult};\n use libverify_core::control::ControlId;\n use libverify_core::profile::FindingSeverity;\n use std::time::{SystemTime, UNIX_EPOCH};\n \n /// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp\n /// (e.g. `\"2026-03-24T12:34:56Z\"`). Uses only `std` — no external crates.\n pub fn utc_now_rfc3339() -> String {\n-    let secs = SystemTime::now()\n-        .duration_since(UNIX_EPOCH)\n-        .unwrap_or_default()\n-        .as_secs();\n-    let s = secs % 60;\n-    let total_min = secs / 60;\n-    let m = total_min % 60;\n-    let total_hour = total_min / 60;\n-    let h = total_hour % 24;\n-    let total_days = total_hour / 24;\n-    // Gregorian calendar reconstruction from epoch days\n-    let (year, month, day) = days_to_ymd(total_days);\n-    format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n+    String::new() /* ~ changed by cargo-mutants ~ */\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:10:5: replace utc_now_rfc3339 -> String with String::new()",
+    "package": "libverify-output",
+    "replacement": "String::new()",
+    "span": {
+      "end": {
+        "column": 67,
+        "line": 22
+      },
+      "start": {
+        "column": 5,
+        "line": 10
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace utc_now_rfc3339 -> String with \"xyzzy\".into()\n@@ -2,29 +2,17 @@\n use libverify_core::assessment::{AssessmentReport, BatchReport, VerificationResult};\n use libverify_core::control::ControlId;\n use libverify_core::profile::FindingSeverity;\n use std::time::{SystemTime, UNIX_EPOCH};\n \n /// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp\n /// (e.g. `\"2026-03-24T12:34:56Z\"`). Uses only `std` — no external crates.\n pub fn utc_now_rfc3339() -> String {\n-    let secs = SystemTime::now()\n-        .duration_since(UNIX_EPOCH)\n-        .unwrap_or_default()\n-        .as_secs();\n-    let s = secs % 60;\n-    let total_min = secs / 60;\n-    let m = total_min % 60;\n-    let total_hour = total_min / 60;\n-    let h = total_hour % 24;\n-    let total_days = total_hour / 24;\n-    // Gregorian calendar reconstruction from epoch days\n-    let (year, month, day) = days_to_ymd(total_days);\n-    format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n+    \"xyzzy\".into() /* ~ changed by cargo-mutants ~ */\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:10:5: replace utc_now_rfc3339 -> String with \"xyzzy\".into()",
+    "package": "libverify-output",
+    "replacement": "\"xyzzy\".into()",
+    "span": {
+      "end": {
+        "column": 67,
+        "line": 22
+      },
+      "start": {
+        "column": 5,
+        "line": 10
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace % with / in utc_now_rfc3339\n@@ -6,17 +6,17 @@\n \n /// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp\n /// (e.g. `\"2026-03-24T12:34:56Z\"`). Uses only `std` — no external crates.\n pub fn utc_now_rfc3339() -> String {\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n-    let s = secs % 60;\n+    let s = secs / /* ~ changed by cargo-mutants ~ */ 60;\n     let total_min = secs / 60;\n     let m = total_min % 60;\n     let total_hour = total_min / 60;\n     let h = total_hour % 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:14:18: replace % with / in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 14
+      },
+      "start": {
+        "column": 18,
+        "line": 14
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace % with + in utc_now_rfc3339\n@@ -6,17 +6,17 @@\n \n /// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp\n /// (e.g. `\"2026-03-24T12:34:56Z\"`). Uses only `std` — no external crates.\n pub fn utc_now_rfc3339() -> String {\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n-    let s = secs % 60;\n+    let s = secs + /* ~ changed by cargo-mutants ~ */ 60;\n     let total_min = secs / 60;\n     let m = total_min % 60;\n     let total_hour = total_min / 60;\n     let h = total_hour % 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:14:18: replace % with + in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 14
+      },
+      "start": {
+        "column": 18,
+        "line": 14
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in utc_now_rfc3339\n@@ -7,17 +7,17 @@\n /// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp\n /// (e.g. `\"2026-03-24T12:34:56Z\"`). Uses only `std` — no external crates.\n pub fn utc_now_rfc3339() -> String {\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n-    let total_min = secs / 60;\n+    let total_min = secs % /* ~ changed by cargo-mutants ~ */ 60;\n     let m = total_min % 60;\n     let total_hour = total_min / 60;\n     let h = total_hour % 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:15:26: replace / with % in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 27,
+        "line": 15
+      },
+      "start": {
+        "column": 26,
+        "line": 15
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in utc_now_rfc3339\n@@ -7,17 +7,17 @@\n /// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp\n /// (e.g. `\"2026-03-24T12:34:56Z\"`). Uses only `std` — no external crates.\n pub fn utc_now_rfc3339() -> String {\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n-    let total_min = secs / 60;\n+    let total_min = secs * /* ~ changed by cargo-mutants ~ */ 60;\n     let m = total_min % 60;\n     let total_hour = total_min / 60;\n     let h = total_hour % 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:15:26: replace / with * in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 27,
+        "line": 15
+      },
+      "start": {
+        "column": 26,
+        "line": 15
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace % with / in utc_now_rfc3339\n@@ -8,17 +8,17 @@\n /// (e.g. `\"2026-03-24T12:34:56Z\"`). Uses only `std` — no external crates.\n pub fn utc_now_rfc3339() -> String {\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n     let total_min = secs / 60;\n-    let m = total_min % 60;\n+    let m = total_min / /* ~ changed by cargo-mutants ~ */ 60;\n     let total_hour = total_min / 60;\n     let h = total_hour % 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:16:23: replace % with / in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 24,
+        "line": 16
+      },
+      "start": {
+        "column": 23,
+        "line": 16
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace % with + in utc_now_rfc3339\n@@ -8,17 +8,17 @@\n /// (e.g. `\"2026-03-24T12:34:56Z\"`). Uses only `std` — no external crates.\n pub fn utc_now_rfc3339() -> String {\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n     let total_min = secs / 60;\n-    let m = total_min % 60;\n+    let m = total_min + /* ~ changed by cargo-mutants ~ */ 60;\n     let total_hour = total_min / 60;\n     let h = total_hour % 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:16:23: replace % with + in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 24,
+        "line": 16
+      },
+      "start": {
+        "column": 23,
+        "line": 16
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in utc_now_rfc3339\n@@ -9,17 +9,17 @@\n pub fn utc_now_rfc3339() -> String {\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n     let total_min = secs / 60;\n     let m = total_min % 60;\n-    let total_hour = total_min / 60;\n+    let total_hour = total_min % /* ~ changed by cargo-mutants ~ */ 60;\n     let h = total_hour % 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:17:32: replace / with % in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 33,
+        "line": 17
+      },
+      "start": {
+        "column": 32,
+        "line": 17
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in utc_now_rfc3339\n@@ -9,17 +9,17 @@\n pub fn utc_now_rfc3339() -> String {\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n     let total_min = secs / 60;\n     let m = total_min % 60;\n-    let total_hour = total_min / 60;\n+    let total_hour = total_min * /* ~ changed by cargo-mutants ~ */ 60;\n     let h = total_hour % 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:17:32: replace / with * in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 33,
+        "line": 17
+      },
+      "start": {
+        "column": 32,
+        "line": 17
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace % with / in utc_now_rfc3339\n@@ -10,17 +10,17 @@\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n     let total_min = secs / 60;\n     let m = total_min % 60;\n     let total_hour = total_min / 60;\n-    let h = total_hour % 24;\n+    let h = total_hour / /* ~ changed by cargo-mutants ~ */ 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:18:24: replace % with / in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 25,
+        "line": 18
+      },
+      "start": {
+        "column": 24,
+        "line": 18
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace % with + in utc_now_rfc3339\n@@ -10,17 +10,17 @@\n     let secs = SystemTime::now()\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n     let total_min = secs / 60;\n     let m = total_min % 60;\n     let total_hour = total_min / 60;\n-    let h = total_hour % 24;\n+    let h = total_hour + /* ~ changed by cargo-mutants ~ */ 24;\n     let total_days = total_hour / 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:18:24: replace % with + in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 25,
+        "line": 18
+      },
+      "start": {
+        "column": 24,
+        "line": 18
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in utc_now_rfc3339\n@@ -11,17 +11,17 @@\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n     let total_min = secs / 60;\n     let m = total_min % 60;\n     let total_hour = total_min / 60;\n     let h = total_hour % 24;\n-    let total_days = total_hour / 24;\n+    let total_days = total_hour % /* ~ changed by cargo-mutants ~ */ 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:19:33: replace / with % in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 34,
+        "line": 19
+      },
+      "start": {
+        "column": 33,
+        "line": 19
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in utc_now_rfc3339\n@@ -11,17 +11,17 @@\n         .duration_since(UNIX_EPOCH)\n         .unwrap_or_default()\n         .as_secs();\n     let s = secs % 60;\n     let total_min = secs / 60;\n     let m = total_min % 60;\n     let total_hour = total_min / 60;\n     let h = total_hour % 24;\n-    let total_days = total_hour / 24;\n+    let total_days = total_hour * /* ~ changed by cargo-mutants ~ */ 24;\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "utc_now_rfc3339",
+      "return_type": "-> String",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 23
+        },
+        "start": {
+          "column": 1,
+          "line": 7
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:19:33: replace / with * in utc_now_rfc3339",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 34,
+        "line": 19
+      },
+      "start": {
+        "column": 33,
+        "line": 19
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace days_to_ymd -> (u64, u64, u64) with (0, 0, 0)\n@@ -20,27 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n-    let era = z / 146097;\n-    let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n-    (y, m, d)\n+    (0, 0, 0) /* ~ changed by cargo-mutants ~ */\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n     result: &VerificationResult,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (0, 0, 0)",
+    "package": "libverify-output",
+    "replacement": "(0, 0, 0)",
+    "span": {
+      "end": {
+        "column": 14,
+        "line": 38
+      },
+      "start": {
+        "column": 5,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace days_to_ymd -> (u64, u64, u64) with (0, 0, 1)\n@@ -20,27 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n-    let era = z / 146097;\n-    let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n-    (y, m, d)\n+    (0, 0, 1) /* ~ changed by cargo-mutants ~ */\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n     result: &VerificationResult,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (0, 0, 1)",
+    "package": "libverify-output",
+    "replacement": "(0, 0, 1)",
+    "span": {
+      "end": {
+        "column": 14,
+        "line": 38
+      },
+      "start": {
+        "column": 5,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace days_to_ymd -> (u64, u64, u64) with (0, 1, 0)\n@@ -20,27 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n-    let era = z / 146097;\n-    let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n-    (y, m, d)\n+    (0, 1, 0) /* ~ changed by cargo-mutants ~ */\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n     result: &VerificationResult,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (0, 1, 0)",
+    "package": "libverify-output",
+    "replacement": "(0, 1, 0)",
+    "span": {
+      "end": {
+        "column": 14,
+        "line": 38
+      },
+      "start": {
+        "column": 5,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace days_to_ymd -> (u64, u64, u64) with (0, 1, 1)\n@@ -20,27 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n-    let era = z / 146097;\n-    let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n-    (y, m, d)\n+    (0, 1, 1) /* ~ changed by cargo-mutants ~ */\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n     result: &VerificationResult,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (0, 1, 1)",
+    "package": "libverify-output",
+    "replacement": "(0, 1, 1)",
+    "span": {
+      "end": {
+        "column": 14,
+        "line": 38
+      },
+      "start": {
+        "column": 5,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace days_to_ymd -> (u64, u64, u64) with (1, 0, 0)\n@@ -20,27 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n-    let era = z / 146097;\n-    let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n-    (y, m, d)\n+    (1, 0, 0) /* ~ changed by cargo-mutants ~ */\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n     result: &VerificationResult,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (1, 0, 0)",
+    "package": "libverify-output",
+    "replacement": "(1, 0, 0)",
+    "span": {
+      "end": {
+        "column": 14,
+        "line": 38
+      },
+      "start": {
+        "column": 5,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace days_to_ymd -> (u64, u64, u64) with (1, 0, 1)\n@@ -20,27 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n-    let era = z / 146097;\n-    let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n-    (y, m, d)\n+    (1, 0, 1) /* ~ changed by cargo-mutants ~ */\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n     result: &VerificationResult,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (1, 0, 1)",
+    "package": "libverify-output",
+    "replacement": "(1, 0, 1)",
+    "span": {
+      "end": {
+        "column": 14,
+        "line": 38
+      },
+      "start": {
+        "column": 5,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace days_to_ymd -> (u64, u64, u64) with (1, 1, 0)\n@@ -20,27 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n-    let era = z / 146097;\n-    let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n-    (y, m, d)\n+    (1, 1, 0) /* ~ changed by cargo-mutants ~ */\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n     result: &VerificationResult,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (1, 1, 0)",
+    "package": "libverify-output",
+    "replacement": "(1, 1, 0)",
+    "span": {
+      "end": {
+        "column": 14,
+        "line": 38
+      },
+      "start": {
+        "column": 5,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace days_to_ymd -> (u64, u64, u64) with (1, 1, 1)\n@@ -20,27 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n-    let era = z / 146097;\n-    let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n-    (y, m, d)\n+    (1, 1, 1) /* ~ changed by cargo-mutants ~ */\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n     result: &VerificationResult,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (1, 1, 1)",
+    "package": "libverify-output",
+    "replacement": "(1, 1, 1)",
+    "span": {
+      "end": {
+        "column": 14,
+        "line": 38
+      },
+      "start": {
+        "column": 5,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -20,17 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n+    let z = days - /* ~ changed by cargo-mutants ~ */ 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:28:18: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 28
+      },
+      "start": {
+        "column": 18,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -20,17 +20,17 @@\n     // Gregorian calendar reconstruction from epoch days\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n-    let z = days + 719468;\n+    let z = days * /* ~ changed by cargo-mutants ~ */ 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:28:18: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 19,
+        "line": 28
+      },
+      "start": {
+        "column": 18,
+        "line": 28
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -21,17 +21,17 @@\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n-    let era = z / 146097;\n+    let era = z % /* ~ changed by cargo-mutants ~ */ 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:29:17: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 29
+      },
+      "start": {
+        "column": 17,
+        "line": 29
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -21,17 +21,17 @@\n     let (year, month, day) = days_to_ymd(total_days);\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n-    let era = z / 146097;\n+    let era = z * /* ~ changed by cargo-mutants ~ */ 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:29:17: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 29
+      },
+      "start": {
+        "column": 17,
+        "line": 29
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace % with / in days_to_ymd\n@@ -22,17 +22,17 @@\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n-    let doe = z % 146097;\n+    let doe = z / /* ~ changed by cargo-mutants ~ */ 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:30:17: replace % with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 30
+      },
+      "start": {
+        "column": 17,
+        "line": 30
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace % with + in days_to_ymd\n@@ -22,17 +22,17 @@\n     format!(\"{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z\")\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n-    let doe = z % 146097;\n+    let doe = z + /* ~ changed by cargo-mutants ~ */ 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:30:17: replace % with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 30
+      },
+      "start": {
+        "column": 17,
+        "line": 30
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) % /* ~ changed by cargo-mutants ~ */ 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:63: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 64,
+        "line": 31
+      },
+      "start": {
+        "column": 63,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) * /* ~ changed by cargo-mutants ~ */ 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:63: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 64,
+        "line": 31
+      },
+      "start": {
+        "column": 63,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with + in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 + doe / 36524 + /* ~ changed by cargo-mutants ~ */ doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:47: replace - with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 48,
+        "line": 31
+      },
+      "start": {
+        "column": 47,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with / in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 + doe / 36524 / /* ~ changed by cargo-mutants ~ */ doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:47: replace - with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 48,
+        "line": 31
+      },
+      "start": {
+        "column": 47,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 - /* ~ changed by cargo-mutants ~ */ doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:33: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 34,
+        "line": 31
+      },
+      "start": {
+        "column": 33,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 * /* ~ changed by cargo-mutants ~ */ doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:33: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 34,
+        "line": 31
+      },
+      "start": {
+        "column": 33,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with + in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe + /* ~ changed by cargo-mutants ~ */ doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:20: replace - with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 21,
+        "line": 31
+      },
+      "start": {
+        "column": 20,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with / in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe / /* ~ changed by cargo-mutants ~ */ doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:20: replace - with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 21,
+        "line": 31
+      },
+      "start": {
+        "column": 20,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe % /* ~ changed by cargo-mutants ~ */ 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:26: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 27,
+        "line": 31
+      },
+      "start": {
+        "column": 26,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe * /* ~ changed by cargo-mutants ~ */ 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:26: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 27,
+        "line": 31
+      },
+      "start": {
+        "column": 26,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 + doe % /* ~ changed by cargo-mutants ~ */ 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:39: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 40,
+        "line": 31
+      },
+      "start": {
+        "column": 39,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 + doe * /* ~ changed by cargo-mutants ~ */ 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:39: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 40,
+        "line": 31
+      },
+      "start": {
+        "column": 39,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 + doe / 36524 - doe % /* ~ changed by cargo-mutants ~ */ 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:53: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 54,
+        "line": 31
+      },
+      "start": {
+        "column": 53,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -23,17 +23,17 @@\n }\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n+    let yoe = (doe - doe / 1460 + doe / 36524 - doe * /* ~ changed by cargo-mutants ~ */ 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:31:53: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 54,
+        "line": 31
+      },
+      "start": {
+        "column": 53,
+        "line": 31
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -24,17 +24,17 @@\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n+    let y = yoe - /* ~ changed by cargo-mutants ~ */ era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:32:17: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 32
+      },
+      "start": {
+        "column": 17,
+        "line": 32
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -24,17 +24,17 @@\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n+    let y = yoe * /* ~ changed by cargo-mutants ~ */ era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:32:17: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 32
+      },
+      "start": {
+        "column": 17,
+        "line": 32
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace * with + in days_to_ymd\n@@ -24,17 +24,17 @@\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n+    let y = yoe + era + /* ~ changed by cargo-mutants ~ */ 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:32:23: replace * with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 24,
+        "line": 32
+      },
+      "start": {
+        "column": 23,
+        "line": 32
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace * with / in days_to_ymd\n@@ -24,17 +24,17 @@\n \n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n-    let y = yoe + era * 400;\n+    let y = yoe + era / /* ~ changed by cargo-mutants ~ */ 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:32:23: replace * with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 24,
+        "line": 32
+      },
+      "start": {
+        "column": 23,
+        "line": 32
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with + in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe + /* ~ changed by cargo-mutants ~ */ (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:19: replace - with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 20,
+        "line": 33
+      },
+      "start": {
+        "column": 19,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with / in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe / /* ~ changed by cargo-mutants ~ */ (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:19: replace - with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 20,
+        "line": 33
+      },
+      "start": {
+        "column": 19,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with + in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 * yoe + yoe / 4 + /* ~ changed by cargo-mutants ~ */ yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:42: replace - with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 43,
+        "line": 33
+      },
+      "start": {
+        "column": 42,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with / in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 * yoe + yoe / 4 / /* ~ changed by cargo-mutants ~ */ yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:42: replace - with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 43,
+        "line": 33
+      },
+      "start": {
+        "column": 42,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 * yoe - /* ~ changed by cargo-mutants ~ */ yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:32: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 33,
+        "line": 33
+      },
+      "start": {
+        "column": 32,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 * yoe * /* ~ changed by cargo-mutants ~ */ yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:32: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 33,
+        "line": 33
+      },
+      "start": {
+        "column": 32,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace * with + in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 + /* ~ changed by cargo-mutants ~ */ yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:26: replace * with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 27,
+        "line": 33
+      },
+      "start": {
+        "column": 26,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace * with / in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 / /* ~ changed by cargo-mutants ~ */ yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:26: replace * with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 27,
+        "line": 33
+      },
+      "start": {
+        "column": 26,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 * yoe + yoe % /* ~ changed by cargo-mutants ~ */ 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:38: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 39,
+        "line": 33
+      },
+      "start": {
+        "column": 38,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 * yoe + yoe * /* ~ changed by cargo-mutants ~ */ 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:38: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 39,
+        "line": 33
+      },
+      "start": {
+        "column": 38,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 * yoe + yoe / 4 - yoe % /* ~ changed by cargo-mutants ~ */ 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:48: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 49,
+        "line": 33
+      },
+      "start": {
+        "column": 48,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -25,17 +25,17 @@\n /// Convert days since 1970-01-01 (UTC) to (year, month, day).\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n+    let doy = doe - (365 * yoe + yoe / 4 - yoe * /* ~ changed by cargo-mutants ~ */ 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:33:48: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 49,
+        "line": 33
+      },
+      "start": {
+        "column": 48,
+        "line": 33
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -26,17 +26,17 @@\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n+    let mp = (5 * doy + 2) % /* ~ changed by cargo-mutants ~ */ 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:34:28: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 34
+      },
+      "start": {
+        "column": 28,
+        "line": 34
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -26,17 +26,17 @@\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n+    let mp = (5 * doy + 2) * /* ~ changed by cargo-mutants ~ */ 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:34:28: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 29,
+        "line": 34
+      },
+      "start": {
+        "column": 28,
+        "line": 34
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -26,17 +26,17 @@\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n+    let mp = (5 * doy - /* ~ changed by cargo-mutants ~ */ 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:34:23: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 24,
+        "line": 34
+      },
+      "start": {
+        "column": 23,
+        "line": 34
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -26,17 +26,17 @@\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n+    let mp = (5 * doy * /* ~ changed by cargo-mutants ~ */ 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:34:23: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 24,
+        "line": 34
+      },
+      "start": {
+        "column": 23,
+        "line": 34
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace * with + in days_to_ymd\n@@ -26,17 +26,17 @@\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n+    let mp = (5 + /* ~ changed by cargo-mutants ~ */ doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:34:17: replace * with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 34
+      },
+      "start": {
+        "column": 17,
+        "line": 34
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace * with / in days_to_ymd\n@@ -26,17 +26,17 @@\n pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n-    let mp = (5 * doy + 2) / 153;\n+    let mp = (5 / /* ~ changed by cargo-mutants ~ */ doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:34:17: replace * with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 34
+      },
+      "start": {
+        "column": 17,
+        "line": 34
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy - (153 * mp + 2) / 5 - /* ~ changed by cargo-mutants ~ */ 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:38: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 39,
+        "line": 35
+      },
+      "start": {
+        "column": 38,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy - (153 * mp + 2) / 5 * /* ~ changed by cargo-mutants ~ */ 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:38: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 39,
+        "line": 35
+      },
+      "start": {
+        "column": 38,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with + in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy + /* ~ changed by cargo-mutants ~ */ (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:17: replace - with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 35
+      },
+      "start": {
+        "column": 17,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with / in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy / /* ~ changed by cargo-mutants ~ */ (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:17: replace - with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 18,
+        "line": 35
+      },
+      "start": {
+        "column": 17,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with % in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy - (153 * mp + 2) % /* ~ changed by cargo-mutants ~ */ 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:34: replace / with % in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "%",
+    "span": {
+      "end": {
+        "column": 35,
+        "line": 35
+      },
+      "start": {
+        "column": 34,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace / with * in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy - (153 * mp + 2) * /* ~ changed by cargo-mutants ~ */ 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:34: replace / with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 35,
+        "line": 35
+      },
+      "start": {
+        "column": 34,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy - (153 * mp - /* ~ changed by cargo-mutants ~ */ 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:29: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 35
+      },
+      "start": {
+        "column": 29,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy - (153 * mp * /* ~ changed by cargo-mutants ~ */ 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:29: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 35
+      },
+      "start": {
+        "column": 29,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace * with + in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy - (153 + /* ~ changed by cargo-mutants ~ */ mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:24: replace * with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 25,
+        "line": 35
+      },
+      "start": {
+        "column": 24,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace * with / in days_to_ymd\n@@ -27,17 +27,17 @@\n     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n-    let d = doy - (153 * mp + 2) / 5 + 1;\n+    let d = doy - (153 / /* ~ changed by cargo-mutants ~ */ mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:35:24: replace * with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 25,
+        "line": 35
+      },
+      "start": {
+        "column": 24,
+        "line": 35
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace < with == in days_to_ymd\n@@ -28,17 +28,17 @@\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n+    let m = if mp == /* ~ changed by cargo-mutants ~ */ 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:36:19: replace < with == in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "==",
+    "span": {
+      "end": {
+        "column": 20,
+        "line": 36
+      },
+      "start": {
+        "column": 19,
+        "line": 36
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace < with > in days_to_ymd\n@@ -28,17 +28,17 @@\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n+    let m = if mp > /* ~ changed by cargo-mutants ~ */ 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:36:19: replace < with > in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": ">",
+    "span": {
+      "end": {
+        "column": 20,
+        "line": 36
+      },
+      "start": {
+        "column": 19,
+        "line": 36
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace < with <= in days_to_ymd\n@@ -28,17 +28,17 @@\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n+    let m = if mp <= /* ~ changed by cargo-mutants ~ */ 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:36:19: replace < with <= in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "<=",
+    "span": {
+      "end": {
+        "column": 20,
+        "line": 36
+      },
+      "start": {
+        "column": 19,
+        "line": 36
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -28,17 +28,17 @@\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n+    let m = if mp < 10 { mp - /* ~ changed by cargo-mutants ~ */ 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:36:29: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 36
+      },
+      "start": {
+        "column": 29,
+        "line": 36
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -28,17 +28,17 @@\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n+    let m = if mp < 10 { mp * /* ~ changed by cargo-mutants ~ */ 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:36:29: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 30,
+        "line": 36
+      },
+      "start": {
+        "column": 29,
+        "line": 36
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with + in days_to_ymd\n@@ -28,17 +28,17 @@\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n+    let m = if mp < 10 { mp + 3 } else { mp + /* ~ changed by cargo-mutants ~ */ 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:36:45: replace - with + in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "+",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 36
+      },
+      "start": {
+        "column": 45,
+        "line": 36
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace - with / in days_to_ymd\n@@ -28,17 +28,17 @@\n     let z = days + 719468;\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n-    let m = if mp < 10 { mp + 3 } else { mp - 9 };\n+    let m = if mp < 10 { mp + 3 } else { mp / /* ~ changed by cargo-mutants ~ */ 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:36:45: replace - with / in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "/",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 36
+      },
+      "start": {
+        "column": 45,
+        "line": 36
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace <= with > in days_to_ymd\n@@ -29,17 +29,17 @@\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n+    let y = if m > /* ~ changed by cargo-mutants ~ */ 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:37:18: replace <= with > in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": ">",
+    "span": {
+      "end": {
+        "column": 20,
+        "line": 37
+      },
+      "start": {
+        "column": 18,
+        "line": 37
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with - in days_to_ymd\n@@ -29,17 +29,17 @@\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n+    let y = if m <= 2 { y - /* ~ changed by cargo-mutants ~ */ 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:37:27: replace + with - in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "-",
+    "span": {
+      "end": {
+        "column": 28,
+        "line": 37
+      },
+      "start": {
+        "column": 27,
+        "line": 37
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace + with * in days_to_ymd\n@@ -29,17 +29,17 @@\n     let era = z / 146097;\n     let doe = z % 146097;\n     let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;\n     let y = yoe + era * 400;\n     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n-    let y = if m <= 2 { y + 1 } else { y };\n+    let y = if m <= 2 { y * /* ~ changed by cargo-mutants ~ */ 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n     libverify_core::controls::control_description(id)\n }\n \n pub fn render(\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "days_to_ymd",
+      "return_type": "-> (u64, u64, u64)",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 39
+        },
+        "start": {
+          "column": 1,
+          "line": 25
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:37:27: replace + with * in days_to_ymd",
+    "package": "libverify-output",
+    "replacement": "*",
+    "span": {
+      "end": {
+        "column": 28,
+        "line": 37
+      },
+      "start": {
+        "column": 27,
+        "line": 37
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace builtin_rule_description -> &'static str with \"\"\n@@ -34,17 +34,17 @@\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n-    libverify_core::controls::control_description(id)\n+    \"\" /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render(\n     result: &VerificationResult,\n     only_failures: bool,\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "builtin_rule_description",
+      "return_type": "-> &'static str",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 43
+        },
+        "start": {
+          "column": 1,
+          "line": 41
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:42:5: replace builtin_rule_description -> &'static str with \"\"",
+    "package": "libverify-output",
+    "replacement": "\"\"",
+    "span": {
+      "end": {
+        "column": 54,
+        "line": 42
+      },
+      "start": {
+        "column": 5,
+        "line": 42
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace builtin_rule_description -> &'static str with \"xyzzy\"\n@@ -34,17 +34,17 @@\n     let mp = (5 * doy + 2) / 153;\n     let d = doy - (153 * mp + 2) / 5 + 1;\n     let m = if mp < 10 { mp + 3 } else { mp - 9 };\n     let y = if m <= 2 { y + 1 } else { y };\n     (y, m, d)\n }\n \n fn builtin_rule_description(id: &str) -> &'static str {\n-    libverify_core::controls::control_description(id)\n+    \"xyzzy\" /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render(\n     result: &VerificationResult,\n     only_failures: bool,\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "builtin_rule_description",
+      "return_type": "-> &'static str",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 43
+        },
+        "start": {
+          "column": 1,
+          "line": 41
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:42:5: replace builtin_rule_description -> &'static str with \"xyzzy\"",
+    "package": "libverify-output",
+    "replacement": "\"xyzzy\"",
+    "span": {
+      "end": {
+        "column": 54,
+        "line": 42
+      },
+      "start": {
+        "column": 5,
+        "line": 42
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace render -> Result<String> with Ok(String::new())\n@@ -43,26 +43,17 @@\n }\n \n pub fn render(\n     result: &VerificationResult,\n     only_failures: bool,\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n-    let mut sarif = build_sarif(&result.report, tool_name, tool_version);\n-    if only_failures {\n-        filter_sarif_runs(&mut sarif);\n-    }\n-    if let Some(evidence) = &result.evidence\n-        && let Some(run) = sarif[\"runs\"].as_array_mut().and_then(|a| a.first_mut())\n-    {\n-        run[\"properties\"][\"evidence\"] = serde_json::to_value(evidence)?;\n-    }\n-    Ok(serde_json::to_string_pretty(&sarif)?)\n+    Ok(String::new()) /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render_batch(\n     batch: &BatchReport,\n     only_failures: bool,\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "render",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 61
+        },
+        "start": {
+          "column": 1,
+          "line": 45
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:51:5: replace render -> Result<String> with Ok(String::new())",
+    "package": "libverify-output",
+    "replacement": "Ok(String::new())",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 60
+      },
+      "start": {
+        "column": 5,
+        "line": 51
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace render -> Result<String> with Ok(\"xyzzy\".into())\n@@ -43,26 +43,17 @@\n }\n \n pub fn render(\n     result: &VerificationResult,\n     only_failures: bool,\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n-    let mut sarif = build_sarif(&result.report, tool_name, tool_version);\n-    if only_failures {\n-        filter_sarif_runs(&mut sarif);\n-    }\n-    if let Some(evidence) = &result.evidence\n-        && let Some(run) = sarif[\"runs\"].as_array_mut().and_then(|a| a.first_mut())\n-    {\n-        run[\"properties\"][\"evidence\"] = serde_json::to_value(evidence)?;\n-    }\n-    Ok(serde_json::to_string_pretty(&sarif)?)\n+    Ok(\"xyzzy\".into()) /* ~ changed by cargo-mutants ~ */\n }\n \n pub fn render_batch(\n     batch: &BatchReport,\n     only_failures: bool,\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "render",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 61
+        },
+        "start": {
+          "column": 1,
+          "line": 45
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:51:5: replace render -> Result<String> with Ok(\"xyzzy\".into())",
+    "package": "libverify-output",
+    "replacement": "Ok(\"xyzzy\".into())",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 60
+      },
+      "start": {
+        "column": 5,
+        "line": 51
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace && with || in render\n@@ -48,17 +48,17 @@\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n     let mut sarif = build_sarif(&result.report, tool_name, tool_version);\n     if only_failures {\n         filter_sarif_runs(&mut sarif);\n     }\n     if let Some(evidence) = &result.evidence\n-        && let Some(run) = sarif[\"runs\"].as_array_mut().and_then(|a| a.first_mut())\n+        || /* ~ changed by cargo-mutants ~ */ let Some(run) = sarif[\"runs\"].as_array_mut().and_then(|a| a.first_mut())\n     {\n         run[\"properties\"][\"evidence\"] = serde_json::to_value(evidence)?;\n     }\n     Ok(serde_json::to_string_pretty(&sarif)?)\n }\n \n pub fn render_batch(\n     batch: &BatchReport,\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "render",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 61
+        },
+        "start": {
+          "column": 1,
+          "line": 45
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:56:9: replace && with || in render",
+    "package": "libverify-output",
+    "replacement": "||",
+    "span": {
+      "end": {
+        "column": 11,
+        "line": 56
+      },
+      "start": {
+        "column": 9,
+        "line": 56
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace render_batch -> Result<String> with Ok(String::new())\n@@ -61,38 +61,17 @@\n }\n \n pub fn render_batch(\n     batch: &BatchReport,\n     only_failures: bool,\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n-    let mut runs = Vec::new();\n-    for entry in &batch.reports {\n-        let mut sarif = build_sarif(&entry.result.report, tool_name, tool_version);\n-        if only_failures {\n-            filter_sarif_runs(&mut sarif);\n-        }\n-        if let Some(run) = sarif[\"runs\"].as_array().and_then(|a| a.first()) {\n-            let mut run = run.clone();\n-            let mut props = serde_json::json!({ \"subjectId\": entry.subject_id });\n-            if let Some(evidence) = &entry.result.evidence {\n-                props[\"evidence\"] = serde_json::to_value(evidence)?;\n-            }\n-            run[\"properties\"] = props;\n-            runs.push(run);\n-        }\n-    }\n-    let sarif = serde_json::json!({\n-        \"$schema\": \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json\",\n-        \"version\": \"2.1.0\",\n-        \"runs\": runs,\n-    });\n-    Ok(serde_json::to_string_pretty(&sarif)?)\n+    Ok(String::new()) /* ~ changed by cargo-mutants ~ */\n }\n \n fn build_sarif(\n     report: &AssessmentReport,\n     tool_name: &str,\n     tool_version: &str,\n ) -> serde_json::Value {\n     let mut seen_rules: Vec<ControlId> = Vec::new();\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "render_batch",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 91
+        },
+        "start": {
+          "column": 1,
+          "line": 63
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:69:5: replace render_batch -> Result<String> with Ok(String::new())",
+    "package": "libverify-output",
+    "replacement": "Ok(String::new())",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 90
+      },
+      "start": {
+        "column": 5,
+        "line": 69
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace render_batch -> Result<String> with Ok(\"xyzzy\".into())\n@@ -61,38 +61,17 @@\n }\n \n pub fn render_batch(\n     batch: &BatchReport,\n     only_failures: bool,\n     tool_name: &str,\n     tool_version: &str,\n ) -> Result<String> {\n-    let mut runs = Vec::new();\n-    for entry in &batch.reports {\n-        let mut sarif = build_sarif(&entry.result.report, tool_name, tool_version);\n-        if only_failures {\n-            filter_sarif_runs(&mut sarif);\n-        }\n-        if let Some(run) = sarif[\"runs\"].as_array().and_then(|a| a.first()) {\n-            let mut run = run.clone();\n-            let mut props = serde_json::json!({ \"subjectId\": entry.subject_id });\n-            if let Some(evidence) = &entry.result.evidence {\n-                props[\"evidence\"] = serde_json::to_value(evidence)?;\n-            }\n-            run[\"properties\"] = props;\n-            runs.push(run);\n-        }\n-    }\n-    let sarif = serde_json::json!({\n-        \"$schema\": \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json\",\n-        \"version\": \"2.1.0\",\n-        \"runs\": runs,\n-    });\n-    Ok(serde_json::to_string_pretty(&sarif)?)\n+    Ok(\"xyzzy\".into()) /* ~ changed by cargo-mutants ~ */\n }\n \n fn build_sarif(\n     report: &AssessmentReport,\n     tool_name: &str,\n     tool_version: &str,\n ) -> serde_json::Value {\n     let mut seen_rules: Vec<ControlId> = Vec::new();\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "render_batch",
+      "return_type": "-> Result<String>",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 91
+        },
+        "start": {
+          "column": 1,
+          "line": 63
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:69:5: replace render_batch -> Result<String> with Ok(\"xyzzy\".into())",
+    "package": "libverify-output",
+    "replacement": "Ok(\"xyzzy\".into())",
+    "span": {
+      "end": {
+        "column": 46,
+        "line": 90
+      },
+      "start": {
+        "column": 5,
+        "line": 69
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace build_sarif -> serde_json::Value with Default::default()\n@@ -90,98 +90,17 @@\n     Ok(serde_json::to_string_pretty(&sarif)?)\n }\n \n fn build_sarif(\n     report: &AssessmentReport,\n     tool_name: &str,\n     tool_version: &str,\n ) -> serde_json::Value {\n-    let mut seen_rules: Vec<ControlId> = Vec::new();\n-    let rules: Vec<serde_json::Value> = report\n-        .outcomes\n-        .iter()\n-        .filter_map(|o| {\n-            if seen_rules.contains(&o.control_id) {\n-                return None;\n-            }\n-            seen_rules.push(o.control_id.clone());\n-            Some(rule_descriptor(&o.control_id))\n-        })\n-        .collect();\n-\n-    let results: Vec<serde_json::Value> = report\n-        .findings\n-        .iter()\n-        .zip(report.outcomes.iter())\n-        .map(|(finding, outcome)| {\n-            let mut props = serde_json::json!({\n-                \"decision\": outcome.decision.as_str(),\n-                \"controlStatus\": finding.status.as_str(),\n-            });\n-            // Merge policy annotations into SARIF properties\n-            for (k, v) in &outcome.annotations {\n-                props[k] = serde_json::Value::String(v.clone());\n-            }\n-\n-            let mut result = serde_json::json!({\n-                \"ruleId\": outcome.control_id.as_str(),\n-                \"level\": severity_to_level(outcome.severity),\n-                \"message\": { \"text\": outcome.rationale },\n-                \"properties\": props,\n-            });\n-\n-            if !finding.subjects.is_empty() {\n-                let locations: Vec<serde_json::Value> = finding\n-                    .subjects\n-                    .iter()\n-                    .map(|s| {\n-                        serde_json::json!({\n-                            \"logicalLocations\": [{\n-                                \"fullyQualifiedName\": s,\n-                                \"kind\": \"resource\",\n-                            }]\n-                        })\n-                    })\n-                    .collect();\n-                result[\"locations\"] = serde_json::Value::Array(locations);\n-            }\n-\n-            if !finding.evidence_gaps.is_empty() {\n-                let gaps: Vec<String> = finding\n-                    .evidence_gaps\n-                    .iter()\n-                    .map(|g| format!(\"{g}\"))\n-                    .collect();\n-                result[\"properties\"][\"evidenceGaps\"] = serde_json::json!(gaps);\n-            }\n-\n-            result\n-        })\n-        .collect();\n-\n-    let end_time = utc_now_rfc3339();\n-    serde_json::json!({\n-        \"$schema\": \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json\",\n-        \"version\": \"2.1.0\",\n-        \"runs\": [{\n-            \"tool\": {\n-                \"driver\": {\n-                    \"name\": tool_name,\n-                    \"version\": tool_version,\n-                    \"rules\": rules,\n-                }\n-            },\n-            \"invocations\": [{\n-                \"endTimeUtc\": end_time,\n-                \"executionSuccessful\": true,\n-            }],\n-            \"results\": results,\n-        }]\n-    })\n+    Default::default() /* ~ changed by cargo-mutants ~ */\n }\n \n fn filter_sarif_runs(sarif: &mut serde_json::Value) {\n     if let Some(runs) = sarif[\"runs\"].as_array_mut() {\n         for run in runs.iter_mut() {\n             if let Some(results) = run[\"results\"].as_array() {\n                 let filtered: Vec<serde_json::Value> = results\n                     .iter()\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "build_sarif",
+      "return_type": "-> serde_json::Value",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 180
+        },
+        "start": {
+          "column": 1,
+          "line": 93
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:98:5: replace build_sarif -> serde_json::Value with Default::default()",
+    "package": "libverify-output",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 7,
+        "line": 179
+      },
+      "start": {
+        "column": 5,
+        "line": 98
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ delete ! in build_sarif\n@@ -124,17 +124,17 @@\n \n             let mut result = serde_json::json!({\n                 \"ruleId\": outcome.control_id.as_str(),\n                 \"level\": severity_to_level(outcome.severity),\n                 \"message\": { \"text\": outcome.rationale },\n                 \"properties\": props,\n             });\n \n-            if !finding.subjects.is_empty() {\n+            if  /* ~ changed by cargo-mutants ~ */finding.subjects.is_empty() {\n                 let locations: Vec<serde_json::Value> = finding\n                     .subjects\n                     .iter()\n                     .map(|s| {\n                         serde_json::json!({\n                             \"logicalLocations\": [{\n                                 \"fullyQualifiedName\": s,\n                                 \"kind\": \"resource\",\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "build_sarif",
+      "return_type": "-> serde_json::Value",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 180
+        },
+        "start": {
+          "column": 1,
+          "line": 93
+        }
+      }
+    },
+    "genre": "UnaryOperator",
+    "name": "crates/output/src/sarif.rs:132:16: delete ! in build_sarif",
+    "package": "libverify-output",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 17,
+        "line": 132
+      },
+      "start": {
+        "column": 16,
+        "line": 132
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ delete ! in build_sarif\n@@ -140,17 +140,17 @@\n                                 \"kind\": \"resource\",\n                             }]\n                         })\n                     })\n                     .collect();\n                 result[\"locations\"] = serde_json::Value::Array(locations);\n             }\n \n-            if !finding.evidence_gaps.is_empty() {\n+            if  /* ~ changed by cargo-mutants ~ */finding.evidence_gaps.is_empty() {\n                 let gaps: Vec<String> = finding\n                     .evidence_gaps\n                     .iter()\n                     .map(|g| format!(\"{g}\"))\n                     .collect();\n                 result[\"properties\"][\"evidenceGaps\"] = serde_json::json!(gaps);\n             }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "build_sarif",
+      "return_type": "-> serde_json::Value",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 180
+        },
+        "start": {
+          "column": 1,
+          "line": 93
+        }
+      }
+    },
+    "genre": "UnaryOperator",
+    "name": "crates/output/src/sarif.rs:148:16: delete ! in build_sarif",
+    "package": "libverify-output",
+    "replacement": "",
+    "span": {
+      "end": {
+        "column": 17,
+        "line": 148
+      },
+      "start": {
+        "column": 16,
+        "line": 148
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace filter_sarif_runs with ()\n@@ -175,28 +175,17 @@\n                 \"executionSuccessful\": true,\n             }],\n             \"results\": results,\n         }]\n     })\n }\n \n fn filter_sarif_runs(sarif: &mut serde_json::Value) {\n-    if let Some(runs) = sarif[\"runs\"].as_array_mut() {\n-        for run in runs.iter_mut() {\n-            if let Some(results) = run[\"results\"].as_array() {\n-                let filtered: Vec<serde_json::Value> = results\n-                    .iter()\n-                    .filter(|r| r[\"level\"].as_str() == Some(\"error\"))\n-                    .cloned()\n-                    .collect();\n-                run[\"results\"] = serde_json::Value::Array(filtered);\n-            }\n-        }\n-    }\n+    () /* ~ changed by cargo-mutants ~ */\n }\n \n fn rule_descriptor(id: &ControlId) -> serde_json::Value {\n     let desc = builtin_rule_description(id.as_str());\n     serde_json::json!({\n         \"id\": id.as_str(),\n         \"shortDescription\": { \"text\": desc },\n     })\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "filter_sarif_runs",
+      "return_type": "",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 195
+        },
+        "start": {
+          "column": 1,
+          "line": 182
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:183:5: replace filter_sarif_runs with ()",
+    "package": "libverify-output",
+    "replacement": "()",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 194
+      },
+      "start": {
+        "column": 5,
+        "line": 183
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace == with != in filter_sarif_runs\n@@ -180,17 +180,17 @@\n }\n \n fn filter_sarif_runs(sarif: &mut serde_json::Value) {\n     if let Some(runs) = sarif[\"runs\"].as_array_mut() {\n         for run in runs.iter_mut() {\n             if let Some(results) = run[\"results\"].as_array() {\n                 let filtered: Vec<serde_json::Value> = results\n                     .iter()\n-                    .filter(|r| r[\"level\"].as_str() == Some(\"error\"))\n+                    .filter(|r| r[\"level\"].as_str() != /* ~ changed by cargo-mutants ~ */ Some(\"error\"))\n                     .cloned()\n                     .collect();\n                 run[\"results\"] = serde_json::Value::Array(filtered);\n             }\n         }\n     }\n }\n \n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "filter_sarif_runs",
+      "return_type": "",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 195
+        },
+        "start": {
+          "column": 1,
+          "line": 182
+        }
+      }
+    },
+    "genre": "BinaryOperator",
+    "name": "crates/output/src/sarif.rs:188:53: replace == with != in filter_sarif_runs",
+    "package": "libverify-output",
+    "replacement": "!=",
+    "span": {
+      "end": {
+        "column": 55,
+        "line": 188
+      },
+      "start": {
+        "column": 53,
+        "line": 188
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace rule_descriptor -> serde_json::Value with Default::default()\n@@ -190,21 +190,17 @@\n                     .collect();\n                 run[\"results\"] = serde_json::Value::Array(filtered);\n             }\n         }\n     }\n }\n \n fn rule_descriptor(id: &ControlId) -> serde_json::Value {\n-    let desc = builtin_rule_description(id.as_str());\n-    serde_json::json!({\n-        \"id\": id.as_str(),\n-        \"shortDescription\": { \"text\": desc },\n-    })\n+    Default::default() /* ~ changed by cargo-mutants ~ */\n }\n \n fn severity_to_level(severity: FindingSeverity) -> &'static str {\n     match severity {\n         FindingSeverity::Info => \"note\",\n         FindingSeverity::Warning => \"warning\",\n         FindingSeverity::Error => \"error\",\n     }\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "rule_descriptor",
+      "return_type": "-> serde_json::Value",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 203
+        },
+        "start": {
+          "column": 1,
+          "line": 197
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:198:5: replace rule_descriptor -> serde_json::Value with Default::default()",
+    "package": "libverify-output",
+    "replacement": "Default::default()",
+    "span": {
+      "end": {
+        "column": 7,
+        "line": 202
+      },
+      "start": {
+        "column": 5,
+        "line": 198
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace severity_to_level -> &'static str with \"\"\n@@ -198,21 +198,17 @@\n     let desc = builtin_rule_description(id.as_str());\n     serde_json::json!({\n         \"id\": id.as_str(),\n         \"shortDescription\": { \"text\": desc },\n     })\n }\n \n fn severity_to_level(severity: FindingSeverity) -> &'static str {\n-    match severity {\n-        FindingSeverity::Info => \"note\",\n-        FindingSeverity::Warning => \"warning\",\n-        FindingSeverity::Error => \"error\",\n-    }\n+    \"\" /* ~ changed by cargo-mutants ~ */\n }\n \n #[cfg(test)]\n mod tests {\n     use super::*;\n     use libverify_core::assessment::{\n         AssessmentReport, BatchEntry, BatchReport, VerificationResult,\n     };\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "severity_to_level",
+      "return_type": "-> &'static str",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 211
+        },
+        "start": {
+          "column": 1,
+          "line": 205
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:206:5: replace severity_to_level -> &'static str with \"\"",
+    "package": "libverify-output",
+    "replacement": "\"\"",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 210
+      },
+      "start": {
+        "column": 5,
+        "line": 206
+      }
+    }
+  },
+  {
+    "diff": "--- crates/output/src/sarif.rs\n+++ replace severity_to_level -> &'static str with \"xyzzy\"\n@@ -198,21 +198,17 @@\n     let desc = builtin_rule_description(id.as_str());\n     serde_json::json!({\n         \"id\": id.as_str(),\n         \"shortDescription\": { \"text\": desc },\n     })\n }\n \n fn severity_to_level(severity: FindingSeverity) -> &'static str {\n-    match severity {\n-        FindingSeverity::Info => \"note\",\n-        FindingSeverity::Warning => \"warning\",\n-        FindingSeverity::Error => \"error\",\n-    }\n+    \"xyzzy\" /* ~ changed by cargo-mutants ~ */\n }\n \n #[cfg(test)]\n mod tests {\n     use super::*;\n     use libverify_core::assessment::{\n         AssessmentReport, BatchEntry, BatchReport, VerificationResult,\n     };\n",
+    "file": "crates/output/src/sarif.rs",
+    "function": {
+      "function_name": "severity_to_level",
+      "return_type": "-> &'static str",
+      "span": {
+        "end": {
+          "column": 2,
+          "line": 211
+        },
+        "start": {
+          "column": 1,
+          "line": 205
+        }
+      }
+    },
+    "genre": "FnValue",
+    "name": "crates/output/src/sarif.rs:206:5: replace severity_to_level -> &'static str with \"xyzzy\"",
+    "package": "libverify-output",
+    "replacement": "\"xyzzy\"",
+    "span": {
+      "end": {
+        "column": 6,
+        "line": 210
+      },
+      "start": {
+        "column": 5,
+        "line": 206
+      }
+    }
+  }
+]

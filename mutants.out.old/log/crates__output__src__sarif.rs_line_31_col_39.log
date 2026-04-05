@@ -1,0 +1,442 @@
+
+*** crates/output/src/sarif.rs:31:39: replace / with % in days_to_ymd
+
+*** mutation diff:
+--- crates/output/src/sarif.rs
++++ replace / with % in days_to_ymd
+@@ -23,17 +23,17 @@
+ }
+ 
+ /// Convert days since 1970-01-01 (UTC) to (year, month, day).
+ pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {
+     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)
+     let z = days + 719468;
+     let era = z / 146097;
+     let doe = z % 146097;
+-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
++    let yoe = (doe - doe / 1460 + doe % /* ~ changed by cargo-mutants ~ */ 36524 - doe / 146096) / 365;
+     let y = yoe + era * 400;
+     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+     let mp = (5 * doy + 2) / 153;
+     let d = doy - (153 * mp + 2) / 5 + 1;
+     let m = if mp < 10 { mp + 3 } else { mp - 9 };
+     let y = if m <= 2 { y + 1 } else { y };
+     (y, m, d)
+ }
+
+
+*** /Users/hikae/.local/share/mise/installs/rust/1.94.1/toolchains/1.94.1-aarch64-apple-darwin/bin/cargo test --no-run --verbose --package=libverify-output@0.11.0
+       Fresh unicode-ident v1.0.24
+       Fresh stable_deref_trait v1.2.1
+       Fresh cfg-if v1.0.4
+       Fresh autocfg v1.5.0
+       Fresh memchr v2.8.0
+       Fresh proc-macro2 v1.0.106
+       Fresh smallvec v1.15.1
+       Fresh litemap v0.8.1
+       Fresh quote v1.0.45
+       Fresh libc v0.2.183
+       Fresh serde_core v1.0.228
+       Fresh writeable v0.6.2
+       Fresh syn v2.0.117
+       Fresh num-traits v0.2.19
+       Fresh zerocopy v0.8.48
+       Fresh rand_core v0.10.0
+       Fresh synstructure v0.13.2
+       Fresh zerovec-derive v0.11.2
+       Fresh displaydoc v0.2.5
+       Fresh serde_derive v1.0.228
+       Fresh num-integer v0.1.46
+       Fresh getrandom v0.3.4
+       Fresh zerofrom-derive v0.1.6
+       Fresh yoke-derive v0.8.1
+       Fresh serde v1.0.228
+       Fresh itoa v1.0.18
+       Fresh icu_properties_data v2.1.2
+       Fresh icu_normalizer_data v2.1.1
+       Fresh zmij v1.0.21
+       Fresh zerofrom v0.1.6
+       Fresh aho-corasick v1.1.4
+       Fresh find-msvc-tools v0.1.9
+       Fresh shlex v1.3.0
+       Fresh version_check v0.9.5
+       Fresh regex-syntax v0.8.10
+       Fresh yoke v0.8.1
+       Fresh regex-automata v0.4.14
+       Fresh cc v1.2.58
+       Fresh getrandom v0.4.2
+       Fresh serde_json v1.0.149
+       Fresh zerovec v0.11.5
+       Fresh zerotrie v0.2.3
+       Fresh num-bigint v0.4.6
+       Fresh ref-cast-impl v1.0.25
+       Fresh chacha20 v0.10.0
+       Fresh scopeguard v1.2.0
+       Fresh percent-encoding v2.3.2
+       Fresh parking_lot_core v0.9.12
+       Fresh anyhow v1.0.102
+       Fresh tinystr v0.8.2
+       Fresh potential_utf v0.1.4
+       Fresh rand v0.10.0
+       Fresh num-rational v0.4.2
+       Fresh ref-cast v1.0.25
+       Fresh lock_api v0.4.14
+       Fresh num-iter v0.1.45
+       Fresh icu_locale_core v2.1.1
+       Fresh icu_collections v2.1.1
+       Fresh num-complex v0.4.6
+       Fresh once_cell v1.21.4
+       Fresh bit-vec v0.8.0
+       Fresh siphasher v1.0.2
+       Fresh borrow-or-share v0.2.4
+       Fresh utf8_iter v1.0.4
+       Fresh core-foundation-sys v0.8.7
+       Fresh icu_provider v2.1.1
+       Fresh iana-time-zone v0.1.65
+       Fresh bit-set v0.8.0
+       Fresh num v0.4.3
+       Fresh fluent-uri v0.3.2
+       Fresh phf_shared v0.12.1
+       Fresh ahash v0.8.12
+       Fresh parking_lot v0.12.5
+       Fresh uuid v1.23.0
+       Fresh icu_properties v2.1.2
+       Fresh icu_normalizer v2.1.1
+       Fresh rand_core v0.9.5
+       Fresh ppv-lite86 v0.2.21
+       Fresh vsimd v0.8.0
+       Fresh outref v0.5.2
+       Fresh idna_adapter v1.2.1
+       Fresh hashbrown v0.16.1
+       Fresh lazy_static v1.5.0
+       Fresh equivalent v1.0.2
+       Fresh uuid-simd v0.8.0
+       Fresh rand_chacha v0.9.0
+       Fresh regorus-mimalloc-sys v2.2.6
+       Fresh idna v1.1.0
+       Fresh indexmap v2.13.0
+       Fresh fraction v0.15.3
+       Fresh phf v0.12.1
+       Fresh chrono v0.4.44
+       Fresh referencing v0.30.0
+       Fresh fancy-regex v0.14.0
+       Fresh form_urlencoded v1.2.2
+       Fresh regex v1.12.3
+       Fresh email_address v0.2.9
+       Fresh thiserror-impl v2.0.18
+       Fresh bstr v1.12.1
+       Fresh ryu v1.0.23
+       Fresh bytecount v0.6.9
+       Fresh base64 v0.22.1
+       Fresh num-cmp v0.1.0
+       Fresh unty v0.0.4
+       Fresh unsafe-libyaml v0.2.11
+       Fresh thiserror v2.0.18
+       Fresh globset v0.4.18
+       Fresh url v2.5.8
+       Fresh chrono-tz v0.10.4
+       Fresh msvc_spectre_libs v0.1.3
+       Fresh jsonschema v0.30.0
+       Fresh serde_yaml v0.9.34+deprecated
+       Fresh bincode v2.0.1
+       Fresh regorus-mimalloc v2.2.6
+       Fresh rand v0.9.2
+       Fresh libverify-core v0.11.0 (/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/crates/core)
+       Fresh spin v0.9.8
+       Fresh semver v1.0.27
+       Fresh ipnet v2.12.0
+       Fresh data-encoding v2.10.0
+       Dirty libverify-output v0.11.0 (/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/crates/output): the file `crates/output/src/sarif.rs` has changed (1775348320.696745498s, 1s after last build at 1775348319.772559533s)
+   Compiling libverify-output v0.11.0 (/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/crates/output)
+       Fresh regorus v0.9.1
+       Fresh libverify-policy v0.11.0 (/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/crates/policy)
+     Running `/Users/hikae/.local/share/mise/installs/rust/1.94.1/toolchains/1.94.1-aarch64-apple-darwin/bin/rustc --crate-name libverify_output --edition=2024 crates/output/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked --test --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=294e1edfda8d1daa -C extra-filename=-daf476852a0643c1 --out-dir /private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps -C incremental=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/incremental -L dependency=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps --extern anyhow=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libanyhow-d9b6d410a1361442.rlib --extern libverify_core=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/liblibverify_core-29106f1c1dd33eff.rlib --extern libverify_policy=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/liblibverify_policy-b4fa2447ac527e26.rlib --extern serde=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libserde-fe9a3b39faafab9c.rlib --extern serde_json=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libserde_json-25c760cf0171f71d.rlib -L native=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/build/regorus-mimalloc-sys-973e61483e28a098/out`
+     Running `/Users/hikae/.local/share/mise/installs/rust/1.94.1/toolchains/1.94.1-aarch64-apple-darwin/bin/rustc --crate-name libverify_output --edition=2024 crates/output/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=79724986bfd1a5d4 -C extra-filename=-5fa6aa370ad6eac1 --out-dir /private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps -C incremental=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/incremental -L dependency=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps --extern anyhow=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libanyhow-d9b6d410a1361442.rmeta --extern libverify_core=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/liblibverify_core-29106f1c1dd33eff.rmeta --extern serde=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libserde-fe9a3b39faafab9c.rmeta --extern serde_json=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libserde_json-25c760cf0171f71d.rmeta`
+warning: variable does not need to be mutable
+   --> crates/output/src/sarif.rs:394:13
+    |
+394 |         let mut finding = ControlFinding::indeterminate(
+    |             ----^^^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+     Running `/Users/hikae/.local/share/mise/installs/rust/1.94.1/toolchains/1.94.1-aarch64-apple-darwin/bin/rustc --crate-name oss_scenario --edition=2024 crates/output/examples/oss_scenario.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type bin --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 -C split-debuginfo=unpacked --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values())' -C metadata=1e99f3fb9739db28 -C extra-filename=-712e33cda7e03697 --out-dir /private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/examples -C incremental=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/incremental -L dependency=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps --extern anyhow=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libanyhow-d9b6d410a1361442.rlib --extern libverify_core=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/liblibverify_core-29106f1c1dd33eff.rlib --extern libverify_output=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/liblibverify_output-5fa6aa370ad6eac1.rlib --extern libverify_policy=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/liblibverify_policy-b4fa2447ac527e26.rlib --extern serde=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libserde-fe9a3b39faafab9c.rlib --extern serde_json=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libserde_json-25c760cf0171f71d.rlib -L native=/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/build/regorus-mimalloc-sys-973e61483e28a098/out`
+warning: `libverify-output` (lib test) generated 1 warning (run `cargo fix --lib -p libverify-output --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.48s
+  Executable `/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libverify_output-daf476852a0643c1`
+
+*** result: Success
+
+*** /Users/hikae/.local/share/mise/installs/rust/1.94.1/toolchains/1.94.1-aarch64-apple-darwin/bin/cargo test --verbose --package=libverify-output@0.11.0 --lib
+       Fresh unicode-ident v1.0.24
+       Fresh cfg-if v1.0.4
+       Fresh stable_deref_trait v1.2.1
+       Fresh autocfg v1.5.0
+       Fresh memchr v2.8.0
+       Fresh proc-macro2 v1.0.106
+       Fresh writeable v0.6.2
+       Fresh litemap v0.8.1
+       Fresh smallvec v1.15.1
+       Fresh quote v1.0.45
+       Fresh libc v0.2.183
+       Fresh serde_core v1.0.228
+       Fresh syn v2.0.117
+       Fresh num-traits v0.2.19
+       Fresh rand_core v0.10.0
+       Fresh synstructure v0.13.2
+       Fresh zerovec-derive v0.11.2
+       Fresh displaydoc v0.2.5
+       Fresh serde_derive v1.0.228
+       Fresh num-integer v0.1.46
+       Fresh getrandom v0.3.4
+       Fresh zerocopy v0.8.48
+       Fresh icu_normalizer_data v2.1.1
+       Fresh zerofrom-derive v0.1.6
+       Fresh yoke-derive v0.8.1
+       Fresh serde v1.0.228
+       Fresh icu_properties_data v2.1.2
+       Fresh aho-corasick v1.1.4
+       Fresh regex-syntax v0.8.10
+       Fresh zerofrom v0.1.6
+       Fresh itoa v1.0.18
+       Fresh version_check v0.9.5
+       Fresh find-msvc-tools v0.1.9
+       Fresh shlex v1.3.0
+       Fresh zmij v1.0.21
+       Fresh regex-automata v0.4.14
+       Fresh yoke v0.8.1
+       Fresh cc v1.2.58
+       Fresh num-bigint v0.4.6
+       Fresh getrandom v0.4.2
+       Fresh chacha20 v0.10.0
+       Fresh ref-cast-impl v1.0.25
+       Fresh zerovec v0.11.5
+       Fresh zerotrie v0.2.3
+       Fresh scopeguard v1.2.0
+       Fresh percent-encoding v2.3.2
+       Fresh parking_lot_core v0.9.12
+       Fresh num-rational v0.4.2
+       Fresh tinystr v0.8.2
+       Fresh potential_utf v0.1.4
+       Fresh lock_api v0.4.14
+       Fresh ref-cast v1.0.25
+       Fresh rand v0.10.0
+       Fresh serde_json v1.0.149
+       Fresh num-iter v0.1.45
+       Fresh num-complex v0.4.6
+       Fresh icu_locale_core v2.1.1
+       Fresh icu_collections v2.1.1
+       Fresh core-foundation-sys v0.8.7
+       Fresh siphasher v1.0.2
+       Fresh utf8_iter v1.0.4
+       Fresh bit-vec v0.8.0
+       Fresh borrow-or-share v0.2.4
+       Fresh once_cell v1.21.4
+       Fresh uuid v1.23.0
+       Fresh icu_provider v2.1.1
+       Fresh iana-time-zone v0.1.65
+       Fresh fluent-uri v0.3.2
+       Fresh phf_shared v0.12.1
+       Fresh ahash v0.8.12
+       Fresh bit-set v0.8.0
+       Fresh parking_lot v0.12.5
+       Fresh anyhow v1.0.102
+       Fresh num v0.4.3
+       Fresh icu_normalizer v2.1.1
+       Fresh icu_properties v2.1.2
+       Fresh rand_core v0.9.5
+       Fresh ppv-lite86 v0.2.21
+       Fresh lazy_static v1.5.0
+       Fresh hashbrown v0.16.1
+       Fresh vsimd v0.8.0
+       Fresh idna_adapter v1.2.1
+       Fresh equivalent v1.0.2
+       Fresh outref v0.5.2
+       Fresh rand_chacha v0.9.0
+       Fresh fraction v0.15.3
+       Fresh regorus-mimalloc-sys v2.2.6
+       Fresh idna v1.1.0
+       Fresh indexmap v2.13.0
+       Fresh uuid-simd v0.8.0
+       Fresh chrono v0.4.44
+       Fresh fancy-regex v0.14.0
+       Fresh phf v0.12.1
+       Fresh referencing v0.30.0
+       Fresh form_urlencoded v1.2.2
+       Fresh regex v1.12.3
+       Fresh email_address v0.2.9
+       Fresh thiserror-impl v2.0.18
+       Fresh bstr v1.12.1
+       Fresh bytecount v0.6.9
+       Fresh unty v0.0.4
+       Fresh unsafe-libyaml v0.2.11
+       Fresh num-cmp v0.1.0
+       Fresh base64 v0.22.1
+       Fresh ryu v1.0.23
+       Fresh globset v0.4.18
+       Fresh bincode v2.0.1
+       Fresh thiserror v2.0.18
+       Fresh url v2.5.8
+       Fresh msvc_spectre_libs v0.1.3
+       Fresh chrono-tz v0.10.4
+       Fresh jsonschema v0.30.0
+       Fresh serde_yaml v0.9.34+deprecated
+       Fresh regorus-mimalloc v2.2.6
+       Fresh rand v0.9.2
+       Fresh data-encoding v2.10.0
+       Fresh ipnet v2.12.0
+       Fresh semver v1.0.27
+       Fresh spin v0.9.8
+       Fresh regorus v0.9.1
+       Fresh libverify-core v0.11.0 (/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/crates/core)
+       Fresh libverify-policy v0.11.0 (/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/crates/policy)
+       Fresh libverify-output v0.11.0 (/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/crates/output)
+warning: variable does not need to be mutable
+   --> crates/output/src/sarif.rs:394:13
+    |
+394 |         let mut finding = ControlFinding::indeterminate(
+    |             ----^^^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: `libverify-output` (lib test) generated 1 warning (run `cargo fix --lib -p libverify-output --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running `/private/var/folders/d4/51x91n9x17380mgz0mlzf9dh0000gn/T/cargo-mutants-libverify-EYfz53.tmp/target/debug/deps/libverify_output-daf476852a0643c1`
+
+running 30 tests
+test json::tests::filter_batch_applies_filter_to_all_entries ... ok
+test json::tests::render_batch_with_only_failures_filters ... ok
+test json::tests::filter_result_excludes_pass_and_review ... ok
+test json::tests::render_batch_produces_valid_json ... ok
+test json::tests::filter_result_keeps_only_fail_decisions ... ok
+test json::tests::render_with_only_failures_filters_to_fail_only ... ok
+test json::tests::render_produces_valid_json ... ok
+test sarif::tests::build_sarif_invocations_timestamp ... FAILED
+test sarif::tests::build_sarif_includes_evidence_gaps ... FAILED
+test sarif::tests::build_sarif_includes_subjects_as_locations ... FAILED
+test sarif::tests::build_sarif_dedups_rules ... FAILED
+test sarif::tests::build_sarif_merges_annotations_into_properties ... FAILED
+test sarif::tests::build_sarif_omits_locations_when_no_subjects ... FAILED
+test sarif::tests::builtin_rule_description_returns_known_description ... ok
+test sarif::tests::days_to_ymd_known_dates ... FAILED
+test sarif::tests::build_sarif_structure ... FAILED
+test sarif::tests::filter_sarif_runs_keeps_only_errors ... FAILED
+test sarif::tests::render_batch_produces_valid_sarif_json ... FAILED
+test sarif::tests::render_batch_with_only_failures_filters ... FAILED
+test sarif::tests::render_produces_valid_sarif_json ... FAILED
+test sarif::tests::rule_descriptor_contains_id_and_description ... ok
+test sarif::tests::severity_to_level_maps_all_variants ... ok
+test sarif::tests::render_with_only_failures_filters ... FAILED
+test sarif::tests::utc_now_rfc3339_format ... FAILED
+test tests::parse_format_valid ... ok
+test tests::render_batch_sarif_format ... ok
+test tests::parse_format_invalid ... ok
+test tests::render_batch_json_format ... ok
+test tests::render_json_format ... ok
+test tests::render_sarif_format ... FAILED
+
+failures:
+
+---- sarif::tests::build_sarif_invocations_timestamp stdout ----
+
+thread 'sarif::tests::build_sarif_invocations_timestamp' (817947) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::build_sarif_includes_evidence_gaps stdout ----
+
+thread 'sarif::tests::build_sarif_includes_evidence_gaps' (817945) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::build_sarif_includes_subjects_as_locations stdout ----
+
+thread 'sarif::tests::build_sarif_includes_subjects_as_locations' (817946) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::build_sarif_dedups_rules stdout ----
+
+thread 'sarif::tests::build_sarif_dedups_rules' (817944) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- sarif::tests::build_sarif_merges_annotations_into_properties stdout ----
+
+thread 'sarif::tests::build_sarif_merges_annotations_into_properties' (817948) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::build_sarif_omits_locations_when_no_subjects stdout ----
+
+thread 'sarif::tests::build_sarif_omits_locations_when_no_subjects' (817949) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::days_to_ymd_known_dates stdout ----
+
+thread 'sarif::tests::days_to_ymd_known_dates' (817952) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::build_sarif_structure stdout ----
+
+thread 'sarif::tests::build_sarif_structure' (817950) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::filter_sarif_runs_keeps_only_errors stdout ----
+
+thread 'sarif::tests::filter_sarif_runs_keeps_only_errors' (817953) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::render_batch_produces_valid_sarif_json stdout ----
+
+thread 'sarif::tests::render_batch_produces_valid_sarif_json' (817954) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::render_batch_with_only_failures_filters stdout ----
+
+thread 'sarif::tests::render_batch_with_only_failures_filters' (817955) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::render_produces_valid_sarif_json stdout ----
+
+thread 'sarif::tests::render_produces_valid_sarif_json' (817956) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::render_with_only_failures_filters stdout ----
+
+thread 'sarif::tests::render_with_only_failures_filters' (817957) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- sarif::tests::utc_now_rfc3339_format stdout ----
+
+thread 'sarif::tests::utc_now_rfc3339_format' (817960) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+---- tests::render_sarif_format stdout ----
+
+thread 'tests::render_sarif_format' (817966) panicked at crates/output/src/sarif.rs:33:15:
+attempt to subtract with overflow
+
+
+failures:
+    sarif::tests::build_sarif_dedups_rules
+    sarif::tests::build_sarif_includes_evidence_gaps
+    sarif::tests::build_sarif_includes_subjects_as_locations
+    sarif::tests::build_sarif_invocations_timestamp
+    sarif::tests::build_sarif_merges_annotations_into_properties
+    sarif::tests::build_sarif_omits_locations_when_no_subjects
+    sarif::tests::build_sarif_structure
+    sarif::tests::days_to_ymd_known_dates
+    sarif::tests::filter_sarif_runs_keeps_only_errors
+    sarif::tests::render_batch_produces_valid_sarif_json
+    sarif::tests::render_batch_with_only_failures_filters
+    sarif::tests::render_produces_valid_sarif_json
+    sarif::tests::render_with_only_failures_filters
+    sarif::tests::utc_now_rfc3339_format
+    tests::render_sarif_format
+
+test result: FAILED. 15 passed; 15 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p libverify-output --lib`
+
+*** result: Failure(101)

@@ -1,0 +1,109 @@
+crates/output/src/lib.rs:26:9: delete match arm "json" in parse_format
+crates/output/src/lib.rs:27:9: delete match arm "sarif" in parse_format
+crates/output/src/lib.rs:33:5: replace render -> Result<String> with Ok(String::new())
+crates/output/src/lib.rs:33:5: replace render -> Result<String> with Ok("xyzzy".into())
+crates/output/src/lib.rs:45:5: replace render_batch -> Result<String> with Ok(String::new())
+crates/output/src/lib.rs:45:5: replace render_batch -> Result<String> with Ok("xyzzy".into())
+crates/output/src/json.rs:6:5: replace render -> Result<String> with Ok(String::new())
+crates/output/src/json.rs:6:5: replace render -> Result<String> with Ok("xyzzy".into())
+crates/output/src/json.rs:15:5: replace render_batch -> Result<String> with Ok(String::new())
+crates/output/src/json.rs:15:5: replace render_batch -> Result<String> with Ok("xyzzy".into())
+crates/output/src/json.rs:29:29: replace == with != in filter_result
+crates/output/src/sarif.rs:10:5: replace utc_now_rfc3339 -> String with String::new()
+crates/output/src/sarif.rs:10:5: replace utc_now_rfc3339 -> String with "xyzzy".into()
+crates/output/src/sarif.rs:14:18: replace % with / in utc_now_rfc3339
+crates/output/src/sarif.rs:14:18: replace % with + in utc_now_rfc3339
+crates/output/src/sarif.rs:15:26: replace / with % in utc_now_rfc3339
+crates/output/src/sarif.rs:15:26: replace / with * in utc_now_rfc3339
+crates/output/src/sarif.rs:16:23: replace % with / in utc_now_rfc3339
+crates/output/src/sarif.rs:16:23: replace % with + in utc_now_rfc3339
+crates/output/src/sarif.rs:17:32: replace / with % in utc_now_rfc3339
+crates/output/src/sarif.rs:17:32: replace / with * in utc_now_rfc3339
+crates/output/src/sarif.rs:18:24: replace % with / in utc_now_rfc3339
+crates/output/src/sarif.rs:18:24: replace % with + in utc_now_rfc3339
+crates/output/src/sarif.rs:19:33: replace / with % in utc_now_rfc3339
+crates/output/src/sarif.rs:19:33: replace / with * in utc_now_rfc3339
+crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (0, 0, 0)
+crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (0, 0, 1)
+crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (0, 1, 0)
+crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (0, 1, 1)
+crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (1, 0, 0)
+crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (1, 0, 1)
+crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (1, 1, 0)
+crates/output/src/sarif.rs:28:5: replace days_to_ymd -> (u64, u64, u64) with (1, 1, 1)
+crates/output/src/sarif.rs:28:18: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:28:18: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:29:17: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:29:17: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:30:17: replace % with / in days_to_ymd
+crates/output/src/sarif.rs:30:17: replace % with + in days_to_ymd
+crates/output/src/sarif.rs:31:63: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:31:63: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:31:47: replace - with + in days_to_ymd
+crates/output/src/sarif.rs:31:47: replace - with / in days_to_ymd
+crates/output/src/sarif.rs:31:33: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:31:33: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:31:20: replace - with + in days_to_ymd
+crates/output/src/sarif.rs:31:20: replace - with / in days_to_ymd
+crates/output/src/sarif.rs:31:26: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:31:26: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:31:39: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:31:39: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:31:53: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:31:53: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:32:17: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:32:17: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:32:23: replace * with + in days_to_ymd
+crates/output/src/sarif.rs:32:23: replace * with / in days_to_ymd
+crates/output/src/sarif.rs:33:19: replace - with + in days_to_ymd
+crates/output/src/sarif.rs:33:19: replace - with / in days_to_ymd
+crates/output/src/sarif.rs:33:42: replace - with + in days_to_ymd
+crates/output/src/sarif.rs:33:42: replace - with / in days_to_ymd
+crates/output/src/sarif.rs:33:32: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:33:32: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:33:26: replace * with + in days_to_ymd
+crates/output/src/sarif.rs:33:26: replace * with / in days_to_ymd
+crates/output/src/sarif.rs:33:38: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:33:38: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:33:48: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:33:48: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:34:28: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:34:28: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:34:23: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:34:23: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:34:17: replace * with + in days_to_ymd
+crates/output/src/sarif.rs:34:17: replace * with / in days_to_ymd
+crates/output/src/sarif.rs:35:38: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:35:38: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:35:17: replace - with + in days_to_ymd
+crates/output/src/sarif.rs:35:17: replace - with / in days_to_ymd
+crates/output/src/sarif.rs:35:34: replace / with % in days_to_ymd
+crates/output/src/sarif.rs:35:34: replace / with * in days_to_ymd
+crates/output/src/sarif.rs:35:29: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:35:29: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:35:24: replace * with + in days_to_ymd
+crates/output/src/sarif.rs:35:24: replace * with / in days_to_ymd
+crates/output/src/sarif.rs:36:19: replace < with == in days_to_ymd
+crates/output/src/sarif.rs:36:19: replace < with > in days_to_ymd
+crates/output/src/sarif.rs:36:19: replace < with <= in days_to_ymd
+crates/output/src/sarif.rs:36:29: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:36:29: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:36:45: replace - with + in days_to_ymd
+crates/output/src/sarif.rs:36:45: replace - with / in days_to_ymd
+crates/output/src/sarif.rs:37:18: replace <= with > in days_to_ymd
+crates/output/src/sarif.rs:37:27: replace + with - in days_to_ymd
+crates/output/src/sarif.rs:37:27: replace + with * in days_to_ymd
+crates/output/src/sarif.rs:42:5: replace builtin_rule_description -> &'static str with ""
+crates/output/src/sarif.rs:42:5: replace builtin_rule_description -> &'static str with "xyzzy"
+crates/output/src/sarif.rs:51:5: replace render -> Result<String> with Ok(String::new())
+crates/output/src/sarif.rs:51:5: replace render -> Result<String> with Ok("xyzzy".into())
+crates/output/src/sarif.rs:69:5: replace render_batch -> Result<String> with Ok(String::new())
+crates/output/src/sarif.rs:69:5: replace render_batch -> Result<String> with Ok("xyzzy".into())
+crates/output/src/sarif.rs:98:5: replace build_sarif -> serde_json::Value with Default::default()
+crates/output/src/sarif.rs:132:16: delete ! in build_sarif
+crates/output/src/sarif.rs:148:16: delete ! in build_sarif
+crates/output/src/sarif.rs:183:5: replace filter_sarif_runs with ()
+crates/output/src/sarif.rs:188:53: replace == with != in filter_sarif_runs
+crates/output/src/sarif.rs:198:5: replace rule_descriptor -> serde_json::Value with Default::default()
+crates/output/src/sarif.rs:206:5: replace severity_to_level -> &'static str with ""
+crates/output/src/sarif.rs:206:5: replace severity_to_level -> &'static str with "xyzzy"

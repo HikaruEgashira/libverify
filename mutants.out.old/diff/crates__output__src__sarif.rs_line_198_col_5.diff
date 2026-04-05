@@ -1,0 +1,25 @@
+--- crates/output/src/sarif.rs
++++ replace rule_descriptor -> serde_json::Value with Default::default()
+@@ -190,21 +190,17 @@
+                     .collect();
+                 run["results"] = serde_json::Value::Array(filtered);
+             }
+         }
+     }
+ }
+ 
+ fn rule_descriptor(id: &ControlId) -> serde_json::Value {
+-    let desc = builtin_rule_description(id.as_str());
+-    serde_json::json!({
+-        "id": id.as_str(),
+-        "shortDescription": { "text": desc },
+-    })
++    Default::default() /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ fn severity_to_level(severity: FindingSeverity) -> &'static str {
+     match severity {
+         FindingSeverity::Info => "note",
+         FindingSeverity::Warning => "warning",
+         FindingSeverity::Error => "error",
+     }

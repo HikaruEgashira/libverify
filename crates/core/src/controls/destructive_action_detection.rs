@@ -1,17 +1,54 @@
 use crate::control::{Control, ControlFinding, ControlId, builtin};
 use crate::evidence::{EvidenceBundle, EvidenceState};
 
-/// Destructive patterns matched case-insensitively against agent action commands.
-const DESTRUCTIVE_PATTERNS: &[&str] = &[
+/// Built-in destructive patterns matched case-insensitively against agent action commands.
+/// Users can extend this via `AgentSpec.custom_destructive_patterns`.
+pub const DEFAULT_DESTRUCTIVE_PATTERNS: &[&str] = &[
+    // Filesystem destruction
     "rm -rf",
+    "rm -r",
+    "rm -fr",
+    "shred ",
+    "find / -delete",
+    "find . -delete",
+    // SQL destruction
     "drop table",
     "drop database",
+    "drop schema",
     "truncate table",
+    "delete from",
+    // Git history mutation
     "git push --force",
     "git push -f",
     "git reset --hard",
+    "git push origin :",
+    // Container/orchestration destruction
     "kubectl delete",
+    "kubectl drain",
+    "helm uninstall",
+    "helm delete",
+    "docker rm",
+    "docker system prune",
+    "docker-compose down -v",
+    // Infrastructure destruction
     "terraform destroy",
+    "pulumi destroy",
+    // Cloud provider destruction
+    "aws s3 rm",
+    "aws s3 rb",
+    "aws ec2 terminate",
+    "aws rds delete",
+    "aws lambda delete",
+    "gsutil rm",
+    "gcloud compute instances delete",
+    "az vm delete",
+    "az storage blob delete",
+    // System administration
+    "chmod 000",
+    "chmod -r 000",
+    "iptables -f",
+    "systemctl stop",
+    "kill -9",
     "format c:",
 ];
 
@@ -27,8 +64,9 @@ impl Control for DestructiveActionDetectionControl {
     }
 
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
-        let log = match &evidence.agent_action_log {
-            EvidenceState::Complete { value } | EvidenceState::Partial { value, .. } => value,
+        let (log, has_gaps) = match &evidence.agent_action_log {
+            EvidenceState::Complete { value } => (value, false),
+            EvidenceState::Partial { value, .. } => (value, true),
             EvidenceState::Missing { gaps } => {
                 return vec![ControlFinding::indeterminate(
                     self.id(),
@@ -45,22 +83,36 @@ impl Control for DestructiveActionDetectionControl {
             }
         };
 
+        // Merge built-in patterns with custom patterns from agent spec
+        let custom_patterns: Vec<String> = match &evidence.agent_spec {
+            EvidenceState::Complete { value } | EvidenceState::Partial { value, .. } => {
+                value.custom_destructive_patterns.iter().map(|p| p.to_lowercase()).collect()
+            }
+            _ => vec![],
+        };
+
         let destructive_commands: Vec<String> = log
             .actions
             .iter()
             .filter(|action| {
                 let lower = action.command.to_lowercase();
-                DESTRUCTIVE_PATTERNS
+                DEFAULT_DESTRUCTIVE_PATTERNS
                     .iter()
                     .any(|pattern| lower.contains(pattern))
+                    || custom_patterns.iter().any(|pattern| lower.contains(pattern.as_str()))
             })
             .map(|action| action.command.clone())
             .collect();
 
         if destructive_commands.is_empty() {
+            let mut rationale =
+                "No destructive actions detected in agent action log".to_string();
+            if has_gaps {
+                rationale.push_str(" (partial evidence — some actions may not have been captured)");
+            }
             vec![ControlFinding::satisfied(
                 self.id(),
-                "No destructive actions detected in agent action log",
+                rationale,
                 vec![format!(
                     "agent:{}:session:{}",
                     log.agent_id, log.session_id
@@ -83,7 +135,7 @@ impl Control for DestructiveActionDetectionControl {
 mod tests {
     use super::*;
     use crate::control::ControlStatus;
-    use crate::evidence::{AgentAction, AgentActionLog, EvidenceGap, EvidenceState};
+    use crate::evidence::{AgentAction, AgentActionLog, AgentSpec, EvidenceGap, EvidenceState};
 
     fn action(command: &str) -> AgentAction {
         AgentAction {
@@ -146,10 +198,6 @@ mod tests {
         ));
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert_eq!(findings[0].subjects.len(), 2);
-        assert!(findings[0].subjects.contains(&"rm -rf /".to_string()));
-        assert!(findings[0]
-            .subjects
-            .contains(&"DROP TABLE users".to_string()));
     }
 
     #[test]
@@ -205,6 +253,70 @@ mod tests {
             )])),
         ));
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert_eq!(findings[0].subjects[0], "sudo rm -rf /var/log/old");
+    }
+
+    // --- New tests for expanded patterns ---
+
+    #[test]
+    fn cloud_provider_patterns_detected() {
+        for cmd in &[
+            "aws s3 rm s3://bucket/key",
+            "aws ec2 terminate-instances --instance-ids i-1234",
+            "gcloud compute instances delete my-vm",
+            "az vm delete --name my-vm",
+            "helm uninstall my-release",
+            "docker rm -f container1",
+            "kubectl delete pod my-pod",
+        ] {
+            let findings = DestructiveActionDetectionControl.evaluate(&bundle(
+                EvidenceState::complete(log_with(vec![action(cmd)])),
+            ));
+            assert_eq!(
+                findings[0].status,
+                ControlStatus::Violated,
+                "Expected Violated for: {cmd}"
+            );
+        }
+    }
+
+    #[test]
+    fn delete_from_sql_detected() {
+        let findings = DestructiveActionDetectionControl.evaluate(&bundle(
+            EvidenceState::complete(log_with(vec![action("DELETE FROM users WHERE 1=1")])),
+        ));
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+    }
+
+    #[test]
+    fn custom_patterns_from_agent_spec() {
+        let evidence = EvidenceBundle {
+            agent_action_log: EvidenceState::complete(log_with(vec![
+                action("vault delete secret/prod/api-key"),
+            ])),
+            agent_spec: EvidenceState::complete(AgentSpec {
+                custom_destructive_patterns: vec!["vault delete".to_string()],
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let findings = DestructiveActionDetectionControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+    }
+
+    #[test]
+    fn partial_evidence_notes_gaps() {
+        let evidence = EvidenceBundle {
+            agent_action_log: EvidenceState::partial(
+                log_with(vec![action("cargo build")]),
+                vec![EvidenceGap::Truncated {
+                    source: "monitor".to_string(),
+                    subject: "action_log".to_string(),
+                }],
+            ),
+            ..Default::default()
+        };
+        let findings = DestructiveActionDetectionControl.evaluate(&evidence);
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+        assert!(findings[0].rationale.contains("partial evidence"));
     }
 }

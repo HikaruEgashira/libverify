@@ -602,7 +602,7 @@ pub struct AgentActionLog {
 }
 
 /// Spec constraining what an agent is allowed to do (Layer 1).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct AgentSpec {
     #[serde(default)]
     pub allowed_paths: Vec<String>,
@@ -616,6 +616,14 @@ pub struct AgentSpec {
     pub max_steps: Option<u32>,
     #[serde(default)]
     pub budget_cents: Option<u32>,
+    /// Additional destructive command patterns (case-insensitive substring match).
+    /// Extends the built-in default set in `DestructiveActionDetectionControl`.
+    #[serde(default)]
+    pub custom_destructive_patterns: Vec<String>,
+    /// When true, actions without `required_permission` are treated as violations.
+    /// Default: false (fail-open for backward compatibility).
+    #[serde(default)]
+    pub deny_unpermissioned_actions: bool,
 }
 
 /// Record of what an agent actually did (Layer 1).

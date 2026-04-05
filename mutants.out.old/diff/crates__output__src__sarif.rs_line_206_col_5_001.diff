@@ -1,0 +1,25 @@
+--- crates/output/src/sarif.rs
++++ replace severity_to_level -> &'static str with "xyzzy"
+@@ -198,21 +198,17 @@
+     let desc = builtin_rule_description(id.as_str());
+     serde_json::json!({
+         "id": id.as_str(),
+         "shortDescription": { "text": desc },
+     })
+ }
+ 
+ fn severity_to_level(severity: FindingSeverity) -> &'static str {
+-    match severity {
+-        FindingSeverity::Info => "note",
+-        FindingSeverity::Warning => "warning",
+-        FindingSeverity::Error => "error",
+-    }
++    "xyzzy" /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+     use libverify_core::assessment::{
+         AssessmentReport, BatchEntry, BatchReport, VerificationResult,
+     };

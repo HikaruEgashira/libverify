@@ -1,0 +1,21 @@
+--- crates/output/src/sarif.rs
++++ delete ! in build_sarif
+@@ -124,17 +124,17 @@
+ 
+             let mut result = serde_json::json!({
+                 "ruleId": outcome.control_id.as_str(),
+                 "level": severity_to_level(outcome.severity),
+                 "message": { "text": outcome.rationale },
+                 "properties": props,
+             });
+ 
+-            if !finding.subjects.is_empty() {
++            if  /* ~ changed by cargo-mutants ~ */finding.subjects.is_empty() {
+                 let locations: Vec<serde_json::Value> = finding
+                     .subjects
+                     .iter()
+                     .map(|s| {
+                         serde_json::json!({
+                             "logicalLocations": [{
+                                 "fullyQualifiedName": s,
+                                 "kind": "resource",

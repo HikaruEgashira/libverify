@@ -1,0 +1,29 @@
+--- crates/output/src/lib.rs
++++ replace render -> Result<String> with Ok(String::new())
+@@ -25,25 +25,17 @@
+     match s {
+         "json" => Ok(Format::Json),
+         "sarif" => Ok(Format::Sarif),
+         _ => anyhow::bail!("invalid format: {s} (use 'json' or 'sarif')"),
+     }
+ }
+ 
+ pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {
+-    match opts.format {
+-        Format::Json => json::render(result, opts.only_failures),
+-        Format::Sarif => sarif::render(
+-            result,
+-            opts.only_failures,
+-            &opts.tool_name,
+-            &opts.tool_version,
+-        ),
+-    }
++    Ok(String::new()) /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ pub fn render_batch(opts: &OutputOptions, batch: &BatchReport) -> Result<String> {
+     match opts.format {
+         Format::Json => json::render_batch(batch, opts.only_failures),
+         Format::Sarif => sarif::render_batch(
+             batch,
+             opts.only_failures,

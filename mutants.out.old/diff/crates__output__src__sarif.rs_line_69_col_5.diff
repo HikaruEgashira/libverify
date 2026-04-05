@@ -1,0 +1,42 @@
+--- crates/output/src/sarif.rs
++++ replace render_batch -> Result<String> with Ok(String::new())
+@@ -61,38 +61,17 @@
+ }
+ 
+ pub fn render_batch(
+     batch: &BatchReport,
+     only_failures: bool,
+     tool_name: &str,
+     tool_version: &str,
+ ) -> Result<String> {
+-    let mut runs = Vec::new();
+-    for entry in &batch.reports {
+-        let mut sarif = build_sarif(&entry.result.report, tool_name, tool_version);
+-        if only_failures {
+-            filter_sarif_runs(&mut sarif);
+-        }
+-        if let Some(run) = sarif["runs"].as_array().and_then(|a| a.first()) {
+-            let mut run = run.clone();
+-            let mut props = serde_json::json!({ "subjectId": entry.subject_id });
+-            if let Some(evidence) = &entry.result.evidence {
+-                props["evidence"] = serde_json::to_value(evidence)?;
+-            }
+-            run["properties"] = props;
+-            runs.push(run);
+-        }
+-    }
+-    let sarif = serde_json::json!({
+-        "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+-        "version": "2.1.0",
+-        "runs": runs,
+-    });
+-    Ok(serde_json::to_string_pretty(&sarif)?)
++    Ok(String::new()) /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ fn build_sarif(
+     report: &AssessmentReport,
+     tool_name: &str,
+     tool_version: &str,
+ ) -> serde_json::Value {
+     let mut seen_rules: Vec<ControlId> = Vec::new();

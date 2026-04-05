@@ -1,0 +1,34 @@
+--- crates/output/src/json.rs
++++ replace filter_batch -> BatchReport with Default::default()
+@@ -39,30 +39,17 @@
+             outcomes: filtered_outcomes,
+             severity_labels: report.severity_labels.clone(),
+         },
+         evidence: result.evidence.clone(),
+     }
+ }
+ 
+ fn filter_batch(batch: &BatchReport) -> BatchReport {
+-    BatchReport {
+-        reports: batch
+-            .reports
+-            .iter()
+-            .map(|entry| BatchEntry {
+-                subject_id: entry.subject_id.clone(),
+-                result: filter_result(&entry.result),
+-            })
+-            .collect(),
+-        total_pass: batch.total_pass,
+-        total_review: batch.total_review,
+-        total_fail: batch.total_fail,
+-        skipped: batch.skipped.clone(),
+-    }
++    Default::default() /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ #[cfg(test)]
+ mod tests {
+     use super::*;
+     use libverify_core::assessment::AssessmentReport;
+     use libverify_core::control::{ControlFinding, builtin};
+     use libverify_core::profile::{FindingSeverity, ProfileOutcome};

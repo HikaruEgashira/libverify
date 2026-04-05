@@ -1,0 +1,30 @@
+--- crates/output/src/sarif.rs
++++ replace render -> Result<String> with Ok("xyzzy".into())
+@@ -43,26 +43,17 @@
+ }
+ 
+ pub fn render(
+     result: &VerificationResult,
+     only_failures: bool,
+     tool_name: &str,
+     tool_version: &str,
+ ) -> Result<String> {
+-    let mut sarif = build_sarif(&result.report, tool_name, tool_version);
+-    if only_failures {
+-        filter_sarif_runs(&mut sarif);
+-    }
+-    if let Some(evidence) = &result.evidence
+-        && let Some(run) = sarif["runs"].as_array_mut().and_then(|a| a.first_mut())
+-    {
+-        run["properties"]["evidence"] = serde_json::to_value(evidence)?;
+-    }
+-    Ok(serde_json::to_string_pretty(&sarif)?)
++    Ok("xyzzy".into()) /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ pub fn render_batch(
+     batch: &BatchReport,
+     only_failures: bool,
+     tool_name: &str,
+     tool_version: &str,
+ ) -> Result<String> {

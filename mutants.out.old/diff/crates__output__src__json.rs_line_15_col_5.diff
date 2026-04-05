@@ -1,0 +1,26 @@
+--- crates/output/src/json.rs
++++ replace render_batch -> Result<String> with Ok(String::new())
+@@ -7,22 +7,17 @@
+         let filtered = filter_result(result);
+         Ok(serde_json::to_string_pretty(&filtered)?)
+     } else {
+         Ok(serde_json::to_string_pretty(result)?)
+     }
+ }
+ 
+ pub fn render_batch(batch: &BatchReport, only_failures: bool) -> Result<String> {
+-    if only_failures {
+-        let filtered = filter_batch(batch);
+-        Ok(serde_json::to_string_pretty(&filtered)?)
+-    } else {
+-        Ok(serde_json::to_string_pretty(batch)?)
+-    }
++    Ok(String::new()) /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ fn filter_result(result: &VerificationResult) -> VerificationResult {
+     let report = &result.report;
+     let mut filtered_findings = Vec::new();
+     let mut filtered_outcomes = Vec::new();
+ 
+     for (finding, outcome) in report.findings.iter().zip(report.outcomes.iter()) {

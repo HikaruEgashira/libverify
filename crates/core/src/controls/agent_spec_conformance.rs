@@ -3,14 +3,32 @@ use crate::evidence::{AgentExecution, AgentSpec, EvidenceBundle, EvidenceState};
 
 pub struct AgentSpecConformanceControl;
 
+/// Normalize a path by resolving `.` and `..` segments and collapsing separators.
+/// Does not touch the filesystem — purely lexical.
+fn normalize_path(path: &str) -> String {
+    let mut parts: Vec<&str> = Vec::new();
+    for segment in path.split('/') {
+        match segment {
+            "" | "." => {}
+            ".." => {
+                parts.pop();
+            }
+            s => parts.push(s),
+        }
+    }
+    parts.join("/")
+}
+
 /// Pattern ends with `*` or `/` -> prefix match (trailing char stripped).
 /// Otherwise -> exact match.
+/// All paths are normalized before matching to prevent traversal attacks.
 fn path_matches(path: &str, pattern: &str) -> bool {
+    let normalized = normalize_path(path);
     if pattern.ends_with('*') || pattern.ends_with('/') {
-        let prefix = &pattern[..pattern.len() - 1];
-        path.starts_with(prefix)
+        let prefix = normalize_path(&pattern[..pattern.len() - 1]);
+        normalized.starts_with(&prefix)
     } else {
-        path == pattern
+        normalized == normalize_path(pattern)
     }
 }
 
@@ -157,6 +175,8 @@ mod tests {
             granted_permissions: Vec::new(),
             max_steps,
             budget_cents,
+            custom_destructive_patterns: Vec::new(),
+            deny_unpermissioned_actions: false,
         }
     }
 
@@ -339,5 +359,48 @@ mod tests {
         };
         let findings = AgentSpecConformanceControl.evaluate(&b);
         assert_eq!(findings[0].status, ControlStatus::NotApplicable);
+    }
+
+    // 14. Path traversal attack: src/../secrets/key.pem should NOT pass allowed "src/*"
+    #[test]
+    fn path_traversal_blocked() {
+        let b = bundle(
+            spec(vec!["src/*"], vec![], vec![], None, None),
+            exec(vec!["src/../secrets/key.pem"], vec![], 0, 0),
+        );
+        let findings = AgentSpecConformanceControl.evaluate(&b);
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+        assert!(findings[0].subjects.iter().any(|s| s.contains("secrets/key.pem")));
+    }
+
+    // 15. Path traversal attack: src/../.env should match forbidden ".env"
+    #[test]
+    fn path_traversal_forbidden_detected() {
+        let b = bundle(
+            spec(vec![], vec![".env"], vec![], None, None),
+            exec(vec!["src/../.env"], vec![], 0, 0),
+        );
+        let findings = AgentSpecConformanceControl.evaluate(&b);
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+    }
+
+    // 16. Normalized path: ./src/main.rs should match allowed "src/*"
+    #[test]
+    fn dot_prefix_normalized() {
+        let b = bundle(
+            spec(vec!["src/*"], vec![], vec![], None, None),
+            exec(vec!["./src/main.rs"], vec![], 0, 0),
+        );
+        let findings = AgentSpecConformanceControl.evaluate(&b);
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+    }
+
+    // 17. normalize_path unit tests
+    #[test]
+    fn normalize_path_resolves_traversal() {
+        assert_eq!(normalize_path("src/../secrets/key.pem"), "secrets/key.pem");
+        assert_eq!(normalize_path("./src/main.rs"), "src/main.rs");
+        assert_eq!(normalize_path("src/./deep/../main.rs"), "src/main.rs");
+        assert_eq!(normalize_path("a/b/c/../../d"), "a/d");
     }
 }

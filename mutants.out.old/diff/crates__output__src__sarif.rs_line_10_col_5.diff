@@ -1,0 +1,33 @@
+--- crates/output/src/sarif.rs
++++ replace utc_now_rfc3339 -> String with String::new()
+@@ -2,29 +2,17 @@
+ use libverify_core::assessment::{AssessmentReport, BatchReport, VerificationResult};
+ use libverify_core::control::ControlId;
+ use libverify_core::profile::FindingSeverity;
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+ /// Format a `SystemTime` as an RFC 3339 / ISO 8601 UTC timestamp
+ /// (e.g. `"2026-03-24T12:34:56Z"`). Uses only `std` — no external crates.
+ pub fn utc_now_rfc3339() -> String {
+-    let secs = SystemTime::now()
+-        .duration_since(UNIX_EPOCH)
+-        .unwrap_or_default()
+-        .as_secs();
+-    let s = secs % 60;
+-    let total_min = secs / 60;
+-    let m = total_min % 60;
+-    let total_hour = total_min / 60;
+-    let h = total_hour % 24;
+-    let total_days = total_hour / 24;
+-    // Gregorian calendar reconstruction from epoch days
+-    let (year, month, day) = days_to_ymd(total_days);
+-    format!("{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z")
++    String::new() /* ~ changed by cargo-mutants ~ */
+ }
+ 
+ /// Convert days since 1970-01-01 (UTC) to (year, month, day).
+ pub fn days_to_ymd(days: u64) -> (u64, u64, u64) {
+     // Algorithm: Civil date from days — Hatcher/Richards (no external deps)
+     let z = days + 719468;
+     let era = z / 146097;
+     let doe = z % 146097;

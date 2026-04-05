@@ -1,0 +1,21 @@
+--- crates/output/src/sarif.rs
++++ replace % with / in utc_now_rfc3339
+@@ -8,17 +8,17 @@
+ /// (e.g. `"2026-03-24T12:34:56Z"`). Uses only `std` — no external crates.
+ pub fn utc_now_rfc3339() -> String {
+     let secs = SystemTime::now()
+         .duration_since(UNIX_EPOCH)
+         .unwrap_or_default()
+         .as_secs();
+     let s = secs % 60;
+     let total_min = secs / 60;
+-    let m = total_min % 60;
++    let m = total_min / /* ~ changed by cargo-mutants ~ */ 60;
+     let total_hour = total_min / 60;
+     let h = total_hour % 24;
+     let total_days = total_hour / 24;
+     // Gregorian calendar reconstruction from epoch days
+     let (year, month, day) = days_to_ymd(total_days);
+     format!("{year:04}-{month:02}-{day:02}T{h:02}:{m:02}:{s:02}Z")
+ }
+ 
