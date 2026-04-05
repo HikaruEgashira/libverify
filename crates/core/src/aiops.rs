@@ -1,11 +1,11 @@
-//! Convenience API for Dark Factory (agent-driven) verification.
+//! Convenience API for AI-ops (agent-driven) verification.
 //!
 //! Provides a high-level function that builds evidence, selects controls,
 //! and evaluates — reducing integration from ~40 lines to ~5.
 
 use crate::assessment::AssessmentReport;
 use crate::control::evaluate_all;
-use crate::controls::dark_factory_controls;
+use crate::controls::aiops_controls;
 use crate::evidence::*;
 use crate::profile::{ControlProfile, apply_profile};
 
@@ -91,13 +91,13 @@ pub fn assess_session(
     profile: &dyn ControlProfile,
 ) -> AssessmentReport {
     let evidence = build_evidence(input);
-    let controls = dark_factory_controls();
+    let controls = aiops_controls();
     let findings = evaluate_all(&controls, &evidence);
     let outcomes = apply_profile(profile, &findings);
     let severity_labels = profile.severity_labels();
 
     AssessmentReport {
-        profile_name: "dark-factory".to_string(),
+        profile_name: "aiops".to_string(),
         findings,
         outcomes,
         severity_labels,

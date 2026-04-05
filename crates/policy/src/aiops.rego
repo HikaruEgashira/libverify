@@ -1,10 +1,13 @@
 # AI-driven SDLC audit preset.
-# Designed for workflows where AI generates code, commits, and PRs.
+# Designed for workflows where AI agents autonomously write code, run tests,
+# and merge changes — with or without human-initiated pull requests.
 #
 # Key design decisions:
+#   - Agent safety controls (harness, permissions, spec, privileged ops)
+#     are strict: violated → fail
+#   - PR-ceremony controls (titles, descriptions, PR size, review) → review
+#     on violated, because agents may not create PRs or follow human conventions
 #   - All indeterminate → review (insufficient evidence → human escalation)
-#   - Dev-quality controls (titles, descriptions, PR size) → review on violated
-#     because AI-generated content may not follow human conventions
 #   - Security-critical controls remain strict (violated → fail)
 #
 # Input (set per finding):
@@ -36,27 +39,52 @@ map := {"severity": "warning", "decision": "review"} if {
 	input.status == "indeterminate"
 }
 
-# --- Dev-quality controls: violated → review ---
+# --- Agent safety controls (strict on violated) ---
+# These are the core agent safety controls that must never be bypassed.
+aiops_agent_safety := {
+	"harness-result",
+	"destructive-action-detection",
+	"agent-permission-boundary",
+	"agent-spec-conformance",
+	"privileged-operation-audit",
+}
+
+map := {"severity": "error", "decision": "fail"} if {
+	input.status == "violated"
+	input.control_id in aiops_agent_safety
+}
+
+# --- PR-ceremony + dev-quality controls (advisory on violated) ---
 # AI-generated PRs commonly produce non-conventional titles, descriptions,
-# and commit messages. These are style violations, not security issues.
-aiops_devquality_controls := {
+# and commit messages. In agentless workflows, PRs may not exist.
+# Violations are advisory (review), not blocking.
+aiops_advisory_controls := {
 	"conventional-title",
 	"description-quality",
 	"change-request-size",
 	"scoped-change",
 	"merge-commit-policy",
 	"issue-linkage",
+	"review-independence",
+	"two-party-review",
+	"stale-review",
+	"branch-history-integrity",
+	"branch-protection-enforcement",
+	"branch-protection-admin-enforcement",
+	"dismiss-stale-reviews-on-push",
+	"source-authenticity",
 	"workflow-permissions-restricted",
 	"dependency-update-tool",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
 	input.status == "violated"
-	input.control_id in aiops_devquality_controls
+	input.control_id in aiops_advisory_controls
 }
 
-# --- Security-critical: violated → fail ---
+# --- All other controls: violated → fail (security-critical stays strict) ---
 map := {"severity": "error", "decision": "fail"} if {
 	input.status == "violated"
-	not input.control_id in aiops_devquality_controls
+	not input.control_id in aiops_agent_safety
+	not input.control_id in aiops_advisory_controls
 }

@@ -270,8 +270,8 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
     ]
 }
 
-/// Returns Dark Factory controls (Layers 1, 2, 4).
-pub fn dark_factory_controls() -> Vec<Box<dyn Control>> {
+/// Returns AI-ops agent safety controls (Layers 1, 2, 4).
+pub fn aiops_controls() -> Vec<Box<dyn Control>> {
     vec![
         Box::new(HarnessResultControl),
         Box::new(DestructiveActionDetectionControl),
@@ -281,11 +281,11 @@ pub fn dark_factory_controls() -> Vec<Box<dyn Control>> {
     ]
 }
 
-/// Returns all controls (all SLSA + compliance + dark factory).
+/// Returns all controls (all SLSA + compliance + aiops).
 pub fn all_controls() -> Vec<Box<dyn Control>> {
     let mut controls = all_slsa_controls();
     controls.extend(compliance_controls());
-    controls.extend(dark_factory_controls());
+    controls.extend(aiops_controls());
     controls
 }
 
@@ -336,11 +336,11 @@ mod tests {
         use crate::control::builtin;
         let compliance = compliance_controls();
         let slsa = all_slsa_controls();
-        let dark_factory = dark_factory_controls();
+        let dark_factory = aiops_controls();
         assert_eq!(
             compliance.len() + slsa.len() + dark_factory.len(),
             builtin::ALL.len(),
-            "compliance + SLSA + dark factory controls must cover all built-in controls"
+            "compliance + SLSA + aiops controls must cover all built-in controls"
         );
     }
 
@@ -375,12 +375,12 @@ mod tests {
     fn all_controls_count() {
         let slsa = all_slsa_controls();
         let compliance = compliance_controls();
-        let dark_factory = dark_factory_controls();
+        let dark_factory = aiops_controls();
         let all = all_controls();
         assert_eq!(
             all.len(),
             slsa.len() + compliance.len() + dark_factory.len(),
-            "all_controls = SLSA + compliance + dark factory"
+            "all_controls = SLSA + compliance + aiops"
         );
     }
 

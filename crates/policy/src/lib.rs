@@ -97,11 +97,6 @@ const PRESETS: &[Preset] = &[
         rego: include_str!("wp29.rego"),
         profile_name: "wp29",
     },
-    Preset {
-        name: "dark-factory",
-        rego: include_str!("dark-factory.rego"),
-        profile_name: "dark-factory",
-    },
 ];
 
 /// Returns the names of all built-in presets.
@@ -296,7 +291,6 @@ mod tests {
                 "tisax",
                 "nist-800-53",
                 "wp29",
-                "dark-factory",
             ]
         );
     }
@@ -329,7 +323,6 @@ mod tests {
             ("tisax", "tisax"),
             ("nist-800-53", "nist-800-53"),
             ("wp29", "wp29"),
-            ("dark-factory", "dark-factory"),
         ];
         for &(preset, expected_name) in expected {
             let profile = OpaProfile::from_preset_or_file(preset).unwrap();
@@ -537,68 +530,75 @@ default map := {"severity": "error", "decision": "fail"}
                 D::Review,
                 S::Warning,
             ),
-            // dark-factory: agent safety controls are strict
+            // aiops: agent safety controls are strict
             (
-                "dark-factory",
+                "aiops",
                 builtin::HARNESS_RESULT,
                 Violated,
                 D::Fail,
                 S::Error,
             ),
             (
-                "dark-factory",
+                "aiops",
                 builtin::DESTRUCTIVE_ACTION_DETECTION,
                 Violated,
                 D::Fail,
                 S::Error,
             ),
             (
-                "dark-factory",
+                "aiops",
                 builtin::AGENT_PERMISSION_BOUNDARY,
                 Violated,
                 D::Fail,
                 S::Error,
             ),
             (
-                "dark-factory",
+                "aiops",
                 builtin::AGENT_SPEC_CONFORMANCE,
                 Violated,
                 D::Fail,
                 S::Error,
             ),
-            // dark-factory: PR-ceremony controls are advisory
             (
-                "dark-factory",
+                "aiops",
+                builtin::PRIVILEGED_OPERATION_AUDIT,
+                Violated,
+                D::Fail,
+                S::Error,
+            ),
+            // aiops: PR-ceremony controls are advisory
+            (
+                "aiops",
                 builtin::REVIEW_INDEPENDENCE,
                 Violated,
                 D::Review,
                 S::Warning,
             ),
             (
-                "dark-factory",
+                "aiops",
                 builtin::TWO_PARTY_REVIEW,
                 Violated,
                 D::Review,
                 S::Warning,
             ),
             (
-                "dark-factory",
+                "aiops",
                 builtin::CHANGE_REQUEST_SIZE,
                 Violated,
                 D::Review,
                 S::Warning,
             ),
-            // dark-factory: indeterminate -> review
+            // aiops: indeterminate -> review
             (
-                "dark-factory",
+                "aiops",
                 builtin::HARNESS_RESULT,
                 Indeterminate,
                 D::Review,
                 S::Warning,
             ),
-            // dark-factory: other security controls stay strict
+            // aiops: other security controls stay strict
             (
-                "dark-factory",
+                "aiops",
                 builtin::VULNERABILITY_SCANNING,
                 Violated,
                 D::Fail,

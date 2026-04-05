@@ -16,17 +16,37 @@ impl Control for AgentPermissionBoundaryControl {
         let id = self.id();
 
         let log = match &evidence.agent_action_log {
-            EvidenceState::NotApplicable => return vec![ControlFinding::not_applicable(id, "Agent action log not applicable")],
+            EvidenceState::NotApplicable => {
+                return vec![ControlFinding::not_applicable(
+                    id,
+                    "Agent action log not applicable",
+                )];
+            }
             EvidenceState::Missing { gaps } => {
-                return vec![ControlFinding::indeterminate(id, "Agent action log evidence is missing", vec![], gaps.clone())];
+                return vec![ControlFinding::indeterminate(
+                    id,
+                    "Agent action log evidence is missing",
+                    vec![],
+                    gaps.clone(),
+                )];
             }
             EvidenceState::Complete { value } | EvidenceState::Partial { value, .. } => value,
         };
 
         let spec = match &evidence.agent_spec {
-            EvidenceState::NotApplicable => return vec![ControlFinding::not_applicable(id, "Agent spec not applicable")],
+            EvidenceState::NotApplicable => {
+                return vec![ControlFinding::not_applicable(
+                    id,
+                    "Agent spec not applicable",
+                )];
+            }
             EvidenceState::Missing { gaps } => {
-                return vec![ControlFinding::indeterminate(id, "Agent spec evidence is missing", vec![], gaps.clone())];
+                return vec![ControlFinding::indeterminate(
+                    id,
+                    "Agent spec evidence is missing",
+                    vec![],
+                    gaps.clone(),
+                )];
             }
             EvidenceState::Complete { value } | EvidenceState::Partial { value, .. } => value,
         };
@@ -60,21 +80,26 @@ fn find_permission_violations<'a>(
 ) -> Vec<(&'a str, String)> {
     log.actions
         .iter()
-        .filter_map(|action| {
-            match action.required_permission.as_deref() {
-                Some(perm) => {
-                    if spec.granted_permissions.iter().any(|g| g == perm) {
-                        None
-                    } else {
-                        Some((action.command.as_str(), format!("requires '{perm}' but not granted")))
-                    }
+        .filter_map(|action| match action.required_permission.as_deref() {
+            Some(perm) => {
+                if spec.granted_permissions.iter().any(|g| g == perm) {
+                    None
+                } else {
+                    Some((
+                        action.command.as_str(),
+                        format!("requires '{perm}' but not granted"),
+                    ))
                 }
-                None => {
-                    if spec.deny_unpermissioned_actions {
-                        Some((action.command.as_str(), "no permission declared (deny_unpermissioned_actions is enabled)".to_string()))
-                    } else {
-                        None
-                    }
+            }
+            None => {
+                if spec.deny_unpermissioned_actions {
+                    Some((
+                        action.command.as_str(),
+                        "no permission declared (deny_unpermissioned_actions is enabled)"
+                            .to_string(),
+                    ))
+                } else {
+                    None
                 }
             }
         })
@@ -194,10 +219,7 @@ mod tests {
     fn deny_unpermissioned_actions_all_labeled_passes() {
         let mut spec = spec_with(vec!["read:repo"]);
         spec.deny_unpermissioned_actions = true;
-        let evidence = bundle_with(
-            log_with(vec![action("git pull", Some("read:repo"))]),
-            spec,
-        );
+        let evidence = bundle_with(log_with(vec![action("git pull", Some("read:repo"))]), spec);
         let findings = AgentPermissionBoundaryControl.evaluate(&evidence);
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }

@@ -50,8 +50,10 @@ impl Control for HarnessResultControl {
             .collect();
 
         if missing_categories.is_empty() {
-            let mut rationale =
-                format!("All {} required harness categories covered", REQUIRED_CATEGORIES.len());
+            let mut rationale = format!(
+                "All {} required harness categories covered",
+                REQUIRED_CATEGORIES.len()
+            );
             if !gaps.is_empty() {
                 rationale.push_str(" (partial evidence — some gaps exist)");
             }
@@ -106,7 +108,11 @@ mod tests {
         ]));
         assert_eq!(findings.len(), 1);
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
-        assert!(findings[0].rationale.contains("4 required harness categories covered"));
+        assert!(
+            findings[0]
+                .rationale
+                .contains("4 required harness categories covered")
+        );
     }
 
     // --- Violated: missing category ---

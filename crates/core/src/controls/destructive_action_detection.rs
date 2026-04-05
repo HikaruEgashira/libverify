@@ -85,9 +85,11 @@ impl Control for DestructiveActionDetectionControl {
 
         // Merge built-in patterns with custom patterns from agent spec
         let custom_patterns: Vec<String> = match &evidence.agent_spec {
-            EvidenceState::Complete { value } | EvidenceState::Partial { value, .. } => {
-                value.custom_destructive_patterns.iter().map(|p| p.to_lowercase()).collect()
-            }
+            EvidenceState::Complete { value } | EvidenceState::Partial { value, .. } => value
+                .custom_destructive_patterns
+                .iter()
+                .map(|p| p.to_lowercase())
+                .collect(),
             _ => vec![],
         };
 
@@ -99,32 +101,28 @@ impl Control for DestructiveActionDetectionControl {
                 DEFAULT_DESTRUCTIVE_PATTERNS
                     .iter()
                     .any(|pattern| lower.contains(pattern))
-                    || custom_patterns.iter().any(|pattern| lower.contains(pattern.as_str()))
+                    || custom_patterns
+                        .iter()
+                        .any(|pattern| lower.contains(pattern.as_str()))
             })
             .map(|action| action.command.clone())
             .collect();
 
         if destructive_commands.is_empty() {
-            let mut rationale =
-                "No destructive actions detected in agent action log".to_string();
+            let mut rationale = "No destructive actions detected in agent action log".to_string();
             if has_gaps {
                 rationale.push_str(" (partial evidence — some actions may not have been captured)");
             }
             vec![ControlFinding::satisfied(
                 self.id(),
                 rationale,
-                vec![format!(
-                    "agent:{}:session:{}",
-                    log.agent_id, log.session_id
-                )],
+                vec![format!("agent:{}:session:{}", log.agent_id, log.session_id)],
             )]
         } else {
             let count = destructive_commands.len();
             vec![ControlFinding::violated(
                 self.id(),
-                format!(
-                    "{count} destructive action(s) detected in agent action log"
-                ),
+                format!("{count} destructive action(s) detected in agent action log"),
                 destructive_commands,
             )]
         }
@@ -170,12 +168,10 @@ mod tests {
 
     #[test]
     fn safe_actions_only_satisfied() {
-        let findings = DestructiveActionDetectionControl.evaluate(&bundle(
-            EvidenceState::complete(log_with(vec![
-                action("cargo build"),
-                action("git commit -m 'fix'"),
-            ])),
-        ));
+        let findings =
+            DestructiveActionDetectionControl.evaluate(&bundle(EvidenceState::complete(log_with(
+                vec![action("cargo build"), action("git commit -m 'fix'")],
+            ))));
         assert_eq!(findings[0].status, ControlStatus::Satisfied);
     }
 
@@ -190,12 +186,10 @@ mod tests {
 
     #[test]
     fn multiple_destructive_actions_lists_all() {
-        let findings = DestructiveActionDetectionControl.evaluate(&bundle(
-            EvidenceState::complete(log_with(vec![
-                action("rm -rf /"),
-                action("DROP TABLE users"),
-            ])),
-        ));
+        let findings =
+            DestructiveActionDetectionControl.evaluate(&bundle(EvidenceState::complete(log_with(
+                vec![action("rm -rf /"), action("DROP TABLE users")],
+            ))));
         assert_eq!(findings[0].status, ControlStatus::Violated);
         assert_eq!(findings[0].subjects.len(), 2);
     }
@@ -211,9 +205,7 @@ mod tests {
     #[test]
     fn git_push_force_violated() {
         let findings = DestructiveActionDetectionControl.evaluate(&bundle(
-            EvidenceState::complete(log_with(vec![action(
-                "git push --force origin main",
-            )])),
+            EvidenceState::complete(log_with(vec![action("git push --force origin main")])),
         ));
         assert_eq!(findings[0].status, ControlStatus::Violated);
     }
@@ -228,13 +220,14 @@ mod tests {
 
     #[test]
     fn missing_evidence_indeterminate() {
-        let findings = DestructiveActionDetectionControl.evaluate(&bundle(
-            EvidenceState::missing(vec![EvidenceGap::CollectionFailed {
-                source: "agent".to_string(),
-                subject: "action_log".to_string(),
-                detail: "not collected".to_string(),
-            }]),
-        ));
+        let findings =
+            DestructiveActionDetectionControl.evaluate(&bundle(EvidenceState::missing(vec![
+                EvidenceGap::CollectionFailed {
+                    source: "agent".to_string(),
+                    subject: "action_log".to_string(),
+                    detail: "not collected".to_string(),
+                },
+            ])));
         assert_eq!(findings[0].status, ControlStatus::Indeterminate);
     }
 
@@ -248,9 +241,7 @@ mod tests {
     #[test]
     fn partial_match_in_middle_of_command() {
         let findings = DestructiveActionDetectionControl.evaluate(&bundle(
-            EvidenceState::complete(log_with(vec![action(
-                "sudo rm -rf /var/log/old",
-            )])),
+            EvidenceState::complete(log_with(vec![action("sudo rm -rf /var/log/old")])),
         ));
         assert_eq!(findings[0].status, ControlStatus::Violated);
     }
@@ -290,9 +281,9 @@ mod tests {
     #[test]
     fn custom_patterns_from_agent_spec() {
         let evidence = EvidenceBundle {
-            agent_action_log: EvidenceState::complete(log_with(vec![
-                action("vault delete secret/prod/api-key"),
-            ])),
+            agent_action_log: EvidenceState::complete(log_with(vec![action(
+                "vault delete secret/prod/api-key",
+            )])),
             agent_spec: EvidenceState::complete(AgentSpec {
                 custom_destructive_patterns: vec!["vault delete".to_string()],
                 ..Default::default()

@@ -32,11 +32,7 @@ fn path_matches(path: &str, pattern: &str) -> bool {
     }
 }
 
-fn check_conformance(
-    id: ControlId,
-    spec: &AgentSpec,
-    exec: &AgentExecution,
-) -> ControlFinding {
+fn check_conformance(id: ControlId, spec: &AgentSpec, exec: &AgentExecution) -> ControlFinding {
     let mut violations: Vec<String> = Vec::new();
 
     // a. Forbidden paths
@@ -72,10 +68,7 @@ fn check_conformance(
     if let Some(max) = spec.max_steps
         && exec.steps_taken > max
     {
-        violations.push(format!(
-            "exceeded step limit: {}/{}",
-            exec.steps_taken, max
-        ));
+        violations.push(format!("exceeded step limit: {}/{}", exec.steps_taken, max));
     }
 
     // e. Budget limit
@@ -97,10 +90,7 @@ fn check_conformance(
     } else {
         ControlFinding::violated(
             id,
-            format!(
-                "Agent {} violated spec constraints",
-                exec.agent_id
-            ),
+            format!("Agent {} violated spec constraints", exec.agent_id),
             violations,
         )
     }
@@ -180,12 +170,7 @@ mod tests {
         }
     }
 
-    fn exec(
-        files: Vec<&str>,
-        tools: Vec<&str>,
-        steps: u32,
-        cost: u32,
-    ) -> AgentExecution {
+    fn exec(files: Vec<&str>, tools: Vec<&str>, steps: u32, cost: u32) -> AgentExecution {
         AgentExecution {
             agent_id: "agent-1".to_string(),
             session_id: "session-1".to_string(),
@@ -208,7 +193,13 @@ mod tests {
     #[test]
     fn all_checks_pass() {
         let b = bundle(
-            spec(vec!["src/*"], vec![".env"], vec!["cargo"], Some(100), Some(2000)),
+            spec(
+                vec!["src/*"],
+                vec![".env"],
+                vec!["cargo"],
+                Some(100),
+                Some(2000),
+            ),
             exec(vec!["src/main.rs"], vec!["cargo"], 50, 1000),
         );
         let findings = AgentSpecConformanceControl.evaluate(&b);
@@ -236,7 +227,12 @@ mod tests {
         );
         let findings = AgentSpecConformanceControl.evaluate(&b);
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0].subjects.iter().any(|s| s.contains("config/settings.toml")));
+        assert!(
+            findings[0]
+                .subjects
+                .iter()
+                .any(|s| s.contains("config/settings.toml"))
+        );
     }
 
     // 4. Use unauthorized tool
@@ -279,7 +275,13 @@ mod tests {
     #[test]
     fn multiple_violations() {
         let b = bundle(
-            spec(vec!["src/*"], vec![".env"], vec!["cargo"], Some(100), Some(2000)),
+            spec(
+                vec!["src/*"],
+                vec![".env"],
+                vec!["cargo"],
+                Some(100),
+                Some(2000),
+            ),
             exec(vec![".env", "docs/readme.md"], vec!["curl"], 150, 5000),
         );
         let findings = AgentSpecConformanceControl.evaluate(&b);
@@ -323,7 +325,12 @@ mod tests {
         );
         let findings = AgentSpecConformanceControl.evaluate(&b);
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0].subjects.iter().any(|s| s.contains("secrets/api.key")));
+        assert!(
+            findings[0]
+                .subjects
+                .iter()
+                .any(|s| s.contains("secrets/api.key"))
+        );
     }
 
     // 11. Wildcard match: allowed "src/*" matches "src/main.rs"
@@ -370,7 +377,12 @@ mod tests {
         );
         let findings = AgentSpecConformanceControl.evaluate(&b);
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0].subjects.iter().any(|s| s.contains("secrets/key.pem")));
+        assert!(
+            findings[0]
+                .subjects
+                .iter()
+                .any(|s| s.contains("secrets/key.pem"))
+        );
     }
 
     // 15. Path traversal attack: src/../.env should match forbidden ".env"
