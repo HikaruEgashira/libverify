@@ -26,7 +26,7 @@ This means:
 
 1. **MCP tool use is a first-class evidence source.** `AgentActionLog` captures tool calls with tool name, command, timestamps, and required permissions. This is not runtime interception — it is structured evidence collected from the agent's execution log after the execution completes.
 
-2. **AI-ops controls are verifiers, not classifiers.** They detect sandbox bypass and spec deviation from monitoring logs. No fine-grained permission taxonomy — just "did the agent do something it shouldn't have?"
+2. **AI-ops controls are verifiers, not enforcers.** They surface what happened during an agent execution from monitoring logs. No fine-grained permission taxonomy — the question is "what did the agent do?" not "was it allowed to?"
    - `harness-result` — CI harnesses passed for this execution's output
    - `destructive-action-detection` — execution log contains no destructive tool calls
    - `agent-spec-conformance` — execution conformed to spec (paths, tools, budget)
