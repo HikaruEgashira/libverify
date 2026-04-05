@@ -27,10 +27,8 @@ This means:
 1. **MCP tool use is a first-class evidence source.** `AgentActionLog` captures tool calls with tool name, command, timestamps, and required permissions. This is not runtime interception — it is structured evidence collected from the agent's execution log after the execution completes.
 
 2. **AI-ops controls are verifiers, not enforcers.** They surface what happened during an agent execution from monitoring logs. No fine-grained permission taxonomy — the question is "what did the agent do?" not "was it allowed to?"
-   - `harness-result` — CI harnesses passed for this execution's output
-   - `destructive-action-detection` — execution log contains no destructive tool calls
    - `agent-spec-conformance` — execution conformed to spec (paths, tools, budget)
-   - `privileged-operation-audit` — no unauthorized privileged git operations occurred
+   - `privileged-operation-audit` — privileged git operations (force push, admin bypass, tag deletion) and notable commands (rm -rf, terraform destroy, etc.) detected in action log
 
 3. **The verification timing is post-execution, pre-promotion.** Like how existing controls verify a PR before merge, AI-ops controls verify an agent execution before its outputs are accepted.
 
@@ -39,7 +37,7 @@ agent receives intent
   -> agent executes (tool calls, file edits, commits)
   -> execution completes
   -> evidence collected (action log, execution record, check runs, git events)
-  -> libverify evaluates (all 48 controls)
+  -> libverify evaluates (all 46 controls)
   -> gate decision (pass/review/fail)
   -> outputs promoted or rejected
 ```
