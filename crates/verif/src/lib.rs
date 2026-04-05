@@ -318,3 +318,16 @@ pub fn agent_spec_conformance_severity(violation_count: usize) -> Severity {
         Severity::Error
     }
 }
+
+/// Privileged operation audit severity.
+///
+/// Pass iff zero privileged operations detected; Error otherwise.
+#[ensures(event_count == 0usize ==> result == Severity::Pass)]
+#[ensures(event_count >= 1usize ==> result == Severity::Error)]
+pub fn privileged_operation_audit_severity(event_count: usize) -> Severity {
+    if event_count == 0 {
+        Severity::Pass
+    } else {
+        Severity::Error
+    }
+}

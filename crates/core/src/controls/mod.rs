@@ -332,13 +332,13 @@ mod tests {
     }
 
     #[test]
-    fn compliance_plus_slsa_plus_dark_factory_equals_all() {
+    fn compliance_plus_slsa_plus_aiops_equals_all() {
         use crate::control::builtin;
         let compliance = compliance_controls();
         let slsa = all_slsa_controls();
-        let dark_factory = aiops_controls();
+        let aiops = aiops_controls();
         assert_eq!(
-            compliance.len() + slsa.len() + dark_factory.len(),
+            compliance.len() + slsa.len() + aiops.len(),
             builtin::ALL.len(),
             "compliance + SLSA + aiops controls must cover all built-in controls"
         );
@@ -375,11 +375,11 @@ mod tests {
     fn all_controls_count() {
         let slsa = all_slsa_controls();
         let compliance = compliance_controls();
-        let dark_factory = aiops_controls();
+        let aiops = aiops_controls();
         let all = all_controls();
         assert_eq!(
             all.len(),
-            slsa.len() + compliance.len() + dark_factory.len(),
+            slsa.len() + compliance.len() + aiops.len(),
             "all_controls = SLSA + compliance + aiops"
         );
     }
