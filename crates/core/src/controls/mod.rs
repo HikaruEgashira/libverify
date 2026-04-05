@@ -1,4 +1,6 @@
 pub mod actions_pinned_dependencies;
+pub mod agent_permission_boundary;
+pub mod agent_spec_conformance;
 pub mod branch_history_integrity;
 pub mod branch_protection_admin_enforcement;
 pub mod branch_protection_enforcement;
@@ -16,8 +18,10 @@ pub mod dependency_signature;
 pub mod dependency_signer_verified;
 pub mod dependency_update_tool;
 pub mod description_quality;
+pub mod destructive_action_detection;
 pub mod dismiss_stale_reviews_on_push;
 pub mod environment_protection_rules;
+pub mod harness_result;
 pub mod hosted_build_platform;
 pub mod issue_linkage;
 pub mod merge_commit_policy;
@@ -47,6 +51,8 @@ use crate::control::{Control, builtin};
 use crate::slsa::{SlsaLevel, SlsaTrack};
 
 use self::actions_pinned_dependencies::ActionsPinnedDependenciesControl;
+use self::agent_permission_boundary::AgentPermissionBoundaryControl;
+use self::agent_spec_conformance::AgentSpecConformanceControl;
 use self::branch_history_integrity::BranchHistoryIntegrityControl;
 use self::branch_protection_admin_enforcement::BranchProtectionAdminEnforcementControl;
 use self::branch_protection_enforcement::BranchProtectionEnforcementControl;
@@ -64,8 +70,10 @@ use self::dependency_signature::DependencySignatureControl;
 use self::dependency_signer_verified::DependencySignerVerifiedControl;
 use self::dependency_update_tool::DependencyUpdateToolControl;
 use self::description_quality::DescriptionQualityControl;
+use self::destructive_action_detection::DestructiveActionDetectionControl;
 use self::dismiss_stale_reviews_on_push::DismissStaleReviewsOnPushControl;
 use self::environment_protection_rules::EnvironmentProtectionRulesControl;
+use self::harness_result::HarnessResultControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
 use self::merge_commit_policy::MergeCommitPolicyControl;
@@ -152,6 +160,10 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         }
         builtin::SECURITY_TEST_IN_CI => Some(Box::new(SecurityTestInCiControl)),
         builtin::PROTECTED_TAGS => Some(Box::new(ProtectedTagsControl)),
+        builtin::HARNESS_RESULT => Some(Box::new(HarnessResultControl)),
+        builtin::DESTRUCTIVE_ACTION_DETECTION => Some(Box::new(DestructiveActionDetectionControl)),
+        builtin::AGENT_PERMISSION_BOUNDARY => Some(Box::new(AgentPermissionBoundaryControl)),
+        builtin::AGENT_SPEC_CONFORMANCE => Some(Box::new(AgentSpecConformanceControl)),
         _ => None,
     }
 }
@@ -255,10 +267,21 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
     ]
 }
 
-/// Returns all controls (all SLSA + compliance).
+/// Returns Dark Factory controls (Layers 1, 2, 4).
+pub fn dark_factory_controls() -> Vec<Box<dyn Control>> {
+    vec![
+        Box::new(HarnessResultControl),
+        Box::new(DestructiveActionDetectionControl),
+        Box::new(AgentPermissionBoundaryControl),
+        Box::new(AgentSpecConformanceControl),
+    ]
+}
+
+/// Returns all controls (all SLSA + compliance + dark factory).
 pub fn all_controls() -> Vec<Box<dyn Control>> {
     let mut controls = all_slsa_controls();
     controls.extend(compliance_controls());
+    controls.extend(dark_factory_controls());
     controls
 }
 
@@ -305,14 +328,15 @@ mod tests {
     }
 
     #[test]
-    fn compliance_plus_slsa_equals_all() {
+    fn compliance_plus_slsa_plus_dark_factory_equals_all() {
         use crate::control::builtin;
         let compliance = compliance_controls();
         let slsa = all_slsa_controls();
+        let dark_factory = dark_factory_controls();
         assert_eq!(
-            compliance.len() + slsa.len(),
+            compliance.len() + slsa.len() + dark_factory.len(),
             builtin::ALL.len(),
-            "compliance + SLSA controls must cover all built-in controls"
+            "compliance + SLSA + dark factory controls must cover all built-in controls"
         );
     }
 
@@ -347,11 +371,12 @@ mod tests {
     fn all_controls_count() {
         let slsa = all_slsa_controls();
         let compliance = compliance_controls();
+        let dark_factory = dark_factory_controls();
         let all = all_controls();
         assert_eq!(
             all.len(),
-            slsa.len() + compliance.len(),
-            "all_controls = SLSA + compliance"
+            slsa.len() + compliance.len() + dark_factory.len(),
+            "all_controls = SLSA + compliance + dark factory"
         );
     }
 

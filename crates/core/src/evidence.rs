@@ -578,6 +578,61 @@ pub struct BuildPlatformEvidence {
     pub signing_key_isolated: bool,
 }
 
+// ---------------------------------------------------------------------------
+// Dark Factory evidence types (Layers 1, 4)
+// ---------------------------------------------------------------------------
+
+/// A single action performed by an AI agent.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentAction {
+    pub tool: String,
+    pub command: String,
+    #[serde(default)]
+    pub timestamp: Option<String>,
+    #[serde(default)]
+    pub required_permission: Option<String>,
+}
+
+/// Log of all actions an agent performed in a session (Layer 4).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentActionLog {
+    pub agent_id: String,
+    pub session_id: String,
+    pub actions: Vec<AgentAction>,
+}
+
+/// Spec constraining what an agent is allowed to do (Layer 1).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentSpec {
+    #[serde(default)]
+    pub allowed_paths: Vec<String>,
+    #[serde(default)]
+    pub forbidden_paths: Vec<String>,
+    #[serde(default)]
+    pub allowed_tools: Vec<String>,
+    #[serde(default)]
+    pub granted_permissions: Vec<String>,
+    #[serde(default)]
+    pub max_steps: Option<u32>,
+    #[serde(default)]
+    pub budget_cents: Option<u32>,
+}
+
+/// Record of what an agent actually did (Layer 1).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AgentExecution {
+    pub agent_id: String,
+    pub session_id: String,
+    #[serde(default)]
+    pub files_touched: Vec<String>,
+    #[serde(default)]
+    pub tools_used: Vec<String>,
+    #[serde(default)]
+    pub steps_taken: u32,
+    #[serde(default)]
+    pub cost_cents: u32,
+}
+
 /// Top-level container for all evidence collected from adapters.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct EvidenceBundle {
@@ -589,4 +644,11 @@ pub struct EvidenceBundle {
     pub dependency_signatures: EvidenceState<Vec<DependencySignatureEvidence>>,
     #[serde(default)]
     pub repository_posture: EvidenceState<RepositoryPosture>,
+    // Dark Factory evidence (Layers 1, 4)
+    #[serde(default)]
+    pub agent_action_log: EvidenceState<AgentActionLog>,
+    #[serde(default)]
+    pub agent_spec: EvidenceState<AgentSpec>,
+    #[serde(default)]
+    pub agent_execution: EvidenceState<AgentExecution>,
 }

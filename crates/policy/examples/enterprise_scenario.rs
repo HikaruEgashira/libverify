@@ -162,6 +162,7 @@ fn build_evidence() -> EvidenceBundle {
         // No dependency signature evidence (would need lock-file parser)
         dependency_signatures: EvidenceState::NotApplicable,
         repository_posture: EvidenceState::complete(posture),
+        ..Default::default()
     }
 }
 

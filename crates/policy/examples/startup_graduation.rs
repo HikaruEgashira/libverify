@@ -102,6 +102,7 @@ fn startup_evidence() -> EvidenceBundle {
         build_platform: EvidenceState::NotApplicable, // no SLSA build evidence
         dependency_signatures: EvidenceState::NotApplicable, // no dep signing
         repository_posture: EvidenceState::complete(posture),
+        ..Default::default()
     }
 }
 

@@ -98,6 +98,7 @@ fn build_evidence() -> EvidenceBundle {
         build_platform: EvidenceState::not_applicable(),
         dependency_signatures: EvidenceState::not_applicable(),
         repository_posture: EvidenceState::complete(posture),
+        ..Default::default()
     }
 }
 
