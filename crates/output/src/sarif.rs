@@ -213,13 +213,17 @@ fn severity_to_level(severity: FindingSeverity) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use libverify_core::assessment::AssessmentReport;
+    use libverify_core::assessment::{
+        AssessmentReport, BatchEntry, BatchReport, VerificationResult,
+    };
     use libverify_core::control::{ControlFinding, builtin};
+    use libverify_core::evidence::EvidenceGap;
     use libverify_core::profile::{GateDecision, ProfileOutcome};
+    use std::collections::BTreeMap;
 
     fn sample_report() -> AssessmentReport {
         AssessmentReport {
-            profile_name: "slsa-source-l1-build-l1".to_string(),
+            profile_name: "test-profile".to_string(),
             findings: vec![
                 ControlFinding::satisfied(
                     builtin::id(builtin::REVIEW_INDEPENDENCE),
@@ -252,47 +256,322 @@ mod tests {
         }
     }
 
-    #[test]
-    fn sarif_version_is_2_1_0() {
-        let sarif = build_sarif(&sample_report(), "test-verify", "0.1.0");
-        assert_eq!(sarif["version"], "2.1.0");
+    fn sample_verification_result() -> VerificationResult {
+        VerificationResult {
+            report: sample_report(),
+            evidence: None,
+        }
     }
 
-    #[test]
-    fn sarif_results_length_matches_outcomes() {
-        let sarif = build_sarif(&sample_report(), "test-verify", "0.1.0");
-        let results = sarif["runs"][0]["results"].as_array().unwrap();
-        assert_eq!(results.len(), 2);
-    }
+    // ── days_to_ymd: known-date regression ──────────────────────────
 
     #[test]
-    fn sarif_tool_name_is_configurable() {
-        let sarif = build_sarif(&sample_report(), "atlassian-verify", "1.0.0");
-        assert_eq!(
-            sarif["runs"][0]["tool"]["driver"]["name"],
-            "atlassian-verify"
-        );
+    fn days_to_ymd_known_dates() {
+        // Unix epoch
+        assert_eq!(days_to_ymd(0), (1970, 1, 1));
+        // Standard dates
+        assert_eq!(days_to_ymd(59), (1970, 3, 1));
+        assert_eq!(days_to_ymd(10957), (2000, 1, 1));
+        assert_eq!(days_to_ymd(20453), (2025, 12, 31));
+        assert_eq!(days_to_ymd(20454), (2026, 1, 1));
+        assert_eq!(days_to_ymd(20536), (2026, 3, 24));
+        // Leap years (4-year rule)
+        assert_eq!(days_to_ymd(789), (1972, 2, 29));
+        assert_eq!(days_to_ymd(19782), (2024, 2, 29));
+        assert_eq!(days_to_ymd(19783), (2024, 3, 1));
+        // 400-year leap: 2000 IS a leap year
+        assert_eq!(days_to_ymd(11016), (2000, 2, 29));
+        // Century boundaries: 2100 is NOT a leap year (100-year correction)
+        assert_eq!(days_to_ymd(46080), (2096, 2, 29));
+        assert_eq!(days_to_ymd(47540), (2100, 2, 28));
+        assert_eq!(days_to_ymd(47541), (2100, 3, 1));
+        assert_eq!(days_to_ymd(49001), (2104, 2, 29));
+        // Additional century boundaries
+        assert_eq!(days_to_ymd(84065), (2200, 3, 1));
+        assert_eq!(days_to_ymd(120589), (2300, 3, 1));
+        // 400-year leap: 2400 IS a leap year (400-year correction)
+        assert_eq!(days_to_ymd(157113), (2400, 2, 29));
+        assert_eq!(days_to_ymd(157114), (2400, 3, 1));
     }
 
-    #[test]
-    fn sarif_invocations_present_and_successful() {
-        let sarif = build_sarif(&sample_report(), "test-verify", "0.1.0");
-        let invocations = sarif["runs"][0]["invocations"].as_array().unwrap();
-        assert_eq!(invocations.len(), 1);
-        assert_eq!(invocations[0]["executionSuccessful"], true);
-        let ts = invocations[0]["endTimeUtc"].as_str().unwrap();
-        // Basic ISO 8601 UTC format check: YYYY-MM-DDTHH:MM:SSZ
-        assert!(ts.ends_with('Z'), "timestamp must end with Z: {ts}");
-        assert_eq!(ts.len(), 20, "unexpected timestamp length: {ts}");
-    }
+    // ── utc_now_rfc3339 ─────────────────────────────────────────────
 
     #[test]
     fn utc_now_rfc3339_format() {
         let ts = utc_now_rfc3339();
         assert!(ts.ends_with('Z'));
         assert_eq!(ts.len(), 20);
-        // Year sanity: must be >= 2026
         let year: u64 = ts[..4].parse().unwrap();
         assert!(year >= 2026, "unexpected year: {year}");
+    }
+
+    // ── builtin_rule_description ────────────────────────────────────
+
+    #[test]
+    fn builtin_rule_description_returns_known_description() {
+        let desc = builtin_rule_description(builtin::REVIEW_INDEPENDENCE);
+        assert!(!desc.is_empty());
+        assert_ne!(desc, "xyzzy");
+        assert_ne!(desc, "Custom control");
+    }
+
+    // ── severity_to_level ───────────────────────────────────────────
+
+    #[test]
+    fn severity_to_level_maps_all_variants() {
+        assert_eq!(severity_to_level(FindingSeverity::Info), "note");
+        assert_eq!(severity_to_level(FindingSeverity::Warning), "warning");
+        assert_eq!(severity_to_level(FindingSeverity::Error), "error");
+    }
+
+    // ── rule_descriptor ─────────────────────────────────────────────
+
+    #[test]
+    fn rule_descriptor_contains_id_and_description() {
+        let id = builtin::id(builtin::REVIEW_INDEPENDENCE);
+        let desc = rule_descriptor(&id);
+        assert_eq!(desc["id"].as_str().unwrap(), builtin::REVIEW_INDEPENDENCE);
+        assert!(desc["shortDescription"]["text"].as_str().unwrap().len() > 0);
+    }
+
+    // ── build_sarif ─────────────────────────────────────────────────
+
+    #[test]
+    fn build_sarif_structure() {
+        let sarif = build_sarif(&sample_report(), "test-verify", "0.1.0");
+        assert_eq!(sarif["version"], "2.1.0");
+        assert_eq!(sarif["runs"][0]["tool"]["driver"]["name"], "test-verify");
+        assert_eq!(sarif["runs"][0]["tool"]["driver"]["version"], "0.1.0");
+        let results = sarif["runs"][0]["results"].as_array().unwrap();
+        assert_eq!(results.len(), 2);
+
+        // First result: pass/note
+        assert_eq!(results[0]["level"], "note");
+        assert_eq!(results[0]["properties"]["decision"], "pass");
+
+        // Second result: fail/error
+        assert_eq!(results[1]["level"], "error");
+        assert_eq!(results[1]["properties"]["decision"], "fail");
+    }
+
+    #[test]
+    fn build_sarif_includes_subjects_as_locations() {
+        let sarif = build_sarif(&sample_report(), "t", "0");
+        let results = sarif["runs"][0]["results"].as_array().unwrap();
+        // Both findings have subjects, so both should have locations
+        let locs = results[0]["locations"].as_array().unwrap();
+        assert_eq!(locs.len(), 1);
+        assert_eq!(
+            locs[0]["logicalLocations"][0]["fullyQualifiedName"],
+            "pr:owner/repo#1"
+        );
+    }
+
+    #[test]
+    fn build_sarif_omits_locations_when_no_subjects() {
+        let report = AssessmentReport {
+            profile_name: "test".to_string(),
+            findings: vec![ControlFinding::not_applicable(
+                builtin::id(builtin::REVIEW_INDEPENDENCE),
+                "N/A",
+            )],
+            outcomes: vec![ProfileOutcome {
+                control_id: builtin::id(builtin::REVIEW_INDEPENDENCE),
+                severity: FindingSeverity::Info,
+                decision: GateDecision::Pass,
+                rationale: "N/A".to_string(),
+                annotations: Default::default(),
+            }],
+            severity_labels: Default::default(),
+        };
+        let sarif = build_sarif(&report, "t", "0");
+        let result = &sarif["runs"][0]["results"][0];
+        assert!(result["locations"].is_null());
+    }
+
+    #[test]
+    fn build_sarif_includes_evidence_gaps() {
+        let mut finding = ControlFinding::indeterminate(
+            builtin::id(builtin::SOURCE_AUTHENTICITY),
+            "missing data",
+            vec!["pr:owner/repo#1".to_string()],
+            vec![EvidenceGap::CollectionFailed {
+                source: "api".to_string(),
+                subject: "pr:owner/repo#1".to_string(),
+                detail: "timeout".to_string(),
+            }],
+        );
+        // Ensure evidence_gaps is populated
+        assert!(!finding.evidence_gaps.is_empty());
+
+        let report = AssessmentReport {
+            profile_name: "test".to_string(),
+            findings: vec![finding],
+            outcomes: vec![ProfileOutcome {
+                control_id: builtin::id(builtin::SOURCE_AUTHENTICITY),
+                severity: FindingSeverity::Warning,
+                decision: GateDecision::Review,
+                rationale: "missing data".to_string(),
+                annotations: Default::default(),
+            }],
+            severity_labels: Default::default(),
+        };
+        let sarif = build_sarif(&report, "t", "0");
+        let result = &sarif["runs"][0]["results"][0];
+        let gaps = result["properties"]["evidenceGaps"].as_array().unwrap();
+        assert!(!gaps.is_empty());
+    }
+
+    #[test]
+    fn build_sarif_invocations_timestamp() {
+        let sarif = build_sarif(&sample_report(), "t", "0");
+        let ts = sarif["runs"][0]["invocations"][0]["endTimeUtc"]
+            .as_str()
+            .unwrap();
+        assert!(ts.ends_with('Z'));
+        assert_eq!(ts.len(), 20);
+    }
+
+    #[test]
+    fn build_sarif_dedups_rules() {
+        // Two findings for same control → one rule entry
+        let report = AssessmentReport {
+            profile_name: "test".to_string(),
+            findings: vec![
+                ControlFinding::satisfied(
+                    builtin::id(builtin::REVIEW_INDEPENDENCE),
+                    "pass1",
+                    vec![],
+                ),
+                ControlFinding::violated(
+                    builtin::id(builtin::REVIEW_INDEPENDENCE),
+                    "fail1",
+                    vec![],
+                ),
+            ],
+            outcomes: vec![
+                ProfileOutcome {
+                    control_id: builtin::id(builtin::REVIEW_INDEPENDENCE),
+                    severity: FindingSeverity::Info,
+                    decision: GateDecision::Pass,
+                    rationale: "pass1".to_string(),
+                    annotations: Default::default(),
+                },
+                ProfileOutcome {
+                    control_id: builtin::id(builtin::REVIEW_INDEPENDENCE),
+                    severity: FindingSeverity::Error,
+                    decision: GateDecision::Fail,
+                    rationale: "fail1".to_string(),
+                    annotations: Default::default(),
+                },
+            ],
+            severity_labels: Default::default(),
+        };
+        let sarif = build_sarif(&report, "t", "0");
+        let rules = sarif["runs"][0]["tool"]["driver"]["rules"]
+            .as_array()
+            .unwrap();
+        assert_eq!(rules.len(), 1);
+    }
+
+    // ── filter_sarif_runs ───────────────────────────────────────────
+
+    #[test]
+    fn filter_sarif_runs_keeps_only_errors() {
+        let mut sarif = build_sarif(&sample_report(), "t", "0");
+        // Before filter: 2 results (note + error)
+        assert_eq!(sarif["runs"][0]["results"].as_array().unwrap().len(), 2);
+        filter_sarif_runs(&mut sarif);
+        // After filter: only error level kept
+        let results = sarif["runs"][0]["results"].as_array().unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0]["level"], "error");
+    }
+
+    // ── render / render_batch ───────────────────────────────────────
+
+    #[test]
+    fn render_produces_valid_sarif_json() {
+        let result = sample_verification_result();
+        let output = render(&result, false, "test", "0.1").unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
+        assert_eq!(parsed["version"], "2.1.0");
+        assert_eq!(parsed["runs"][0]["results"].as_array().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn render_with_only_failures_filters() {
+        let result = sample_verification_result();
+        let output = render(&result, true, "test", "0.1").unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
+        let results = parsed["runs"][0]["results"].as_array().unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0]["level"], "error");
+    }
+
+    #[test]
+    fn render_batch_produces_valid_sarif_json() {
+        let batch = BatchReport {
+            reports: vec![BatchEntry {
+                subject_id: "owner/repo".to_string(),
+                result: sample_verification_result(),
+            }],
+            total_pass: 1,
+            total_review: 0,
+            total_fail: 1,
+            skipped: vec![],
+        };
+        let output = render_batch(&batch, false, "test", "0.1").unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
+        assert_eq!(parsed["version"], "2.1.0");
+        let runs = parsed["runs"].as_array().unwrap();
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0]["properties"]["subjectId"], "owner/repo");
+    }
+
+    #[test]
+    fn render_batch_with_only_failures_filters() {
+        let batch = BatchReport {
+            reports: vec![BatchEntry {
+                subject_id: "owner/repo".to_string(),
+                result: sample_verification_result(),
+            }],
+            total_pass: 1,
+            total_review: 0,
+            total_fail: 1,
+            skipped: vec![],
+        };
+        let output = render_batch(&batch, true, "test", "0.1").unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&output).unwrap();
+        let results = parsed["runs"][0]["results"].as_array().unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0]["level"], "error");
+    }
+
+    // ── annotations in SARIF properties ─────────────────────────────
+
+    #[test]
+    fn build_sarif_merges_annotations_into_properties() {
+        let mut annotations = BTreeMap::new();
+        annotations.insert("framework_ref".to_string(), "SOC2-CC6.1".to_string());
+        let report = AssessmentReport {
+            profile_name: "test".to_string(),
+            findings: vec![ControlFinding::violated(
+                builtin::id(builtin::REVIEW_INDEPENDENCE),
+                "failed",
+                vec![],
+            )],
+            outcomes: vec![ProfileOutcome {
+                control_id: builtin::id(builtin::REVIEW_INDEPENDENCE),
+                severity: FindingSeverity::Error,
+                decision: GateDecision::Fail,
+                rationale: "failed".to_string(),
+                annotations,
+            }],
+            severity_labels: Default::default(),
+        };
+        let sarif = build_sarif(&report, "t", "0");
+        let props = &sarif["runs"][0]["results"][0]["properties"];
+        assert_eq!(props["framework_ref"], "SOC2-CC6.1");
     }
 }

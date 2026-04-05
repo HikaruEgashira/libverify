@@ -376,34 +376,160 @@ default map := {"severity": "error", "decision": "fail"}
 
         let cases: &[(&str, &str, ControlStatus, D, S)] = &[
             // default: advisory-only — violated → review, satisfied → pass
-            ("default", builtin::REVIEW_INDEPENDENCE, Violated, D::Review, S::Warning),
-            ("default", builtin::REVIEW_INDEPENDENCE, Satisfied, D::Pass, S::Info),
+            (
+                "default",
+                builtin::REVIEW_INDEPENDENCE,
+                Violated,
+                D::Review,
+                S::Warning,
+            ),
+            (
+                "default",
+                builtin::REVIEW_INDEPENDENCE,
+                Satisfied,
+                D::Pass,
+                S::Info,
+            ),
             // oss: complement-based — source-authenticity violated → review
-            ("oss", builtin::SOURCE_AUTHENTICITY, Violated, D::Review, S::Warning),
+            (
+                "oss",
+                builtin::SOURCE_AUTHENTICITY,
+                Violated,
+                D::Review,
+                S::Warning,
+            ),
             // slsa-l1: build-provenance required, review-independence optional
-            ("slsa-l1", builtin::BUILD_PROVENANCE, Indeterminate, D::Fail, S::Error),
-            ("slsa-l1", builtin::REVIEW_INDEPENDENCE, Indeterminate, D::Review, S::Warning),
-            ("slsa-l1", builtin::BRANCH_HISTORY_INTEGRITY, Indeterminate, D::Review, S::Warning),
-            ("slsa-l1", builtin::DEPENDENCY_SIGNATURE, Indeterminate, D::Fail, S::Error),
-            ("slsa-l1", builtin::DEPENDENCY_PROVENANCE_CHECK, Indeterminate, D::Review, S::Warning),
-            ("slsa-l1", builtin::CHANGE_REQUEST_SIZE, Indeterminate, D::Review, S::Warning),
+            (
+                "slsa-l1",
+                builtin::BUILD_PROVENANCE,
+                Indeterminate,
+                D::Fail,
+                S::Error,
+            ),
+            (
+                "slsa-l1",
+                builtin::REVIEW_INDEPENDENCE,
+                Indeterminate,
+                D::Review,
+                S::Warning,
+            ),
+            (
+                "slsa-l1",
+                builtin::BRANCH_HISTORY_INTEGRITY,
+                Indeterminate,
+                D::Review,
+                S::Warning,
+            ),
+            (
+                "slsa-l1",
+                builtin::DEPENDENCY_SIGNATURE,
+                Indeterminate,
+                D::Fail,
+                S::Error,
+            ),
+            (
+                "slsa-l1",
+                builtin::DEPENDENCY_PROVENANCE_CHECK,
+                Indeterminate,
+                D::Review,
+                S::Warning,
+            ),
+            (
+                "slsa-l1",
+                builtin::CHANGE_REQUEST_SIZE,
+                Indeterminate,
+                D::Review,
+                S::Warning,
+            ),
             // slsa-l2: branch-history + vuln-scanning required, dep-provenance not yet
-            ("slsa-l2", builtin::BRANCH_HISTORY_INTEGRITY, Indeterminate, D::Fail, S::Error),
-            ("slsa-l2", builtin::VULNERABILITY_SCANNING, Indeterminate, D::Fail, S::Error),
-            ("slsa-l2", builtin::DEPENDENCY_PROVENANCE_CHECK, Indeterminate, D::Review, S::Warning),
+            (
+                "slsa-l2",
+                builtin::BRANCH_HISTORY_INTEGRITY,
+                Indeterminate,
+                D::Fail,
+                S::Error,
+            ),
+            (
+                "slsa-l2",
+                builtin::VULNERABILITY_SCANNING,
+                Indeterminate,
+                D::Fail,
+                S::Error,
+            ),
+            (
+                "slsa-l2",
+                builtin::DEPENDENCY_PROVENANCE_CHECK,
+                Indeterminate,
+                D::Review,
+                S::Warning,
+            ),
             // slsa-l3: dep-signer-verified required
-            ("slsa-l3", builtin::DEPENDENCY_SIGNER_VERIFIED, Indeterminate, D::Fail, S::Error),
+            (
+                "slsa-l3",
+                builtin::DEPENDENCY_SIGNER_VERIFIED,
+                Indeterminate,
+                D::Fail,
+                S::Error,
+            ),
             // slsa-l4: dep-completeness required
-            ("slsa-l4", builtin::DEPENDENCY_COMPLETENESS, Indeterminate, D::Fail, S::Error),
+            (
+                "slsa-l4",
+                builtin::DEPENDENCY_COMPLETENESS,
+                Indeterminate,
+                D::Fail,
+                S::Error,
+            ),
             // scorecard: tiered severity — critical violated → fail/error
-            ("scorecard", builtin::VULNERABILITY_SCANNING, Violated, D::Fail, S::Error),
-            ("scorecard", builtin::VULNERABILITY_SCANNING, Indeterminate, D::Fail, S::Error),
-            ("scorecard", builtin::REVIEW_INDEPENDENCE, Violated, D::Fail, S::Error),
-            ("scorecard", builtin::REQUIRED_STATUS_CHECKS, Violated, D::Fail, S::Error),
-            ("scorecard", builtin::REQUIRED_STATUS_CHECKS, Indeterminate, D::Review, S::Warning),
-            ("scorecard", builtin::CHANGE_REQUEST_SIZE, Violated, D::Review, S::Warning),
+            (
+                "scorecard",
+                builtin::VULNERABILITY_SCANNING,
+                Violated,
+                D::Fail,
+                S::Error,
+            ),
+            (
+                "scorecard",
+                builtin::VULNERABILITY_SCANNING,
+                Indeterminate,
+                D::Fail,
+                S::Error,
+            ),
+            (
+                "scorecard",
+                builtin::REVIEW_INDEPENDENCE,
+                Violated,
+                D::Fail,
+                S::Error,
+            ),
+            (
+                "scorecard",
+                builtin::REQUIRED_STATUS_CHECKS,
+                Violated,
+                D::Fail,
+                S::Error,
+            ),
+            (
+                "scorecard",
+                builtin::REQUIRED_STATUS_CHECKS,
+                Indeterminate,
+                D::Review,
+                S::Warning,
+            ),
+            (
+                "scorecard",
+                builtin::CHANGE_REQUEST_SIZE,
+                Violated,
+                D::Review,
+                S::Warning,
+            ),
             // soc1: change-request-size is advisory
-            ("soc1", builtin::CHANGE_REQUEST_SIZE, Violated, D::Review, S::Warning),
+            (
+                "soc1",
+                builtin::CHANGE_REQUEST_SIZE,
+                Violated,
+                D::Review,
+                S::Warning,
+            ),
         ];
 
         for &(preset, control, status, exp_decision, exp_severity) in cases {
@@ -435,9 +561,21 @@ map := {"severity": "warning", "decision": "review"} if { input.status == "indet
 "#;
         let profile = OpaProfile::from_rego("custom.rego", rego).unwrap();
         let cases = [
-            (ControlStatus::Satisfied, GateDecision::Pass, FindingSeverity::Info),
-            (ControlStatus::Indeterminate, GateDecision::Review, FindingSeverity::Warning),
-            (ControlStatus::Violated, GateDecision::Fail, FindingSeverity::Error),
+            (
+                ControlStatus::Satisfied,
+                GateDecision::Pass,
+                FindingSeverity::Info,
+            ),
+            (
+                ControlStatus::Indeterminate,
+                GateDecision::Review,
+                FindingSeverity::Warning,
+            ),
+            (
+                ControlStatus::Violated,
+                GateDecision::Fail,
+                FindingSeverity::Error,
+            ),
         ];
         for (status, exp_decision, exp_severity) in cases {
             let outcome = profile.map(&make_finding(builtin::REVIEW_INDEPENDENCE, status));
@@ -457,7 +595,10 @@ default map := {"severity": "error", "decision": "fail", "annotations": {"framew
 map := {"severity": "info", "decision": "pass"} if { input.status == "satisfied" }
 "#;
         let profile = OpaProfile::from_rego("ann.rego", rego).unwrap();
-        let outcome = profile.map(&make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated));
+        let outcome = profile.map(&make_finding(
+            builtin::REVIEW_INDEPENDENCE,
+            ControlStatus::Violated,
+        ));
         assert_eq!(outcome.annotations.len(), 1);
         assert_eq!(outcome.annotations["framework_ref"], "TEST-1");
     }
@@ -465,14 +606,20 @@ map := {"severity": "info", "decision": "pass"} if { input.status == "satisfied"
     #[test]
     fn annotations_empty_when_rego_omits_them() {
         let profile = OpaProfile::from_preset_or_file("default").unwrap();
-        let outcome = profile.map(&make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated));
+        let outcome = profile.map(&make_finding(
+            builtin::REVIEW_INDEPENDENCE,
+            ControlStatus::Violated,
+        ));
         assert!(outcome.annotations.is_empty());
     }
 
     #[test]
     fn ismap_annotations_contain_framework_ref() {
         let profile = OpaProfile::from_preset_or_file("ismap").unwrap();
-        let outcome = profile.map(&make_finding(builtin::REVIEW_INDEPENDENCE, ControlStatus::Violated));
+        let outcome = profile.map(&make_finding(
+            builtin::REVIEW_INDEPENDENCE,
+            ControlStatus::Violated,
+        ));
         assert!(
             outcome.annotations.contains_key("framework_ref"),
             "ISMAP annotations: {:?}",
