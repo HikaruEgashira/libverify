@@ -43,6 +43,7 @@ dark_factory_required := {
 	"destructive-action-detection",
 	"agent-permission-boundary",
 	"agent-spec-conformance",
+	"privileged-operation-audit",
 }
 
 map := {"severity": "error", "decision": "fail"} if {

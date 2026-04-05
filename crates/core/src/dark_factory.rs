@@ -27,6 +27,7 @@ pub struct SessionInput {
     pub steps_taken: u32,
     pub cost_cents: u32,
     pub check_runs: Vec<CheckRunEvidence>,
+    pub privileged_events: Vec<PrivilegedGitEvent>,
 }
 
 /// Build an `EvidenceBundle` from agent session input.
@@ -66,6 +67,11 @@ pub fn build_evidence(input: &SessionInput) -> EvidenceBundle {
         agent_action_log: EvidenceState::complete(action_log),
         agent_spec: EvidenceState::complete(input.spec.clone()),
         agent_execution: EvidenceState::complete(execution),
+        privileged_git_events: if input.privileged_events.is_empty() {
+            EvidenceState::complete(vec![])
+        } else {
+            EvidenceState::complete(input.privileged_events.clone())
+        },
         ..Default::default()
     }
 }
@@ -156,11 +162,12 @@ mod tests {
                 CheckRunEvidence { name: "ci/lint".into(), conclusion: CheckConclusion::Success, app_slug: None },
                 CheckRunEvidence { name: "ci/typecheck".into(), conclusion: CheckConclusion::Success, app_slug: None },
             ],
+            privileged_events: vec![],
         };
 
         let report = assess_session(&input, &TestProfile);
         let pass_count = report.outcomes.iter().filter(|o| o.decision == GateDecision::Pass).count();
-        assert_eq!(pass_count, 4, "All 4 Dark Factory controls should pass");
+        assert_eq!(pass_count, 5, "All 5 Dark Factory controls should pass");
     }
 
     #[test]
@@ -185,6 +192,7 @@ mod tests {
             steps_taken: 50,
             cost_cents: 500,
             check_runs: vec![],
+            privileged_events: vec![],
         };
 
         let report = assess_session(&input, &TestProfile);

@@ -25,6 +25,7 @@ pub mod harness_result;
 pub mod hosted_build_platform;
 pub mod issue_linkage;
 pub mod merge_commit_policy;
+pub mod privileged_operation_audit;
 pub mod privileged_workflow_detection;
 pub mod protected_tags;
 pub mod provenance_authenticity;
@@ -77,6 +78,7 @@ use self::harness_result::HarnessResultControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
 use self::merge_commit_policy::MergeCommitPolicyControl;
+use self::privileged_operation_audit::PrivilegedOperationAuditControl;
 use self::privileged_workflow_detection::PrivilegedWorkflowDetectionControl;
 use self::protected_tags::ProtectedTagsControl;
 use self::provenance_authenticity::ProvenanceAuthenticityControl;
@@ -164,6 +166,7 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::DESTRUCTIVE_ACTION_DETECTION => Some(Box::new(DestructiveActionDetectionControl)),
         builtin::AGENT_PERMISSION_BOUNDARY => Some(Box::new(AgentPermissionBoundaryControl)),
         builtin::AGENT_SPEC_CONFORMANCE => Some(Box::new(AgentSpecConformanceControl)),
+        builtin::PRIVILEGED_OPERATION_AUDIT => Some(Box::new(PrivilegedOperationAuditControl)),
         _ => None,
     }
 }
@@ -274,6 +277,7 @@ pub fn dark_factory_controls() -> Vec<Box<dyn Control>> {
         Box::new(DestructiveActionDetectionControl),
         Box::new(AgentPermissionBoundaryControl),
         Box::new(AgentSpecConformanceControl),
+        Box::new(PrivilegedOperationAuditControl),
     ]
 }
 

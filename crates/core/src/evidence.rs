@@ -641,6 +641,46 @@ pub struct AgentExecution {
     pub cost_cents: u32,
 }
 
+/// A structured git/platform event for privileged operation auditing.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PrivilegedGitEvent {
+    pub actor: String,
+    pub action: PrivilegedAction,
+    pub branch: Option<String>,
+    pub tag: Option<String>,
+    #[serde(default)]
+    pub timestamp: Option<String>,
+    #[serde(default)]
+    pub commit_sha: Option<String>,
+    #[serde(default)]
+    pub detail: Option<String>,
+}
+
+/// Categories of privileged operations that require audit.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PrivilegedAction {
+    ForcePush,
+    DirectPushToDefault,
+    AdminBypassProtection,
+    BranchDeletion,
+    TagDeletion,
+    ProtectionRuleOverride,
+}
+
+impl PrivilegedAction {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::ForcePush => "force-push",
+            Self::DirectPushToDefault => "direct-push-to-default",
+            Self::AdminBypassProtection => "admin-bypass-protection",
+            Self::BranchDeletion => "branch-deletion",
+            Self::TagDeletion => "tag-deletion",
+            Self::ProtectionRuleOverride => "protection-rule-override",
+        }
+    }
+}
+
 /// Top-level container for all evidence collected from adapters.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct EvidenceBundle {
@@ -659,4 +699,6 @@ pub struct EvidenceBundle {
     pub agent_spec: EvidenceState<AgentSpec>,
     #[serde(default)]
     pub agent_execution: EvidenceState<AgentExecution>,
+    #[serde(default)]
+    pub privileged_git_events: EvidenceState<Vec<PrivilegedGitEvent>>,
 }

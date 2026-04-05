@@ -119,8 +119,9 @@ pub mod builtin {
     pub const DESTRUCTIVE_ACTION_DETECTION: &str = "destructive-action-detection";
     pub const AGENT_PERMISSION_BOUNDARY: &str = "agent-permission-boundary";
     pub const AGENT_SPEC_CONFORMANCE: &str = "agent-spec-conformance";
+    pub const PRIVILEGED_OPERATION_AUDIT: &str = "privileged-operation-audit";
 
-    /// All 48 built-in control IDs.
+    /// All 49 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -170,6 +171,7 @@ pub mod builtin {
         DESTRUCTIVE_ACTION_DETECTION,
         AGENT_PERMISSION_BOUNDARY,
         AGENT_SPEC_CONFORMANCE,
+        PRIVILEGED_OPERATION_AUDIT,
     ];
 
     /// Returns a ControlId for a built-in constant.
@@ -459,6 +461,9 @@ pub fn builtin_remediation_hint(id: &str) -> Option<&'static str> {
         builtin::AGENT_SPEC_CONFORMANCE => Some(
             "Define allowed_paths, forbidden_paths, and budget in agent spec to constrain agent scope",
         ),
+        builtin::PRIVILEGED_OPERATION_AUDIT => Some(
+            "Review privileged git operations (force push, admin bypass, tag deletion) and restrict agent permissions",
+        ),
         _ => None,
     }
 }
@@ -515,6 +520,7 @@ pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
         builtin::DESTRUCTIVE_ACTION_DETECTION => &["CC6.1", "CC7.2"],
         builtin::AGENT_PERMISSION_BOUNDARY => &["CC6.1", "CC6.3"],
         builtin::AGENT_SPEC_CONFORMANCE => &["CC6.1", "CC8.1"],
+        builtin::PRIVILEGED_OPERATION_AUDIT => &["CC6.1", "CC7.2", "CC8.1"],
         _ => &[],
     }
 }
