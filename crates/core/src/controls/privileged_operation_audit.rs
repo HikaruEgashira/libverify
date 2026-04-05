@@ -159,7 +159,10 @@ mod tests {
             ]),
         ));
         assert_eq!(findings[0].status, ControlStatus::Violated);
-        assert!(findings[0].rationale.contains("direct push"));
+        assert!(findings[0].rationale.contains("1 direct push(es) to default"));
+        // must NOT contain other categories
+        assert!(!findings[0].rationale.contains("force push"));
+        assert!(!findings[0].rationale.contains("deletion"));
     }
 
     #[test]
@@ -242,5 +245,34 @@ mod tests {
             ]),
         ));
         assert_eq!(findings[0].status, ControlStatus::Violated);
+    }
+
+    #[test]
+    fn rationale_only_includes_present_categories() {
+        // Only force push — rationale should mention "force push" but NOT "direct push" or "deletion"
+        let findings = PrivilegedOperationAuditControl.evaluate(&bundle(
+            EvidenceState::complete(vec![
+                event("bot", PrivilegedAction::ForcePush, Some("main"), None),
+            ]),
+        ));
+        assert!(findings[0].rationale.contains("1 force push"));
+        assert!(!findings[0].rationale.contains("direct push"));
+        assert!(!findings[0].rationale.contains("deletion"));
+        assert!(!findings[0].rationale.contains("admin bypass"));
+    }
+
+    #[test]
+    fn rationale_breakdown_counts_each_category_exactly() {
+        // 2 force pushes + 1 deletion = rationale should show "2 force push(es), 1 deletion(s)"
+        let findings = PrivilegedOperationAuditControl.evaluate(&bundle(
+            EvidenceState::complete(vec![
+                event("bot", PrivilegedAction::ForcePush, Some("main"), None),
+                event("bot", PrivilegedAction::ForcePush, Some("dev"), None),
+                event("bot", PrivilegedAction::TagDeletion, None, Some("v1.0")),
+            ]),
+        ));
+        assert!(findings[0].rationale.contains("2 force push(es)"));
+        assert!(findings[0].rationale.contains("1 deletion(s)"));
+        assert!(!findings[0].rationale.contains("0 "));
     }
 }

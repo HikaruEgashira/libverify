@@ -415,4 +415,48 @@ mod tests {
         assert_eq!(normalize_path("src/./deep/../main.rs"), "src/main.rs");
         assert_eq!(normalize_path("a/b/c/../../d"), "a/d");
     }
+
+    // 18. Boundary: steps exactly at limit -> Satisfied
+    #[test]
+    fn steps_at_limit_satisfied() {
+        let b = bundle(
+            spec(vec![], vec![], vec![], Some(100), None),
+            exec(vec![], vec![], 100, 0),
+        );
+        let findings = AgentSpecConformanceControl.evaluate(&b);
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+    }
+
+    // 19. Boundary: budget exactly at limit -> Satisfied
+    #[test]
+    fn budget_at_limit_satisfied() {
+        let b = bundle(
+            spec(vec![], vec![], vec![], None, Some(2000)),
+            exec(vec![], vec![], 0, 2000),
+        );
+        let findings = AgentSpecConformanceControl.evaluate(&b);
+        assert_eq!(findings[0].status, ControlStatus::Satisfied);
+    }
+
+    // 20. Boundary: steps one over limit -> Violated
+    #[test]
+    fn steps_one_over_limit_violated() {
+        let b = bundle(
+            spec(vec![], vec![], vec![], Some(100), None),
+            exec(vec![], vec![], 101, 0),
+        );
+        let findings = AgentSpecConformanceControl.evaluate(&b);
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+    }
+
+    // 21. Boundary: budget one over limit -> Violated
+    #[test]
+    fn budget_one_over_limit_violated() {
+        let b = bundle(
+            spec(vec![], vec![], vec![], None, Some(2000)),
+            exec(vec![], vec![], 0, 2001),
+        );
+        let findings = AgentSpecConformanceControl.evaluate(&b);
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+    }
 }

@@ -412,4 +412,53 @@ mod tests {
         );
         assert!(!ids.iter().any(|id| id.as_str() == builtin::BUILD_ISOLATION));
     }
+
+    #[test]
+    fn all_controls_have_meaningful_description() {
+        let controls = all_controls();
+        for c in &controls {
+            let desc = c.description();
+            assert!(
+                !desc.is_empty() && desc.len() > 10,
+                "control {} has too short description: '{}'",
+                c.id(),
+                desc,
+            );
+            // description must contain a keyword related to the control's purpose
+            let id = c.id();
+            let id_str = id.as_str();
+            let has_relevant_keyword = desc.to_lowercase().contains("must")
+                || desc.to_lowercase().contains("should")
+                || desc.to_lowercase().contains("agent")
+                || desc.to_lowercase().contains("ci")
+                || desc.to_lowercase().contains("review")
+                || desc.to_lowercase().contains("sign")
+                || desc.to_lowercase().contains("branch")
+                || desc.to_lowercase().contains("build")
+                || desc.to_lowercase().contains("depend")
+                || desc.to_lowercase().contains("secur")
+                || desc.to_lowercase().contains("test")
+                || desc.to_lowercase().contains("change")
+                || desc.to_lowercase().contains("scan")
+                || desc.to_lowercase().contains("release")
+                || desc.to_lowercase().contains("code")
+                || desc.to_lowercase().contains("permission")
+                || desc.to_lowercase().contains("privileged")
+                || desc.to_lowercase().contains("action")
+                || desc.to_lowercase().contains("harness")
+                || desc.to_lowercase().contains("environment")
+                || desc.to_lowercase().contains("workflow")
+                || desc.to_lowercase().contains("tag")
+                || desc.to_lowercase().contains("license")
+                || desc.to_lowercase().contains("sbom")
+                || desc.to_lowercase().contains("attest")
+                || desc.to_lowercase().contains("owner")
+                || desc.to_lowercase().contains("provenance");
+            assert!(
+                has_relevant_keyword,
+                "control {} description '{}' lacks a relevant keyword",
+                id_str, desc,
+            );
+        }
+    }
 }
