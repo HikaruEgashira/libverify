@@ -17,10 +17,8 @@ pub mod dependency_signature;
 pub mod dependency_signer_verified;
 pub mod dependency_update_tool;
 pub mod description_quality;
-pub mod destructive_action_detection;
 pub mod dismiss_stale_reviews_on_push;
 pub mod environment_protection_rules;
-pub mod harness_result;
 pub mod hosted_build_platform;
 pub mod issue_linkage;
 pub mod merge_commit_policy;
@@ -69,10 +67,8 @@ use self::dependency_signature::DependencySignatureControl;
 use self::dependency_signer_verified::DependencySignerVerifiedControl;
 use self::dependency_update_tool::DependencyUpdateToolControl;
 use self::description_quality::DescriptionQualityControl;
-use self::destructive_action_detection::DestructiveActionDetectionControl;
 use self::dismiss_stale_reviews_on_push::DismissStaleReviewsOnPushControl;
 use self::environment_protection_rules::EnvironmentProtectionRulesControl;
-use self::harness_result::HarnessResultControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
 use self::merge_commit_policy::MergeCommitPolicyControl;
@@ -160,8 +156,6 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         }
         builtin::SECURITY_TEST_IN_CI => Some(Box::new(SecurityTestInCiControl)),
         builtin::PROTECTED_TAGS => Some(Box::new(ProtectedTagsControl)),
-        builtin::HARNESS_RESULT => Some(Box::new(HarnessResultControl)),
-        builtin::DESTRUCTIVE_ACTION_DETECTION => Some(Box::new(DestructiveActionDetectionControl)),
         builtin::AGENT_SPEC_CONFORMANCE => Some(Box::new(AgentSpecConformanceControl)),
         builtin::PRIVILEGED_OPERATION_AUDIT => Some(Box::new(PrivilegedOperationAuditControl)),
         _ => None,
@@ -270,8 +264,6 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
 /// Returns AI-ops agent safety controls (Layers 1, 2, 4).
 pub fn aiops_controls() -> Vec<Box<dyn Control>> {
     vec![
-        Box::new(HarnessResultControl),
-        Box::new(DestructiveActionDetectionControl),
         Box::new(AgentSpecConformanceControl),
         Box::new(PrivilegedOperationAuditControl),
     ]

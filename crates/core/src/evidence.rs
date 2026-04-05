@@ -613,7 +613,7 @@ pub struct AgentSpec {
     #[serde(default)]
     pub budget_cents: Option<u32>,
     /// Additional destructive command patterns (case-insensitive substring match).
-    /// Extends the built-in default set in `DestructiveActionDetectionControl`.
+    /// Extends the built-in default set in `PrivilegedOperationAuditControl`.
     #[serde(default)]
     pub custom_destructive_patterns: Vec<String>,
 }

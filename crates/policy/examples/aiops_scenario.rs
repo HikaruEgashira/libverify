@@ -5,7 +5,7 @@
 //! AI-ops scenarios:
 //!
 //!   Scenario 1: Happy path — agent completes task within spec
-//!   Scenario 2: Rogue agent — multiple violations across all 5 controls
+//!   Scenario 2: Rogue agent — multiple violations across both controls
 //!   Scenario 3: Degraded monitoring — partial/missing evidence
 //!
 //! Run: cargo run -p libverify-policy --example aiops_scenario
@@ -93,7 +93,6 @@ fn scenario_2_rogue_agent() -> EvidenceBundle {
         check_runs: EvidenceState::complete(vec![
             check_run("ci/build", CheckConclusion::Failure),
             check_run("ci/test", CheckConclusion::Success),
-            // lint and typecheck are absent — harness-result should catch this
         ]),
         agent_action_log: EvidenceState::complete(AgentActionLog {
             agent_id: "agent-rogue".to_string(),
@@ -157,7 +156,6 @@ fn scenario_2_rogue_agent() -> EvidenceBundle {
 
 fn scenario_3_degraded_monitoring() -> EvidenceBundle {
     EvidenceBundle {
-        // Only build and test present, lint and typecheck missing
         check_runs: EvidenceState::complete(vec![
             check_run("ci/build", CheckConclusion::Success),
             check_run("ci/test", CheckConclusion::Success),
@@ -197,8 +195,6 @@ fn scenario_3_degraded_monitoring() -> EvidenceBundle {
 // ============================================================================
 
 const AIOPS_CONTROL_IDS: &[&str] = &[
-    builtin::HARNESS_RESULT,
-    builtin::DESTRUCTIVE_ACTION_DETECTION,
     builtin::AGENT_SPEC_CONFORMANCE,
     builtin::PRIVILEGED_OPERATION_AUDIT,
 ];
@@ -288,11 +284,10 @@ fn find_result<'a>(results: &'a [ScenarioResult], id: &str) -> &'a ScenarioResul
 
 fn main() {
     let controls = aiops_controls();
-    let profile =
-        OpaProfile::from_preset_or_file("aiops").expect("aiops preset must load");
+    let profile = OpaProfile::from_preset_or_file("aiops").expect("aiops preset must load");
 
     println!("##########################################################");
-    println!("#  AI-ops Integration Scenario                      #");
+    println!("#  AI-ops Integration Scenario                           #");
     println!("#  3 AI agents push to main -- no PRs, no human review   #");
     println!("##########################################################");
     println!("Controls under test: {}", controls.len());
@@ -310,8 +305,8 @@ fn main() {
 
     assert_eq!(
         results_1.len(),
-        4,
-        "Scenario 1: expected 4 aiops findings, got {}",
+        2,
+        "Scenario 1: expected 2 aiops findings, got {}",
         results_1.len()
     );
     for r in &results_1 {
@@ -330,7 +325,7 @@ fn main() {
             r.decision
         );
     }
-    println!("  [PASS] Scenario 1: All 4 controls Satisfied/Pass");
+    println!("  [PASS] Scenario 1: All 2 controls Satisfied/Pass");
 
     // ── Scenario 2: Rogue Agent ─────────────────────────────────────────
     let results_2 = run_scenario(
@@ -342,24 +337,9 @@ fn main() {
 
     assert_eq!(
         results_2.len(),
-        4,
-        "Scenario 2: expected 4 aiops findings, got {}",
+        2,
+        "Scenario 2: expected 2 aiops findings, got {}",
         results_2.len()
-    );
-
-    // harness-result: build failed + lint/typecheck absent
-    let harness_2 = find_result(&results_2, builtin::HARNESS_RESULT);
-    assert_eq!(harness_2.status, ControlStatus::Violated);
-    assert_eq!(harness_2.decision, GateDecision::Fail);
-
-    // destructive-action-detection: rm -rf, git push --force
-    let destruct_2 = find_result(&results_2, builtin::DESTRUCTIVE_ACTION_DETECTION);
-    assert_eq!(destruct_2.status, ControlStatus::Violated);
-    assert_eq!(destruct_2.decision, GateDecision::Fail);
-    assert!(
-        destruct_2.subjects.len() >= 2,
-        "Expected at least 2 destructive actions, got: {:?}",
-        destruct_2.subjects
     );
 
     // agent-spec-conformance: forbidden paths, unauthorized tools, over budget/steps
@@ -375,12 +355,19 @@ fn main() {
         spec_2.subjects
     );
 
-    // privileged-operation-audit: force push + admin bypass detected
+    // privileged-operation-audit: force push + admin bypass + rm -rf + git push --force in action log
     let priv_2 = find_result(&results_2, builtin::PRIVILEGED_OPERATION_AUDIT);
     assert_eq!(priv_2.status, ControlStatus::Violated);
-    assert_eq!(priv_2.subjects.len(), 2);
+    assert_eq!(priv_2.decision, GateDecision::Fail);
+    // 2 git events + at least 2 notable commands (rm -rf, git push --force)
+    assert!(
+        priv_2.subjects.len() >= 4,
+        "Expected at least 4 privileged operation subjects, got {}: {:?}",
+        priv_2.subjects.len(),
+        priv_2.subjects
+    );
 
-    println!("  [PASS] Scenario 2: All 4 controls Violated/Fail");
+    println!("  [PASS] Scenario 2: All 2 controls Violated/Fail");
 
     // Print violation details for Scenario 2 to verify quality
     println!("\n  Violation details (Scenario 2):");
@@ -401,31 +388,9 @@ fn main() {
 
     assert_eq!(
         results_3.len(),
-        4,
-        "Scenario 3: expected 4 aiops findings, got {}",
+        2,
+        "Scenario 3: expected 2 aiops findings, got {}",
         results_3.len()
-    );
-
-    // harness-result: lint/typecheck absent -> Violated (missing categories)
-    let harness_3 = find_result(&results_3, builtin::HARNESS_RESULT);
-    assert_eq!(
-        harness_3.status,
-        ControlStatus::Violated,
-        "harness-result: missing lint/typecheck should be Violated"
-    );
-    assert_eq!(harness_3.decision, GateDecision::Fail);
-
-    // destructive-action-detection: action log missing -> Indeterminate
-    let destruct_3 = find_result(&results_3, builtin::DESTRUCTIVE_ACTION_DETECTION);
-    assert_eq!(
-        destruct_3.status,
-        ControlStatus::Indeterminate,
-        "destructive-action-detection: missing log should be Indeterminate"
-    );
-    assert_eq!(
-        destruct_3.decision,
-        GateDecision::Review,
-        "aiops preset maps Indeterminate to Review"
     );
 
     // agent-spec-conformance: execution missing -> Indeterminate
@@ -433,12 +398,12 @@ fn main() {
     assert_eq!(spec_3.status, ControlStatus::Indeterminate);
     assert_eq!(spec_3.decision, GateDecision::Review);
 
-    // privileged-operation-audit: webhook not configured -> Indeterminate
+    // privileged-operation-audit: both action log and git events missing -> Indeterminate
     let priv_3 = find_result(&results_3, builtin::PRIVILEGED_OPERATION_AUDIT);
     assert_eq!(priv_3.status, ControlStatus::Indeterminate);
     assert_eq!(priv_3.decision, GateDecision::Review);
 
-    println!("  [PASS] Scenario 3: 1 Violated + 3 Indeterminate (correct)");
+    println!("  [PASS] Scenario 3: 2 Indeterminate (correct)");
 
     // ── Summary ─────────────────────────────────────────────────────────
     println!("\n{}", "=".repeat(70));
@@ -446,8 +411,7 @@ fn main() {
     println!("{}", "=".repeat(70));
     println!();
     println!("AI-ops Evaluation Summary:");
-    println!("  Scenario 1 (happy path):         4/4 Satisfied  -> all Pass");
-    println!("  Scenario 2 (rogue agent):         4/4 Violated   -> all Fail");
-    println!("  Scenario 3 (degraded monitoring): 1 Violated + 3 Indeterminate");
-    println!("                                    -> 1 Fail + 3 Review");
+    println!("  Scenario 1 (happy path):         2/2 Satisfied  -> all Pass");
+    println!("  Scenario 2 (rogue agent):         2/2 Violated   -> all Fail");
+    println!("  Scenario 3 (degraded monitoring): 2/2 Indeterminate -> all Review");
 }

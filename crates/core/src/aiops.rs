@@ -74,20 +74,16 @@ pub fn build_evidence(input: &SessionInput) -> EvidenceBundle {
     }
 }
 
-/// Assess an agent session against Dark Factory controls.
+/// Assess an agent session against AI-ops controls.
 ///
-/// Returns findings from the 4 Dark Factory controls
-/// (harness-result, destructive-action-detection,
-/// agent-permission-boundary, agent-spec-conformance).
+/// Returns findings from the 2 AI-ops controls
+/// (agent-spec-conformance, privileged-operation-audit).
 ///
 /// Use with an OPA profile for gate decisions:
 /// ```ignore
 /// let report = assess_session(&input, &profile);
 /// ```
-pub fn assess_session(
-    input: &SessionInput,
-    profile: &dyn ControlProfile,
-) -> AssessmentReport {
+pub fn assess_session(input: &SessionInput, profile: &dyn ControlProfile) -> AssessmentReport {
     let evidence = build_evidence(input);
     let controls = aiops_controls();
     let findings = evaluate_all(&controls, &evidence);
@@ -111,7 +107,9 @@ mod tests {
     /// Minimal pass-through profile for testing.
     struct TestProfile;
     impl ControlProfile for TestProfile {
-        fn name(&self) -> &str { "test" }
+        fn name(&self) -> &str {
+            "test"
+        }
         fn map(&self, finding: &crate::control::ControlFinding) -> ProfileOutcome {
             let (severity, decision) = match finding.status {
                 ControlStatus::Satisfied => (FindingSeverity::Info, GateDecision::Pass),
@@ -138,8 +136,14 @@ mod tests {
             agent_id: "agent-1".into(),
             session_id: "sess-1".into(),
             actions: vec![
-                ActionInput { tool: "cargo".into(), command: "cargo build".into() },
-                ActionInput { tool: "cargo".into(), command: "cargo test".into() },
+                ActionInput {
+                    tool: "cargo".into(),
+                    command: "cargo build".into(),
+                },
+                ActionInput {
+                    tool: "cargo".into(),
+                    command: "cargo test".into(),
+                },
             ],
             spec: AgentSpec {
                 allowed_paths: vec!["src/*".into()],
@@ -154,17 +158,37 @@ mod tests {
             steps_taken: 10,
             cost_cents: 500,
             check_runs: vec![
-                CheckRunEvidence { name: "ci/build".into(), conclusion: CheckConclusion::Success, app_slug: None },
-                CheckRunEvidence { name: "ci/test".into(), conclusion: CheckConclusion::Success, app_slug: None },
-                CheckRunEvidence { name: "ci/lint".into(), conclusion: CheckConclusion::Success, app_slug: None },
-                CheckRunEvidence { name: "ci/typecheck".into(), conclusion: CheckConclusion::Success, app_slug: None },
+                CheckRunEvidence {
+                    name: "ci/build".into(),
+                    conclusion: CheckConclusion::Success,
+                    app_slug: None,
+                },
+                CheckRunEvidence {
+                    name: "ci/test".into(),
+                    conclusion: CheckConclusion::Success,
+                    app_slug: None,
+                },
+                CheckRunEvidence {
+                    name: "ci/lint".into(),
+                    conclusion: CheckConclusion::Success,
+                    app_slug: None,
+                },
+                CheckRunEvidence {
+                    name: "ci/typecheck".into(),
+                    conclusion: CheckConclusion::Success,
+                    app_slug: None,
+                },
             ],
             privileged_events: vec![],
         };
 
         let report = assess_session(&input, &TestProfile);
-        let pass_count = report.outcomes.iter().filter(|o| o.decision == GateDecision::Pass).count();
-        assert_eq!(pass_count, 4, "All 4 AI-ops controls should pass");
+        let pass_count = report
+            .outcomes
+            .iter()
+            .filter(|o| o.decision == GateDecision::Pass)
+            .count();
+        assert_eq!(pass_count, 2, "All 2 AI-ops controls should pass");
     }
 
     #[test]
@@ -172,9 +196,10 @@ mod tests {
         let input = SessionInput {
             agent_id: "rogue".into(),
             session_id: "evil-sess".into(),
-            actions: vec![
-                ActionInput { tool: "shell".into(), command: "rm -rf /".into() },
-            ],
+            actions: vec![ActionInput {
+                tool: "shell".into(),
+                command: "rm -rf /".into(),
+            }],
             spec: AgentSpec {
                 allowed_paths: vec!["src/*".into()],
                 forbidden_paths: vec![".env".into()],
@@ -192,11 +217,17 @@ mod tests {
         };
 
         let report = assess_session(&input, &TestProfile);
-        let fail_count = report.outcomes.iter().filter(|o| o.decision == GateDecision::Fail).count();
-        // destructive-action + spec-conformance should fail
-        // harness-result is NotApplicable (no check_runs) -> filtered out
-        // privileged_events is empty -> Satisfied
-        assert!(fail_count >= 2, "At least 2 controls should fail, got {fail_count}");
+        let fail_count = report
+            .outcomes
+            .iter()
+            .filter(|o| o.decision == GateDecision::Fail)
+            .count();
+        // spec-conformance should fail (forbidden paths, unauthorized tools, over budget/steps)
+        // privileged-operation-audit: empty privileged_events + rm -rf in action log -> Violated
+        assert!(
+            fail_count >= 2,
+            "Both AI-ops controls should fail, got {fail_count}"
+        );
     }
 
     #[test]
@@ -210,13 +241,18 @@ mod tests {
             tools_used: vec![],
             steps_taken: 0,
             cost_cents: 0,
-            check_runs: vec![
-                CheckRunEvidence { name: "ci/build".into(), conclusion: CheckConclusion::Success, app_slug: None },
-            ],
+            check_runs: vec![CheckRunEvidence {
+                name: "ci/build".into(),
+                conclusion: CheckConclusion::Success,
+                app_slug: None,
+            }],
             privileged_events: vec![],
         };
         let evidence = build_evidence(&input);
-        let runs = evidence.check_runs.value().expect("check_runs should be Complete");
+        let runs = evidence
+            .check_runs
+            .value()
+            .expect("check_runs should be Complete");
         assert_eq!(runs.len(), 1);
         assert_eq!(runs[0].name, "ci/build");
     }
@@ -236,7 +272,10 @@ mod tests {
             privileged_events: vec![],
         };
         let evidence = build_evidence(&input);
-        assert!(evidence.check_runs.value().is_none(), "empty check_runs should be NotApplicable");
+        assert!(
+            evidence.check_runs.value().is_none(),
+            "empty check_runs should be NotApplicable"
+        );
     }
 
     #[test]
@@ -263,7 +302,10 @@ mod tests {
             }],
         };
         let evidence = build_evidence(&input);
-        let events = evidence.privileged_git_events.value().expect("events should be Complete");
+        let events = evidence
+            .privileged_git_events
+            .value()
+            .expect("events should be Complete");
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].action, PrivilegedAction::ForcePush);
     }

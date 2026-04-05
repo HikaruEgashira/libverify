@@ -42,8 +42,6 @@ map := {"severity": "warning", "decision": "review"} if {
 # --- Agent safety controls (strict on violated) ---
 # These are the core agent safety controls that must never be bypassed.
 aiops_agent_safety := {
-	"harness-result",
-	"destructive-action-detection",
 	"agent-spec-conformance",
 	"privileged-operation-audit",
 }

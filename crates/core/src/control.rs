@@ -114,13 +114,11 @@ pub mod builtin {
     pub const SECURITY_TEST_IN_CI: &str = "security-test-in-ci";
     pub const PROTECTED_TAGS: &str = "protected-tags";
 
-    // Dark Factory (Layers 1, 2, 4)
-    pub const HARNESS_RESULT: &str = "harness-result";
-    pub const DESTRUCTIVE_ACTION_DETECTION: &str = "destructive-action-detection";
+    // AI-ops (agent execution verification)
     pub const AGENT_SPEC_CONFORMANCE: &str = "agent-spec-conformance";
     pub const PRIVILEGED_OPERATION_AUDIT: &str = "privileged-operation-audit";
 
-    /// All 48 built-in control IDs.
+    /// All 46 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -166,8 +164,6 @@ pub mod builtin {
         DEFAULT_BRANCH_SETTINGS_BASELINE,
         SECURITY_TEST_IN_CI,
         PROTECTED_TAGS,
-        HARNESS_RESULT,
-        DESTRUCTIVE_ACTION_DETECTION,
         AGENT_SPEC_CONFORMANCE,
         PRIVILEGED_OPERATION_AUDIT,
     ];
@@ -447,12 +443,6 @@ pub fn builtin_remediation_hint(id: &str) -> Option<&'static str> {
         builtin::PROTECTED_TAGS => {
             Some("Add tag protection rules at Settings > Tags to prevent unauthorized releases")
         }
-        builtin::HARNESS_RESULT => Some(
-            "Ensure all required CI harnesses (build, test, lint, typecheck) pass before merge",
-        ),
-        builtin::DESTRUCTIVE_ACTION_DETECTION => Some(
-            "Audit agent action logs for destructive commands (rm -rf, DROP TABLE, force push)",
-        ),
         builtin::AGENT_SPEC_CONFORMANCE => Some(
             "Define allowed_paths, forbidden_paths, and budget in agent spec to constrain agent scope",
         ),
@@ -510,9 +500,7 @@ pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
         builtin::SBOM_ATTESTATION => &["CC7.1"],
         builtin::RELEASE_ASSET_ATTESTATION => &["PI1.4"],
         builtin::PRIVILEGED_WORKFLOW_DETECTION => &["CC6.1", "CC8.1"],
-        // Dark Factory
-        builtin::HARNESS_RESULT => &["CC7.1", "CC8.1"],
-        builtin::DESTRUCTIVE_ACTION_DETECTION => &["CC6.1", "CC7.2"],
+        // AI-ops (agent execution verification)
         builtin::AGENT_SPEC_CONFORMANCE => &["CC6.1", "CC8.1"],
         builtin::PRIVILEGED_OPERATION_AUDIT => &["CC6.1", "CC7.2", "CC8.1"],
         _ => &[],

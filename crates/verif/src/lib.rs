@@ -265,33 +265,7 @@ pub fn release_traceability_severity(linked_cr_count: usize) -> Severity {
     }
 }
 
-// --- Dark Factory control predicates ---
-
-/// Harness result severity.
-///
-/// Pass iff zero missing test harnesses; Error otherwise.
-#[ensures(missing_harness_count == 0usize ==> result == Severity::Pass)]
-#[ensures(missing_harness_count >= 1usize ==> result == Severity::Error)]
-pub fn harness_result_severity(missing_harness_count: usize) -> Severity {
-    if missing_harness_count == 0 {
-        Severity::Pass
-    } else {
-        Severity::Error
-    }
-}
-
-/// Destructive action severity.
-///
-/// Pass iff zero destructive actions detected; Error otherwise.
-#[ensures(detected_count == 0usize ==> result == Severity::Pass)]
-#[ensures(detected_count >= 1usize ==> result == Severity::Error)]
-pub fn destructive_action_severity(detected_count: usize) -> Severity {
-    if detected_count == 0 {
-        Severity::Pass
-    } else {
-        Severity::Error
-    }
-}
+// --- AI-ops control predicates ---
 
 /// Agent spec conformance severity.
 ///

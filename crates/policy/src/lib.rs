@@ -533,20 +533,6 @@ default map := {"severity": "error", "decision": "fail"}
             // aiops: agent safety controls are strict
             (
                 "aiops",
-                builtin::HARNESS_RESULT,
-                Violated,
-                D::Fail,
-                S::Error,
-            ),
-            (
-                "aiops",
-                builtin::DESTRUCTIVE_ACTION_DETECTION,
-                Violated,
-                D::Fail,
-                S::Error,
-            ),
-            (
-                "aiops",
                 builtin::AGENT_SPEC_CONFORMANCE,
                 Violated,
                 D::Fail,
@@ -584,7 +570,7 @@ default map := {"severity": "error", "decision": "fail"}
             // aiops: indeterminate -> review
             (
                 "aiops",
-                builtin::HARNESS_RESULT,
+                builtin::AGENT_SPEC_CONFORMANCE,
                 Indeterminate,
                 D::Review,
                 S::Warning,

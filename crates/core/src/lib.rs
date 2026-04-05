@@ -1,10 +1,10 @@
 pub mod adapter;
+pub mod aiops;
 pub mod assessment;
 pub mod cache;
 pub mod control;
 pub mod controls;
 pub mod coverage;
-pub mod aiops;
 pub mod evidence;
 pub mod integrity;
 pub mod linkage;
