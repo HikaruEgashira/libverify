@@ -97,28 +97,16 @@ pub mod builtin {
     pub const SECURITY_POLICY: &str = "security-policy";
 
     // Enterprise Posture
-    pub const SECRET_SCANNING_PUSH_PROTECTION: &str = "secret-scanning-push-protection";
-    pub const BRANCH_PROTECTION_ADMIN_ENFORCEMENT: &str = "branch-protection-admin-enforcement";
-    pub const DISMISS_STALE_REVIEWS_ON_PUSH: &str = "dismiss-stale-reviews-on-push";
-    pub const ACTIONS_PINNED_DEPENDENCIES: &str = "actions-pinned-dependencies";
-    pub const ENVIRONMENT_PROTECTION_RULES: &str = "environment-protection-rules";
     pub const CODE_SCANNING_ALERTS_RESOLVED: &str = "code-scanning-alerts-resolved";
-    pub const DEPENDENCY_LICENSE_COMPLIANCE: &str = "dependency-license-compliance";
-    pub const SBOM_ATTESTATION: &str = "sbom-attestation";
     pub const RELEASE_ASSET_ATTESTATION: &str = "release-asset-attestation";
     pub const PRIVILEGED_WORKFLOW_DETECTION: &str = "privileged-workflow-detection";
-    pub const WORKFLOW_PERMISSIONS_RESTRICTED: &str = "workflow-permissions-restricted";
-    pub const DEPENDENCY_UPDATE_TOOL: &str = "dependency-update-tool";
-    pub const REPOSITORY_PERMISSIONS_AUDIT: &str = "repository-permissions-audit";
-    pub const DEFAULT_BRANCH_SETTINGS_BASELINE: &str = "default-branch-settings-baseline";
     pub const SECURITY_TEST_IN_CI: &str = "security-test-in-ci";
-    pub const PROTECTED_TAGS: &str = "protected-tags";
 
     // AI-ops (agent execution verification)
     pub const AGENT_SPEC_CONFORMANCE: &str = "agent-spec-conformance";
     pub const PRIVILEGED_OPERATION_AUDIT: &str = "privileged-operation-audit";
 
-    /// All 46 built-in control IDs.
+    /// All 34 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -148,22 +136,10 @@ pub mod builtin {
         SECRET_SCANNING,
         VULNERABILITY_SCANNING,
         SECURITY_POLICY,
-        SECRET_SCANNING_PUSH_PROTECTION,
-        BRANCH_PROTECTION_ADMIN_ENFORCEMENT,
-        DISMISS_STALE_REVIEWS_ON_PUSH,
-        ACTIONS_PINNED_DEPENDENCIES,
-        ENVIRONMENT_PROTECTION_RULES,
         CODE_SCANNING_ALERTS_RESOLVED,
-        DEPENDENCY_LICENSE_COMPLIANCE,
-        SBOM_ATTESTATION,
         RELEASE_ASSET_ATTESTATION,
         PRIVILEGED_WORKFLOW_DETECTION,
-        WORKFLOW_PERMISSIONS_RESTRICTED,
-        DEPENDENCY_UPDATE_TOOL,
-        REPOSITORY_PERMISSIONS_AUDIT,
-        DEFAULT_BRANCH_SETTINGS_BASELINE,
         SECURITY_TEST_IN_CI,
-        PROTECTED_TAGS,
         AGENT_SPEC_CONFORMANCE,
         PRIVILEGED_OPERATION_AUDIT,
     ];
@@ -395,29 +371,8 @@ pub fn builtin_remediation_hint(id: &str) -> Option<&'static str> {
         builtin::SECURITY_POLICY => {
             Some("Add a SECURITY.md file with vulnerability reporting instructions")
         }
-        builtin::SECRET_SCANNING_PUSH_PROTECTION => {
-            Some("Enable push protection at Settings > Code security > Secret scanning")
-        }
-        builtin::BRANCH_PROTECTION_ADMIN_ENFORCEMENT => {
-            Some("Enable 'Include administrators' in branch protection rules")
-        }
-        builtin::DISMISS_STALE_REVIEWS_ON_PUSH => {
-            Some("Enable 'Dismiss stale pull request approvals when new commits are pushed'")
-        }
-        builtin::ACTIONS_PINNED_DEPENDENCIES => {
-            Some("Pin GitHub Actions to full commit SHAs instead of tags")
-        }
-        builtin::ENVIRONMENT_PROTECTION_RULES => {
-            Some("Configure environment protection rules at Settings > Environments")
-        }
         builtin::CODE_SCANNING_ALERTS_RESOLVED => {
             Some("Resolve open code scanning alerts at Security > Code scanning alerts")
-        }
-        builtin::DEPENDENCY_LICENSE_COMPLIANCE => {
-            Some("Review dependency licenses; remove or replace copyleft dependencies")
-        }
-        builtin::SBOM_ATTESTATION => {
-            Some("Generate SBOM with gh attestation or anchore/sbom-action in CI")
         }
         builtin::RELEASE_ASSET_ATTESTATION => {
             Some("Attest release assets with gh attestation or sigstore/cosign")
@@ -425,23 +380,8 @@ pub fn builtin_remediation_hint(id: &str) -> Option<&'static str> {
         builtin::PRIVILEGED_WORKFLOW_DETECTION => {
             Some("Avoid pull_request_target with checkout of PR code in workflows")
         }
-        builtin::WORKFLOW_PERMISSIONS_RESTRICTED => {
-            Some("Set default workflow permissions to 'Read' at Settings > Actions > General")
-        }
-        builtin::DEPENDENCY_UPDATE_TOOL => Some(
-            "Add .github/dependabot.yml or renovate.json to enable automated dependency updates",
-        ),
-        builtin::REPOSITORY_PERMISSIONS_AUDIT => {
-            Some("Reduce admin count (<= 3), use team-based access instead of direct collaborators")
-        }
-        builtin::DEFAULT_BRANCH_SETTINGS_BASELINE => Some(
-            "Enable branch protection, admin enforcement, and stale review dismissal on default branch",
-        ),
         builtin::SECURITY_TEST_IN_CI => {
             Some("Add CodeQL or Semgrep to GitHub Actions: github/codeql-action/analyze")
-        }
-        builtin::PROTECTED_TAGS => {
-            Some("Add tag protection rules at Settings > Tags to prevent unauthorized releases")
         }
         builtin::AGENT_SPEC_CONFORMANCE => Some(
             "Define allowed_paths, forbidden_paths, and budget in agent spec to constrain agent scope",
@@ -490,10 +430,6 @@ pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
         builtin::DEPENDENCY_SIGNER_VERIFIED => &["CC7.1", "PI1.4"],
         builtin::DEPENDENCY_COMPLETENESS => &["CC7.1", "PI1.4"],
         // Enterprise Posture
-        builtin::SECRET_SCANNING_PUSH_PROTECTION => &["CC6.1", "CC6.6"],
-        builtin::BRANCH_PROTECTION_ADMIN_ENFORCEMENT => &["CC6.1", "CC8.1"],
-        builtin::DISMISS_STALE_REVIEWS_ON_PUSH => &["CC8.1"],
-        builtin::ENVIRONMENT_PROTECTION_RULES => &["CC6.1", "CC8.1"],
         builtin::CODE_SCANNING_ALERTS_RESOLVED => &["CC7.1"],
         builtin::RELEASE_ASSET_ATTESTATION => &["PI1.4"],
         builtin::PRIVILEGED_WORKFLOW_DETECTION => &["CC6.1", "CC8.1"],

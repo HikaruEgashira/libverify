@@ -67,22 +67,10 @@ soc1_out_of_scope := {
 	"secret-scanning",
 	"codeowners-coverage",
 	"branch-history-integrity",
-	"secret-scanning-push-protection",
-	"branch-protection-admin-enforcement",
-	"dismiss-stale-reviews-on-push",
-	"actions-pinned-dependencies",
-	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
-	"dependency-license-compliance",
-	"sbom-attestation",
 	"release-asset-attestation",
 	"privileged-workflow-detection",
-	"repository-permissions-audit",
-	"workflow-permissions-restricted",
-	"dependency-update-tool",
-	"default-branch-settings-baseline",
 	"security-test-in-ci",
-	"protected-tags",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

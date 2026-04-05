@@ -51,7 +51,6 @@ wp29_csms_controls := {
 	"review-independence",
 	"required-status-checks",
 	"test-coverage",
-	"actions-pinned-dependencies",
 	"code-scanning-alerts-resolved",
 	"privileged-workflow-detection",
 	"security-test-in-ci",
@@ -71,7 +70,6 @@ wp29_software_controls := {
 	"build-provenance",
 	"provenance-authenticity",
 	"release-traceability",
-	"sbom-attestation",
 	"release-asset-attestation",
 }
 
@@ -96,16 +94,6 @@ wp29_recommended_controls := {
 	"secret-scanning",
 	"security-policy",
 	"branch-history-integrity",
-	"secret-scanning-push-protection",
-	"branch-protection-admin-enforcement",
-	"dismiss-stale-reviews-on-push",
-	"environment-protection-rules",
-	"dependency-license-compliance",
-	"repository-permissions-audit",
-	"workflow-permissions-restricted",
-	"dependency-update-tool",
-	"default-branch-settings-baseline",
-	"protected-tags",
 }
 
 # --- Recommended: violated -> review ---

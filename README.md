@@ -38,7 +38,7 @@ use libverify_output::{OutputOptions, Format, render};
 // 1. Collect evidence from your platform
 let evidence = EvidenceBundle { /* ... */ };
 
-// 2. Run all 46 built-in controls with an OPA policy
+// 2. Run all 34 built-in controls with an OPA policy
 let registry = ControlRegistry::builtin();
 let profile = OpaProfile::from_preset_or_file("soc2")?;
 let report = assess_with_registry(&evidence, &registry, &profile);
@@ -61,7 +61,7 @@ let sarif = render(&opts, &report.into())?;
 
 | Crate | Purpose |
 |-------|---------|
-| `libverify-core` | Evidence model, `Control` trait, 46 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks), profile system. Pure logic, serde only. |
+| `libverify-core` | Evidence model, `Control` trait, 34 built-in controls, assessment engine, SLSA v1.2 mapping (Source/Build/Dependencies tracks), profile system. Pure logic, serde only. |
 | `libverify-policy` | OPA Rego policy engine ([regorus](https://github.com/nicholasbishop/regorus)). Built-in presets + custom `.rego` support. See [Policy presets](#policy-presets). |
 | `libverify-output` | SARIF 2.1.0 / JSON formatters. Tool name/version configurable per consumer. |
 | `libverify-github` | GitHub API client, evidence adapter, PR/release/repo verification orchestration. |
@@ -70,7 +70,7 @@ let sarif = render(&opts, &report.into())?;
 
 ## Controls
 
-46 built-in controls covering SLSA v1.2, SOC2 CC7/CC8, ASPM repository posture, enterprise posture, and AI-ops agent execution verification.
+34 built-in controls covering SLSA v1.2, SOC2 CC7/CC8, repository posture, and AI-ops agent execution verification.
 
 ### SLSA v1.2
 
@@ -109,24 +109,10 @@ let sarif = render(&opts, &report.into())?;
 | `secret-scanning` | CC6.1, CC6.6 | Secret scanning enabled on the repository |
 | `vulnerability-scanning` | CC7.1 | Vulnerability/Dependabot scanning enabled |
 | `security-policy` | CC7.3, CC7.4 | SECURITY.md or equivalent policy exists |
-| `secret-scanning-push-protection` | CC6.1, CC6.6 | Push protection blocks secrets before they reach the repository |
-| `branch-protection-admin-enforcement` | CC6.1, CC8.1 | Administrators cannot bypass branch protection rules |
-| `dismiss-stale-reviews-on-push` | CC8.1 | Stale review approvals dismissed when new commits are pushed |
-| `environment-protection-rules` | CC6.1, CC8.1 | Deployment environments have protection rules configured |
 | `code-scanning-alerts-resolved` | CC7.1 | Code scanning alerts are resolved before merge |
 | `privileged-workflow-detection` | CC6.1, CC8.1 | Dangerous workflow patterns (`pull_request_target` with PR checkout) detected |
 | `release-asset-attestation` | PI1.4 | Release assets have provenance attestations |
-| `actions-pinned-dependencies` | — | GitHub Actions pinned to full commit SHAs |
-| `workflow-permissions-restricted` | — | Default workflow permissions set to read-only |
-| `dependency-update-tool` | — | Automated dependency update tool (Dependabot/Renovate) configured |
-| `dependency-license-compliance` | — | Dependency licenses reviewed for compliance |
-| `repository-permissions-audit` | — | Repository access permissions follow least-privilege |
-| `default-branch-settings-baseline` | — | Default branch has protection, admin enforcement, and stale review dismissal |
-| `security-test-in-ci` | — | Security testing (CodeQL/Semgrep) integrated in CI |
-| `sbom-attestation` | — | SBOM attestation generated for releases |
-| `protected-tags` | — | Tag protection rules prevent unauthorized releases |
-
-Controls with a TSC mapping have a defensible SOC2 justification. Controls marked "—" are security best practices without direct regulatory mapping.
+| `security-test-in-ci` | — | Security testing (SAST/DAST) integrated in CI |
 
 ### AI-ops (Agent Execution Verification)
 

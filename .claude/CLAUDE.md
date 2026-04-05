@@ -15,7 +15,7 @@ cargo mutants -p libverify-core -- --lib            # Mutation testing (core)
 
 Seven-crate workspace:
 
-- `libverify-core` — evidence model, Control trait, 46 built-in controls, assessment engine. Pure logic, serde only.
+- `libverify-core` — evidence model, Control trait, 34 built-in controls, assessment engine. Pure logic, serde only.
 - `libverify-policy` — OPA Rego policy engine (regorus).
 - `libverify-output` — SARIF/JSON output formatters.
 - `libverify-github` — GitHub API client, evidence adapter, verification orchestration.

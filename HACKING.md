@@ -50,7 +50,7 @@ Seven-crate workspace.
 │  │                                                   │   │
 │  │  libverify-core                                   │   │
 │  │  ├─ EvidenceBundle    (platform-neutral model)    │   │
-│  │  ├─ Control trait     (46 built-in controls)      │   │
+│  │  ├─ Control trait     (34 built-in controls)      │   │
 │  │  ├─ ControlRegistry   (dynamic collection)        │   │
 │  │  ├─ assessment        (evidence → findings)       │   │
 │  │  └─ SLSA v1.2 + SOC2 CC7/CC8 + posture + AI-ops   │   │

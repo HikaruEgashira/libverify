@@ -61,22 +61,10 @@ oss_review_on_violated := {
 	"merge-commit-policy",
 	"release-traceability",
 	# Enterprise posture controls (require GHAS/Enterprise, not available in most OSS)
-	"secret-scanning-push-protection",
-	"branch-protection-admin-enforcement",
-	"dismiss-stale-reviews-on-push",
-	"actions-pinned-dependencies",
-	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
-	"dependency-license-compliance",
-	"sbom-attestation",
 	"release-asset-attestation",
 	"privileged-workflow-detection",
-	"repository-permissions-audit",
-	"workflow-permissions-restricted",
-	"dependency-update-tool",
-	"default-branch-settings-baseline",
 	"security-test-in-ci",
-	"protected-tags",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
@@ -115,22 +103,10 @@ oss_review_on_indeterminate := {
 	"dependency-signer-verified",
 	"dependency-completeness",
 	# Enterprise posture controls
-	"secret-scanning-push-protection",
-	"branch-protection-admin-enforcement",
-	"dismiss-stale-reviews-on-push",
-	"actions-pinned-dependencies",
-	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
-	"dependency-license-compliance",
-	"sbom-attestation",
 	"release-asset-attestation",
 	"privileged-workflow-detection",
-	"repository-permissions-audit",
-	"workflow-permissions-restricted",
-	"dependency-update-tool",
-	"default-branch-settings-baseline",
 	"security-test-in-ci",
-	"protected-tags",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

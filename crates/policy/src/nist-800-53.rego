@@ -61,17 +61,9 @@ nist_mandatory_controls := {
 	"required-status-checks",
 	"vulnerability-scanning",
 	"secret-scanning",
-	"secret-scanning-push-protection",
-	"branch-protection-admin-enforcement",
-	"actions-pinned-dependencies",
-	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
 	"privileged-workflow-detection",
-	"repository-permissions-audit",
-	"workflow-permissions-restricted",
-	"default-branch-settings-baseline",
 	"security-test-in-ci",
-	"protected-tags",
 }
 
 # --- SR (Supply Chain Risk Management) controls ---
@@ -108,11 +100,7 @@ nist_devquality_controls := {
 	"merge-commit-policy",
 	"conventional-title",
 	"stale-review",
-	"dismiss-stale-reviews-on-push",
-	"dependency-license-compliance",
-	"sbom-attestation",
 	"release-asset-attestation",
-	"dependency-update-tool",
 }
 
 # --- Audit recommended: violated -> review ---

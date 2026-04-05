@@ -67,11 +67,7 @@ aiops_advisory_controls := {
 	"stale-review",
 	"branch-history-integrity",
 	"branch-protection-enforcement",
-	"branch-protection-admin-enforcement",
-	"dismiss-stale-reviews-on-push",
 	"source-authenticity",
-	"workflow-permissions-restricted",
-	"dependency-update-tool",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

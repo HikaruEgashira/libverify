@@ -53,17 +53,9 @@ ismap_mandatory_controls := {
 	"vulnerability-scanning",
 	"secret-scanning",
 	"test-coverage",
-	"secret-scanning-push-protection",
-	"branch-protection-admin-enforcement",
-	"dismiss-stale-reviews-on-push",
-	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
 	"privileged-workflow-detection",
-	"repository-permissions-audit",
-	"workflow-permissions-restricted",
-	"default-branch-settings-baseline",
 	"security-test-in-ci",
-	"protected-tags",
 }
 
 # --- Recommended controls (violated -> review) ---
@@ -80,11 +72,7 @@ ismap_recommended_controls := {
 	"release-traceability",
 	"security-file-change",
 	"security-policy",
-	"actions-pinned-dependencies",
-	"dependency-license-compliance",
-	"sbom-attestation",
 	"release-asset-attestation",
-	"dependency-update-tool",
 }
 
 # --- Build/dependency-track controls ---

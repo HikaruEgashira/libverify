@@ -77,12 +77,7 @@ map := {"severity": "warning", "decision": "review"} if {
 # These are good security practices but SOC2 auditors assess them via
 # alternative evidence (GRC platforms, security tooling dashboards).
 soc2_enterprise_advisory_controls := {
-	"actions-pinned-dependencies",
-	"dependency-license-compliance",
-	"sbom-attestation",
 	"release-asset-attestation",
-	"dismiss-stale-reviews-on-push",
-	"dependency-update-tool",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

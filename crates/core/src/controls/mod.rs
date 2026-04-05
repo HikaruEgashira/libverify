@@ -1,7 +1,5 @@
-pub mod actions_pinned_dependencies;
 pub mod agent_spec_conformance;
 pub mod branch_history_integrity;
-pub mod branch_protection_admin_enforcement;
 pub mod branch_protection_enforcement;
 pub mod build_isolation;
 pub mod build_provenance;
@@ -9,32 +7,23 @@ pub mod change_request_size;
 pub mod code_scanning_alerts_resolved;
 pub mod codeowners_coverage;
 pub mod conventional_title;
-pub mod default_branch_settings_baseline;
 pub mod dependency_completeness;
-pub mod dependency_license_compliance;
 pub mod dependency_provenance;
 pub mod dependency_signature;
 pub mod dependency_signer_verified;
-pub mod dependency_update_tool;
 pub mod description_quality;
-pub mod dismiss_stale_reviews_on_push;
-pub mod environment_protection_rules;
 pub mod hosted_build_platform;
 pub mod issue_linkage;
 pub mod merge_commit_policy;
 pub mod privileged_operation_audit;
 pub mod privileged_workflow_detection;
-pub mod protected_tags;
 pub mod provenance_authenticity;
 pub mod release_asset_attestation;
 pub mod release_traceability;
-pub mod repository_permissions_audit;
 pub mod required_status_checks;
 pub mod review_independence;
-pub mod sbom_attestation;
 pub mod scoped_change;
 pub mod secret_scanning;
-pub mod secret_scanning_push_protection;
 pub mod security_file_change;
 pub mod security_policy;
 pub mod security_test_in_ci;
@@ -43,15 +32,11 @@ pub mod stale_review;
 pub mod test_coverage;
 pub mod two_party_review;
 pub mod vulnerability_scanning;
-pub mod workflow_permissions_restricted;
-
 use crate::control::{Control, builtin};
 use crate::slsa::{SlsaLevel, SlsaTrack};
 
-use self::actions_pinned_dependencies::ActionsPinnedDependenciesControl;
 use self::agent_spec_conformance::AgentSpecConformanceControl;
 use self::branch_history_integrity::BranchHistoryIntegrityControl;
-use self::branch_protection_admin_enforcement::BranchProtectionAdminEnforcementControl;
 use self::branch_protection_enforcement::BranchProtectionEnforcementControl;
 use self::build_isolation::BuildIsolationControl;
 use self::build_provenance::BuildProvenanceControl;
@@ -59,32 +44,23 @@ use self::change_request_size::ChangeRequestSizeControl;
 use self::code_scanning_alerts_resolved::CodeScanningAlertsResolvedControl;
 use self::codeowners_coverage::CodeownersCoverageControl;
 use self::conventional_title::ConventionalTitleControl;
-use self::default_branch_settings_baseline::DefaultBranchSettingsBaselineControl;
 use self::dependency_completeness::DependencyCompletenessControl;
-use self::dependency_license_compliance::DependencyLicenseComplianceControl;
 use self::dependency_provenance::DependencyProvenanceControl;
 use self::dependency_signature::DependencySignatureControl;
 use self::dependency_signer_verified::DependencySignerVerifiedControl;
-use self::dependency_update_tool::DependencyUpdateToolControl;
 use self::description_quality::DescriptionQualityControl;
-use self::dismiss_stale_reviews_on_push::DismissStaleReviewsOnPushControl;
-use self::environment_protection_rules::EnvironmentProtectionRulesControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
 use self::merge_commit_policy::MergeCommitPolicyControl;
 use self::privileged_operation_audit::PrivilegedOperationAuditControl;
 use self::privileged_workflow_detection::PrivilegedWorkflowDetectionControl;
-use self::protected_tags::ProtectedTagsControl;
 use self::provenance_authenticity::ProvenanceAuthenticityControl;
 use self::release_asset_attestation::ReleaseAssetAttestationControl;
 use self::release_traceability::ReleaseTraceabilityControl;
-use self::repository_permissions_audit::RepositoryPermissionsAuditControl;
 use self::required_status_checks::RequiredStatusChecksControl;
 use self::review_independence::ReviewIndependenceControl;
-use self::sbom_attestation::SbomAttestationControl;
 use self::scoped_change::ScopedChangeControl;
 use self::secret_scanning::SecretScanningControl;
-use self::secret_scanning_push_protection::SecretScanningPushProtectionControl;
 use self::security_file_change::SecurityFileChangeControl;
 use self::security_policy::SecurityPolicyControl;
 use self::security_test_in_ci::SecurityTestInCiControl;
@@ -93,8 +69,6 @@ use self::stale_review::StaleReviewControl;
 use self::test_coverage::TestCoverageControl;
 use self::two_party_review::TwoPartyReviewControl;
 use self::vulnerability_scanning::VulnerabilityScanningControl;
-use self::workflow_permissions_restricted::WorkflowPermissionsRestrictedControl;
-
 /// Instantiates a control by its string ID.
 fn instantiate(id: &str) -> Option<Box<dyn Control>> {
     match id {
@@ -128,34 +102,12 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::SECRET_SCANNING => Some(Box::new(SecretScanningControl)),
         builtin::VULNERABILITY_SCANNING => Some(Box::new(VulnerabilityScanningControl)),
         builtin::SECURITY_POLICY => Some(Box::new(SecurityPolicyControl)),
-        builtin::SECRET_SCANNING_PUSH_PROTECTION => {
-            Some(Box::new(SecretScanningPushProtectionControl))
-        }
-        builtin::BRANCH_PROTECTION_ADMIN_ENFORCEMENT => {
-            Some(Box::new(BranchProtectionAdminEnforcementControl))
-        }
-        builtin::DISMISS_STALE_REVIEWS_ON_PUSH => Some(Box::new(DismissStaleReviewsOnPushControl)),
-        builtin::ACTIONS_PINNED_DEPENDENCIES => Some(Box::new(ActionsPinnedDependenciesControl)),
-        builtin::ENVIRONMENT_PROTECTION_RULES => Some(Box::new(EnvironmentProtectionRulesControl)),
         builtin::CODE_SCANNING_ALERTS_RESOLVED => Some(Box::new(CodeScanningAlertsResolvedControl)),
-        builtin::DEPENDENCY_LICENSE_COMPLIANCE => {
-            Some(Box::new(DependencyLicenseComplianceControl))
-        }
-        builtin::SBOM_ATTESTATION => Some(Box::new(SbomAttestationControl)),
         builtin::RELEASE_ASSET_ATTESTATION => Some(Box::new(ReleaseAssetAttestationControl)),
         builtin::PRIVILEGED_WORKFLOW_DETECTION => {
             Some(Box::new(PrivilegedWorkflowDetectionControl))
         }
-        builtin::WORKFLOW_PERMISSIONS_RESTRICTED => {
-            Some(Box::new(WorkflowPermissionsRestrictedControl))
-        }
-        builtin::DEPENDENCY_UPDATE_TOOL => Some(Box::new(DependencyUpdateToolControl)),
-        builtin::REPOSITORY_PERMISSIONS_AUDIT => Some(Box::new(RepositoryPermissionsAuditControl)),
-        builtin::DEFAULT_BRANCH_SETTINGS_BASELINE => {
-            Some(Box::new(DefaultBranchSettingsBaselineControl))
-        }
         builtin::SECURITY_TEST_IN_CI => Some(Box::new(SecurityTestInCiControl)),
-        builtin::PROTECTED_TAGS => Some(Box::new(ProtectedTagsControl)),
         builtin::AGENT_SPEC_CONFORMANCE => Some(Box::new(AgentSpecConformanceControl)),
         builtin::PRIVILEGED_OPERATION_AUDIT => Some(Box::new(PrivilegedOperationAuditControl)),
         _ => None,
@@ -213,22 +165,10 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(SecretScanningControl),
         Box::new(VulnerabilityScanningControl),
         Box::new(SecurityPolicyControl),
-        Box::new(SecretScanningPushProtectionControl),
-        Box::new(BranchProtectionAdminEnforcementControl),
-        Box::new(DismissStaleReviewsOnPushControl),
-        Box::new(ActionsPinnedDependenciesControl),
-        Box::new(EnvironmentProtectionRulesControl),
         Box::new(CodeScanningAlertsResolvedControl),
-        Box::new(DependencyLicenseComplianceControl),
-        Box::new(SbomAttestationControl),
         Box::new(ReleaseAssetAttestationControl),
         Box::new(PrivilegedWorkflowDetectionControl),
-        Box::new(WorkflowPermissionsRestrictedControl),
-        Box::new(DependencyUpdateToolControl),
-        Box::new(RepositoryPermissionsAuditControl),
-        Box::new(DefaultBranchSettingsBaselineControl),
         Box::new(SecurityTestInCiControl),
-        Box::new(ProtectedTagsControl),
     ]
 }
 
@@ -242,22 +182,10 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
         Box::new(SecretScanningControl),
         Box::new(VulnerabilityScanningControl),
         Box::new(SecurityPolicyControl),
-        Box::new(SecretScanningPushProtectionControl),
-        Box::new(BranchProtectionAdminEnforcementControl),
-        Box::new(DismissStaleReviewsOnPushControl),
-        Box::new(ActionsPinnedDependenciesControl),
-        Box::new(EnvironmentProtectionRulesControl),
         Box::new(CodeScanningAlertsResolvedControl),
-        Box::new(DependencyLicenseComplianceControl),
-        Box::new(SbomAttestationControl),
         Box::new(ReleaseAssetAttestationControl),
         Box::new(PrivilegedWorkflowDetectionControl),
-        Box::new(WorkflowPermissionsRestrictedControl),
-        Box::new(DependencyUpdateToolControl),
-        Box::new(RepositoryPermissionsAuditControl),
-        Box::new(DefaultBranchSettingsBaselineControl),
         Box::new(SecurityTestInCiControl),
-        Box::new(ProtectedTagsControl),
     ]
 }
 

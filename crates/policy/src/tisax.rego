@@ -60,17 +60,9 @@ tisax_mandatory_controls := {
 	"required-status-checks",
 	"build-provenance",
 	"provenance-authenticity",
-	"secret-scanning-push-protection",
-	"branch-protection-admin-enforcement",
-	"actions-pinned-dependencies",
-	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
 	"privileged-workflow-detection",
-	"repository-permissions-audit",
-	"workflow-permissions-restricted",
-	"default-branch-settings-baseline",
 	"security-test-in-ci",
-	"protected-tags",
 }
 
 # --- Development environment (VDA ISA 3.1.2) ---
@@ -82,9 +74,9 @@ tisax_devenv_controls := {
 
 # --- Recommended controls (violated -> review) ---
 # These improve development quality but are not explicitly required by VDA ISA.
-# sbom-attestation, release-asset-attestation, dependency-license-compliance:
+# release-asset-attestation:
 #   Useful for VDA ISA 4.1 supply chain visibility but not mandatory controls.
-#   Moved to recommended until VDA ISA explicitly mandates SBOM attestation.
+#   Moved to recommended until VDA ISA explicitly mandates attestation.
 tisax_recommended_controls := {
 	"test-coverage",
 	"scoped-change",
@@ -97,11 +89,7 @@ tisax_recommended_controls := {
 	"release-traceability",
 	"security-file-change",
 	"security-policy",
-	"dismiss-stale-reviews-on-push",
-	"dependency-license-compliance",
-	"sbom-attestation",
 	"release-asset-attestation",
-	"dependency-update-tool",
 }
 
 # --- Recommended: violated -> review ---

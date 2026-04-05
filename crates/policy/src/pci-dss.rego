@@ -59,14 +59,8 @@ pcidss_mandatory_controls := {
 	"provenance-authenticity",
 	"branch-protection-enforcement",
 	"branch-history-integrity",
-	"secret-scanning-push-protection",
-	"branch-protection-admin-enforcement",
-	"actions-pinned-dependencies",
-	"environment-protection-rules",
 	"code-scanning-alerts-resolved",
-	"dependency-license-compliance",
 	"privileged-workflow-detection",
-	"default-branch-settings-baseline",
 	"security-test-in-ci",
 }
 
@@ -79,17 +73,11 @@ pcidss_advisory_controls := {
 	"merge-commit-policy",
 	"change-request-size",
 	"description-quality",
-	"dismiss-stale-reviews-on-push",
-	"sbom-attestation",
 	"release-asset-attestation",
 	"codeowners-coverage",
 	"release-traceability",
 	"security-policy",
 	"security-file-change",
-	"repository-permissions-audit",
-	"workflow-permissions-restricted",
-	"dependency-update-tool",
-	"protected-tags",
 }
 
 # --- Dependency controls (violated -> fail, indeterminate -> review) ---
