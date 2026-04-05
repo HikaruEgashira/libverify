@@ -589,8 +589,6 @@ pub struct AgentAction {
     pub command: String,
     #[serde(default)]
     pub timestamp: Option<String>,
-    #[serde(default)]
-    pub required_permission: Option<String>,
 }
 
 /// Log of all actions an agent performed in a session (Layer 4).
@@ -611,8 +609,6 @@ pub struct AgentSpec {
     #[serde(default)]
     pub allowed_tools: Vec<String>,
     #[serde(default)]
-    pub granted_permissions: Vec<String>,
-    #[serde(default)]
     pub max_steps: Option<u32>,
     #[serde(default)]
     pub budget_cents: Option<u32>,
@@ -620,10 +616,6 @@ pub struct AgentSpec {
     /// Extends the built-in default set in `DestructiveActionDetectionControl`.
     #[serde(default)]
     pub custom_destructive_patterns: Vec<String>,
-    /// When true, actions without `required_permission` are treated as violations.
-    /// Default: false (fail-open for backward compatibility).
-    #[serde(default)]
-    pub deny_unpermissioned_actions: bool,
 }
 
 /// Record of what an agent actually did (Layer 1).

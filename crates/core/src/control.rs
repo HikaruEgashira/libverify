@@ -117,11 +117,10 @@ pub mod builtin {
     // Dark Factory (Layers 1, 2, 4)
     pub const HARNESS_RESULT: &str = "harness-result";
     pub const DESTRUCTIVE_ACTION_DETECTION: &str = "destructive-action-detection";
-    pub const AGENT_PERMISSION_BOUNDARY: &str = "agent-permission-boundary";
     pub const AGENT_SPEC_CONFORMANCE: &str = "agent-spec-conformance";
     pub const PRIVILEGED_OPERATION_AUDIT: &str = "privileged-operation-audit";
 
-    /// All 49 built-in control IDs.
+    /// All 48 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -169,7 +168,6 @@ pub mod builtin {
         PROTECTED_TAGS,
         HARNESS_RESULT,
         DESTRUCTIVE_ACTION_DETECTION,
-        AGENT_PERMISSION_BOUNDARY,
         AGENT_SPEC_CONFORMANCE,
         PRIVILEGED_OPERATION_AUDIT,
     ];
@@ -455,9 +453,6 @@ pub fn builtin_remediation_hint(id: &str) -> Option<&'static str> {
         builtin::DESTRUCTIVE_ACTION_DETECTION => Some(
             "Audit agent action logs for destructive commands (rm -rf, DROP TABLE, force push)",
         ),
-        builtin::AGENT_PERMISSION_BOUNDARY => Some(
-            "Restrict agent permissions to the minimum required; review granted_permissions in agent spec",
-        ),
         builtin::AGENT_SPEC_CONFORMANCE => Some(
             "Define allowed_paths, forbidden_paths, and budget in agent spec to constrain agent scope",
         ),
@@ -518,7 +513,6 @@ pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
         // Dark Factory
         builtin::HARNESS_RESULT => &["CC7.1", "CC8.1"],
         builtin::DESTRUCTIVE_ACTION_DETECTION => &["CC6.1", "CC7.2"],
-        builtin::AGENT_PERMISSION_BOUNDARY => &["CC6.1", "CC6.3"],
         builtin::AGENT_SPEC_CONFORMANCE => &["CC6.1", "CC8.1"],
         builtin::PRIVILEGED_OPERATION_AUDIT => &["CC6.1", "CC7.2", "CC8.1"],
         _ => &[],

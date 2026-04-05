@@ -293,19 +293,6 @@ pub fn destructive_action_severity(detected_count: usize) -> Severity {
     }
 }
 
-/// Agent permission boundary severity.
-///
-/// Pass iff zero permission boundary violations; Error otherwise.
-#[ensures(violation_count == 0usize ==> result == Severity::Pass)]
-#[ensures(violation_count >= 1usize ==> result == Severity::Error)]
-pub fn agent_permission_boundary_severity(violation_count: usize) -> Severity {
-    if violation_count == 0 {
-        Severity::Pass
-    } else {
-        Severity::Error
-    }
-}
-
 /// Agent spec conformance severity.
 ///
 /// Pass iff zero spec conformance violations; Error otherwise.

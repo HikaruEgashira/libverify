@@ -162,11 +162,9 @@ mod tests {
             allowed_paths: allowed_paths.into_iter().map(String::from).collect(),
             forbidden_paths: forbidden_paths.into_iter().map(String::from).collect(),
             allowed_tools: allowed_tools.into_iter().map(String::from).collect(),
-            granted_permissions: Vec::new(),
             max_steps,
             budget_cents,
             custom_destructive_patterns: Vec::new(),
-            deny_unpermissioned_actions: false,
         }
     }
 

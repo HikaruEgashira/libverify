@@ -140,7 +140,6 @@ mod tests {
             tool: "shell".to_string(),
             command: command.to_string(),
             timestamp: None,
-            required_permission: None,
         }
     }
 

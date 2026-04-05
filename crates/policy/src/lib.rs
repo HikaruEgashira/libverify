@@ -547,13 +547,6 @@ default map := {"severity": "error", "decision": "fail"}
             ),
             (
                 "aiops",
-                builtin::AGENT_PERMISSION_BOUNDARY,
-                Violated,
-                D::Fail,
-                S::Error,
-            ),
-            (
-                "aiops",
                 builtin::AGENT_SPEC_CONFORMANCE,
                 Violated,
                 D::Fail,

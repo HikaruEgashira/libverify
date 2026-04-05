@@ -1,5 +1,4 @@
 pub mod actions_pinned_dependencies;
-pub mod agent_permission_boundary;
 pub mod agent_spec_conformance;
 pub mod branch_history_integrity;
 pub mod branch_protection_admin_enforcement;
@@ -52,7 +51,6 @@ use crate::control::{Control, builtin};
 use crate::slsa::{SlsaLevel, SlsaTrack};
 
 use self::actions_pinned_dependencies::ActionsPinnedDependenciesControl;
-use self::agent_permission_boundary::AgentPermissionBoundaryControl;
 use self::agent_spec_conformance::AgentSpecConformanceControl;
 use self::branch_history_integrity::BranchHistoryIntegrityControl;
 use self::branch_protection_admin_enforcement::BranchProtectionAdminEnforcementControl;
@@ -164,7 +162,6 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::PROTECTED_TAGS => Some(Box::new(ProtectedTagsControl)),
         builtin::HARNESS_RESULT => Some(Box::new(HarnessResultControl)),
         builtin::DESTRUCTIVE_ACTION_DETECTION => Some(Box::new(DestructiveActionDetectionControl)),
-        builtin::AGENT_PERMISSION_BOUNDARY => Some(Box::new(AgentPermissionBoundaryControl)),
         builtin::AGENT_SPEC_CONFORMANCE => Some(Box::new(AgentSpecConformanceControl)),
         builtin::PRIVILEGED_OPERATION_AUDIT => Some(Box::new(PrivilegedOperationAuditControl)),
         _ => None,
@@ -275,7 +272,6 @@ pub fn aiops_controls() -> Vec<Box<dyn Control>> {
     vec![
         Box::new(HarnessResultControl),
         Box::new(DestructiveActionDetectionControl),
-        Box::new(AgentPermissionBoundaryControl),
         Box::new(AgentSpecConformanceControl),
         Box::new(PrivilegedOperationAuditControl),
     ]

@@ -44,7 +44,6 @@ map := {"severity": "warning", "decision": "review"} if {
 aiops_agent_safety := {
 	"harness-result",
 	"destructive-action-detection",
-	"agent-permission-boundary",
 	"agent-spec-conformance",
 	"privileged-operation-audit",
 }

@@ -13,7 +13,6 @@ use crate::profile::{ControlProfile, apply_profile};
 pub struct ActionInput {
     pub tool: String,
     pub command: String,
-    pub required_permission: Option<String>,
 }
 
 /// High-level input for assessing an agent session.
@@ -39,7 +38,6 @@ pub fn build_evidence(input: &SessionInput) -> EvidenceBundle {
             tool: a.tool.clone(),
             command: a.command.clone(),
             timestamp: None,
-            required_permission: a.required_permission.clone(),
         })
         .collect();
 
@@ -140,14 +138,13 @@ mod tests {
             agent_id: "agent-1".into(),
             session_id: "sess-1".into(),
             actions: vec![
-                ActionInput { tool: "cargo".into(), command: "cargo build".into(), required_permission: Some("execute:build".into()) },
-                ActionInput { tool: "cargo".into(), command: "cargo test".into(), required_permission: Some("execute:test".into()) },
+                ActionInput { tool: "cargo".into(), command: "cargo build".into() },
+                ActionInput { tool: "cargo".into(), command: "cargo test".into() },
             ],
             spec: AgentSpec {
                 allowed_paths: vec!["src/*".into()],
                 forbidden_paths: vec![".env".into()],
                 allowed_tools: vec!["cargo".into()],
-                granted_permissions: vec!["execute:build".into(), "execute:test".into()],
                 max_steps: Some(100),
                 budget_cents: Some(5000),
                 ..Default::default()
@@ -167,7 +164,7 @@ mod tests {
 
         let report = assess_session(&input, &TestProfile);
         let pass_count = report.outcomes.iter().filter(|o| o.decision == GateDecision::Pass).count();
-        assert_eq!(pass_count, 5, "All 5 Dark Factory controls should pass");
+        assert_eq!(pass_count, 4, "All 4 AI-ops controls should pass");
     }
 
     #[test]
@@ -176,13 +173,12 @@ mod tests {
             agent_id: "rogue".into(),
             session_id: "evil-sess".into(),
             actions: vec![
-                ActionInput { tool: "shell".into(), command: "rm -rf /".into(), required_permission: Some("execute:shell".into()) },
+                ActionInput { tool: "shell".into(), command: "rm -rf /".into() },
             ],
             spec: AgentSpec {
                 allowed_paths: vec!["src/*".into()],
                 forbidden_paths: vec![".env".into()],
                 allowed_tools: vec!["cargo".into()],
-                granted_permissions: vec!["execute:build".into()],
                 max_steps: Some(10),
                 budget_cents: Some(100),
                 ..Default::default()
@@ -197,9 +193,10 @@ mod tests {
 
         let report = assess_session(&input, &TestProfile);
         let fail_count = report.outcomes.iter().filter(|o| o.decision == GateDecision::Fail).count();
-        // destructive-action, permission-boundary, spec-conformance should fail
-        // harness-result is NotApplicable (no check_runs) -> Pass
-        assert!(fail_count >= 3, "At least 3 controls should fail, got {fail_count}");
+        // destructive-action + spec-conformance should fail
+        // harness-result is NotApplicable (no check_runs) -> filtered out
+        // privileged_events is empty -> Satisfied
+        assert!(fail_count >= 2, "At least 2 controls should fail, got {fail_count}");
     }
 
     #[test]
