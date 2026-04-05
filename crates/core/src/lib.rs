@@ -4,6 +4,7 @@ pub mod cache;
 pub mod control;
 pub mod controls;
 pub mod coverage;
+pub mod dark_factory;
 pub mod evidence;
 pub mod integrity;
 pub mod linkage;
