@@ -1,4 +1,0 @@
-crates/output/src/lib.rs:25:5: replace parse_format -> Result<Format> with Ok(Default::default())
-crates/output/src/json.rs:24:5: replace filter_result -> VerificationResult with Default::default()
-crates/output/src/json.rs:47:5: replace filter_batch -> BatchReport with Default::default()
-crates/output/src/sarif.rs:56:9: replace && with || in render

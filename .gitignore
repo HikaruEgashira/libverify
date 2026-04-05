@@ -2,3 +2,4 @@
 Cargo.lock
 site/
 mutants.out/
+mutants.out.old/
