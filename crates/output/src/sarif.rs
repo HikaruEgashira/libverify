@@ -391,7 +391,7 @@ mod tests {
 
     #[test]
     fn build_sarif_includes_evidence_gaps() {
-        let mut finding = ControlFinding::indeterminate(
+        let finding = ControlFinding::indeterminate(
             builtin::id(builtin::SOURCE_AUTHENTICITY),
             "missing data",
             vec!["pr:owner/repo#1".to_string()],
