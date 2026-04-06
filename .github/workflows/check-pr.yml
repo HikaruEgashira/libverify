@@ -20,7 +20,7 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.sha }}
-      - uses: HikaruEgashira/gh-verify@56e71f28c2b47c77519afca5c2bf63e2bb8976f4 # v0.14
+      - uses: HikaruEgashira/gh-verify@96203c3dc4be07e27aaf340566ebae2198084310 # v0.19.0
         timeout-minutes: 5
         with:
           command: pr
