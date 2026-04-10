@@ -1,5 +1,7 @@
 pub mod json;
+pub mod matrix;
 pub mod sarif;
+pub mod vanta;
 
 pub use sarif::utc_now_rfc3339;
 
@@ -9,7 +11,9 @@ use libverify_core::assessment::{BatchReport, VerificationResult};
 #[derive(Debug, Clone, Copy)]
 pub enum Format {
     Json,
+    Matrix,
     Sarif,
+    Vanta,
 }
 
 pub struct OutputOptions {
@@ -24,32 +28,38 @@ pub struct OutputOptions {
 pub fn parse_format(s: &str) -> Result<Format> {
     match s {
         "json" => Ok(Format::Json),
+        "matrix" => Ok(Format::Matrix),
         "sarif" => Ok(Format::Sarif),
-        _ => anyhow::bail!("invalid format: {s} (use 'json' or 'sarif')"),
+        "vanta" => Ok(Format::Vanta),
+        _ => anyhow::bail!("invalid format: {s} (use 'json', 'matrix', 'sarif', or 'vanta')"),
     }
 }
 
 pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {
     match opts.format {
         Format::Json => json::render(result, opts.only_failures),
+        Format::Matrix => matrix::render(result, opts.only_failures),
         Format::Sarif => sarif::render(
             result,
             opts.only_failures,
             &opts.tool_name,
             &opts.tool_version,
         ),
+        Format::Vanta => vanta::render(result, opts.only_failures),
     }
 }
 
 pub fn render_batch(opts: &OutputOptions, batch: &BatchReport) -> Result<String> {
     match opts.format {
         Format::Json => json::render_batch(batch, opts.only_failures),
+        Format::Matrix => matrix::render_batch(batch, opts.only_failures),
         Format::Sarif => sarif::render_batch(
             batch,
             opts.only_failures,
             &opts.tool_name,
             &opts.tool_version,
         ),
+        Format::Vanta => vanta::render_batch(batch, opts.only_failures),
     }
 }
 
@@ -94,7 +104,9 @@ mod tests {
     #[test]
     fn parse_format_valid() {
         assert!(matches!(parse_format("json").unwrap(), Format::Json));
+        assert!(matches!(parse_format("matrix").unwrap(), Format::Matrix));
         assert!(matches!(parse_format("sarif").unwrap(), Format::Sarif));
+        assert!(matches!(parse_format("vanta").unwrap(), Format::Vanta));
     }
 
     #[test]
