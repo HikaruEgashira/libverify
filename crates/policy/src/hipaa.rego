@@ -79,6 +79,8 @@ map := {"severity": "warning", "decision": "review", "annotations": {"framework_
 
 # --- Development quality recommended controls ---
 # violated -> review, indeterminate -> review
+# security-policy: enterprises maintain security disclosure via org-level
+# SECURITY.md or internal portals; repo-level absence is not conclusive.
 hipaa_recommended_controls := {
 	"change-request-size",
 	"scoped-change",
@@ -87,6 +89,7 @@ hipaa_recommended_controls := {
 	"merge-commit-policy",
 	"release-asset-attestation",
 	"stale-review",
+	"security-policy",
 }
 
 map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "HIPAA 164.308(a)(8)"}} if {

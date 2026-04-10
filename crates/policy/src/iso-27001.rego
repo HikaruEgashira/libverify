@@ -90,11 +90,14 @@ map := {"severity": "warning", "decision": "review", "annotations": {"framework_
 
 # --- Recommended controls (not directly in Annex A scope) ---
 # violated -> review, indeterminate -> review
+# security-policy: enterprises maintain security disclosure via org-level
+# SECURITY.md or internal portals; repo-level absence is not conclusive.
 iso27001_recommended_controls := {
 	"conventional-title",
 	"merge-commit-policy",
 	"release-asset-attestation",
 	"source-authenticity",
+	"security-policy",
 }
 
 map := {"severity": "warning", "decision": "review", "annotations": {"framework_ref": "ISO 27001 A.8.32"}} if {

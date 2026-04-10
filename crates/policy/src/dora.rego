@@ -81,9 +81,12 @@ map := {"severity": "warning", "decision": "review", "annotations": {"framework_
 
 # --- Recommended controls (not directly in DORA scope) ---
 # violated -> review, indeterminate -> review
+# security-policy: enterprises maintain security disclosure via org-level
+# SECURITY.md or internal portals; repo-level absence is not conclusive.
 dora_recommended_controls := {
 	"description-quality",
 	"conventional-title",
+	"security-policy",
 	"merge-commit-policy",
 	"release-asset-attestation",
 	"scoped-change",

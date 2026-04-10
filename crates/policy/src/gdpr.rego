@@ -93,6 +93,8 @@ map := {"severity": "warning", "decision": "review", "annotations": {"framework_
 
 # --- Development quality recommended controls ---
 # violated -> review, indeterminate -> review
+# security-policy: enterprises maintain security disclosure via org-level
+# SECURITY.md or internal portals; repo-level absence is not conclusive.
 gdpr_recommended_controls := {
 	"change-request-size",
 	"description-quality",
@@ -100,6 +102,7 @@ gdpr_recommended_controls := {
 	"merge-commit-policy",
 	"stale-review",
 	"release-asset-attestation",
+	"security-policy",
 	"source-authenticity",
 }
 
