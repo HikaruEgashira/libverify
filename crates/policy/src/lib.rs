@@ -92,6 +92,26 @@ const PRESETS: &[Preset] = &[
         rego: include_str!("wp29.rego"),
         profile_name: "wp29",
     },
+    Preset {
+        name: "iso-27001",
+        rego: include_str!("iso-27001.rego"),
+        profile_name: "iso-27001",
+    },
+    Preset {
+        name: "hipaa",
+        rego: include_str!("hipaa.rego"),
+        profile_name: "hipaa",
+    },
+    Preset {
+        name: "gdpr",
+        rego: include_str!("gdpr.rego"),
+        profile_name: "gdpr",
+    },
+    Preset {
+        name: "dora",
+        rego: include_str!("dora.rego"),
+        profile_name: "dora",
+    },
 ];
 
 /// Returns the names of all built-in presets.
@@ -285,6 +305,10 @@ mod tests {
                 "tisax",
                 "nist-800-53",
                 "wp29",
+                "iso-27001",
+                "hipaa",
+                "gdpr",
+                "dora",
             ]
         );
     }
@@ -316,6 +340,10 @@ mod tests {
             ("tisax", "tisax"),
             ("nist-800-53", "nist-800-53"),
             ("wp29", "wp29"),
+            ("iso-27001", "iso-27001"),
+            ("hipaa", "hipaa"),
+            ("gdpr", "gdpr"),
+            ("dora", "dora"),
         ];
         for &(preset, expected_name) in expected {
             let profile = OpaProfile::from_preset_or_file(preset).unwrap();
