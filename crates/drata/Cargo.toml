@@ -1,19 +1,18 @@
 [package]
-name = "libverify-output"
+name = "libverify-drata"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 authors.workspace = true
-description = "Output formatters (SARIF, JSON, Matrix, Vanta, Drata) for libverify verification results"
+description = "Drata compliance platform adapter for libverify verification results"
 
 [dependencies]
 libverify-core = { workspace = true }
-libverify-vanta = { workspace = true }
-libverify-drata = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
+reqwest = { workspace = true }
 
 [dev-dependencies]
 libverify-policy = { workspace = true }

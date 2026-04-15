@@ -102,11 +102,29 @@ pub mod builtin {
     pub const PRIVILEGED_WORKFLOW_DETECTION: &str = "privileged-workflow-detection";
     pub const SECURITY_TEST_IN_CI: &str = "security-test-in-ci";
 
+    // Supply Chain Transparency
+    pub const LICENSE_COMPLIANCE: &str = "license-compliance";
+    pub const SBOM_COMPLETENESS: &str = "sbom-completeness";
+
+    // Layer 2: Deterministic Gates
+    pub const HARNESS_GATE: &str = "harness-gate";
+    pub const COVERAGE_THRESHOLD: &str = "coverage-threshold";
+
+    // Container Image Attestation
+    pub const CONTAINER_SIGNATURE: &str = "container-signature";
+    pub const CONTAINER_PROVENANCE: &str = "container-provenance";
+
+    // Layer 3: Behavioral Diff
+    pub const BEHAVIORAL_REGRESSION: &str = "behavioral-regression";
+    pub const DEPLOYMENT_HEALTH: &str = "deployment-health";
+
     // AI-ops (agent execution verification)
     pub const AGENT_SPEC_CONFORMANCE: &str = "agent-spec-conformance";
     pub const PRIVILEGED_OPERATION_AUDIT: &str = "privileged-operation-audit";
+    pub const MCP_SCOPE_CHECK: &str = "mcp-scope-check";
+    pub const NETWORK_EGRESS_AUDIT: &str = "network-egress-audit";
 
-    /// All 34 built-in control IDs.
+    /// All 44 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -140,8 +158,18 @@ pub mod builtin {
         RELEASE_ASSET_ATTESTATION,
         PRIVILEGED_WORKFLOW_DETECTION,
         SECURITY_TEST_IN_CI,
+        LICENSE_COMPLIANCE,
+        SBOM_COMPLETENESS,
+        HARNESS_GATE,
+        COVERAGE_THRESHOLD,
+        CONTAINER_SIGNATURE,
+        CONTAINER_PROVENANCE,
+        BEHAVIORAL_REGRESSION,
+        DEPLOYMENT_HEALTH,
         AGENT_SPEC_CONFORMANCE,
         PRIVILEGED_OPERATION_AUDIT,
+        MCP_SCOPE_CHECK,
+        NETWORK_EGRESS_AUDIT,
     ];
 
     /// Returns a ControlId for a built-in constant.
@@ -383,11 +411,41 @@ pub fn builtin_remediation_hint(id: &str) -> Option<&'static str> {
         builtin::SECURITY_TEST_IN_CI => {
             Some("Add CodeQL or Semgrep to GitHub Actions: github/codeql-action/analyze")
         }
+        builtin::LICENSE_COMPLIANCE => Some(
+            "Review copyleft dependencies (GPL, AGPL, SSPL) and replace with permissively-licensed alternatives or obtain legal approval",
+        ),
+        builtin::SBOM_COMPLETENESS => {
+            Some("Generate SBOM with syft, cyclonedx-cli, or cargo-sbom and attach to releases")
+        }
+        builtin::HARNESS_GATE => {
+            Some("Fix failing CI checks before merging. Run tests locally: cargo test / npm test")
+        }
+        builtin::COVERAGE_THRESHOLD => {
+            Some("Increase test coverage. Current coverage is below the minimum threshold")
+        }
+        builtin::CONTAINER_SIGNATURE => {
+            Some("Sign container images with cosign: cosign sign --yes ghcr.io/owner/repo:tag")
+        }
+        builtin::CONTAINER_PROVENANCE => Some(
+            "Generate SLSA provenance for container images using slsa-framework/slsa-github-generator or ko build --provenance",
+        ),
+        builtin::BEHAVIORAL_REGRESSION => Some(
+            "Investigate metric regressions post-deploy. Consider rolling back if latency increased >10% or error rate increased >5%",
+        ),
+        builtin::DEPLOYMENT_HEALTH => Some(
+            "Service health degraded post-deployment. Error rate exceeds 5% or availability below 99%. Consider immediate rollback",
+        ),
         builtin::AGENT_SPEC_CONFORMANCE => Some(
             "Define allowed_paths, forbidden_paths, and budget in agent spec to constrain agent scope",
         ),
         builtin::PRIVILEGED_OPERATION_AUDIT => Some(
             "Review privileged git operations (force push, admin bypass, tag deletion) and restrict agent permissions",
+        ),
+        builtin::MCP_SCOPE_CHECK => Some(
+            "Restrict MCP tool access in agent spec. Add allowed_tools entries like 'mcp:github/*' or remove forbidden servers",
+        ),
+        builtin::NETWORK_EGRESS_AUDIT => Some(
+            "Review agent network access. Restrict outbound connections in agent spec or network policy",
         ),
         _ => None,
     }
@@ -433,9 +491,23 @@ pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
         builtin::CODE_SCANNING_ALERTS_RESOLVED => &["CC7.1"],
         builtin::RELEASE_ASSET_ATTESTATION => &["PI1.4"],
         builtin::PRIVILEGED_WORKFLOW_DETECTION => &["CC6.1", "CC8.1"],
+        // Supply Chain Transparency
+        builtin::LICENSE_COMPLIANCE => &["CC7.1"],
+        builtin::SBOM_COMPLETENESS => &["CC7.1", "PI1.4"],
+        // Layer 2: Deterministic Gates
+        builtin::HARNESS_GATE => &["CC7.1", "CC8.1"],
+        builtin::COVERAGE_THRESHOLD => &["CC8.1"],
+        // Container Image Attestation
+        builtin::CONTAINER_SIGNATURE => &["PI1.4"],
+        builtin::CONTAINER_PROVENANCE => &["PI1.4"],
+        // Layer 3: Behavioral Diff
+        builtin::BEHAVIORAL_REGRESSION => &["CC7.1"],
+        builtin::DEPLOYMENT_HEALTH => &["CC7.1", "CC7.2"],
         // AI-ops (agent execution verification)
         builtin::AGENT_SPEC_CONFORMANCE => &["CC6.1", "CC8.1"],
         builtin::PRIVILEGED_OPERATION_AUDIT => &["CC6.1", "CC7.2", "CC8.1"],
+        builtin::MCP_SCOPE_CHECK => &["CC6.1", "CC8.1"],
+        builtin::NETWORK_EGRESS_AUDIT => &["CC6.1", "CC6.6"],
         _ => &[],
     }
 }

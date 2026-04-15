@@ -165,6 +165,7 @@ mod tests {
             max_steps,
             budget_cents,
             custom_destructive_patterns: Vec::new(),
+            forbidden_mcp_servers: Vec::new(),
         }
     }
 

@@ -1,3 +1,4 @@
+pub mod drata;
 pub mod json;
 pub mod matrix;
 pub mod sarif;
@@ -10,6 +11,7 @@ use libverify_core::assessment::{BatchReport, VerificationResult};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Format {
+    Drata,
     Json,
     Matrix,
     Sarif,
@@ -27,16 +29,20 @@ pub struct OutputOptions {
 
 pub fn parse_format(s: &str) -> Result<Format> {
     match s {
+        "drata" => Ok(Format::Drata),
         "json" => Ok(Format::Json),
         "matrix" => Ok(Format::Matrix),
         "sarif" => Ok(Format::Sarif),
         "vanta" => Ok(Format::Vanta),
-        _ => anyhow::bail!("invalid format: {s} (use 'json', 'matrix', 'sarif', or 'vanta')"),
+        _ => anyhow::bail!(
+            "invalid format: {s} (use 'drata', 'json', 'matrix', 'sarif', or 'vanta')"
+        ),
     }
 }
 
 pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<String> {
     match opts.format {
+        Format::Drata => drata::render(result, opts.only_failures),
         Format::Json => json::render(result, opts.only_failures),
         Format::Matrix => matrix::render(result, opts.only_failures),
         Format::Sarif => sarif::render(
@@ -51,6 +57,7 @@ pub fn render(opts: &OutputOptions, result: &VerificationResult) -> Result<Strin
 
 pub fn render_batch(opts: &OutputOptions, batch: &BatchReport) -> Result<String> {
     match opts.format {
+        Format::Drata => drata::render_batch(batch, opts.only_failures),
         Format::Json => json::render_batch(batch, opts.only_failures),
         Format::Matrix => matrix::render_batch(batch, opts.only_failures),
         Format::Sarif => sarif::render_batch(
@@ -103,6 +110,7 @@ mod tests {
 
     #[test]
     fn parse_format_valid() {
+        assert!(matches!(parse_format("drata").unwrap(), Format::Drata));
         assert!(matches!(parse_format("json").unwrap(), Format::Json));
         assert!(matches!(parse_format("matrix").unwrap(), Format::Matrix));
         assert!(matches!(parse_format("sarif").unwrap(), Format::Sarif));

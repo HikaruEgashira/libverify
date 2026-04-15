@@ -7,6 +7,8 @@ pub mod controls;
 pub mod coverage;
 pub mod evidence;
 pub mod integrity;
+pub mod junit;
+pub mod license;
 pub mod linkage;
 pub mod profile;
 pub mod registry;

@@ -15,7 +15,7 @@ pub struct AssessmentReport {
 }
 
 /// Assessment report with optional raw evidence bundle for audit trails.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct VerificationResult {
     #[serde(flatten)]
     pub report: AssessmentReport,
@@ -30,7 +30,7 @@ impl VerificationResult {
 }
 
 /// Batch verification report for multiple change requests.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BatchReport {
     pub reports: Vec<BatchEntry>,
     pub total_pass: usize,
@@ -40,7 +40,7 @@ pub struct BatchReport {
 }
 
 /// A single entry in a batch report.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BatchEntry {
     pub subject_id: String,
     #[serde(flatten)]

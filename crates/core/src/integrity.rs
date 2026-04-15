@@ -141,6 +141,36 @@ pub fn dependency_signature_severity(unsigned_count: usize) -> Severity {
     }
 }
 
+// --- Container image attestation predicates ---
+
+/// Core predicate for container signature verification severity (PI1.4).
+/// All signed and count > 0 -> Pass, count == 0 -> NotApplicable (Warning), otherwise -> Error.
+///
+/// Verified by Creusot in `libverify-verif` crate.
+pub fn container_signature_severity(all_signed: bool, count: u32) -> Severity {
+    if count == 0 {
+        Severity::Warning
+    } else if all_signed {
+        Severity::Pass
+    } else {
+        Severity::Error
+    }
+}
+
+/// Core predicate for container provenance severity (PI1.4).
+/// All have provenance and count > 0 -> Pass, count == 0 -> NotApplicable (Warning), otherwise -> Error.
+///
+/// Verified by Creusot in `libverify-verif` crate.
+pub fn container_provenance_severity(all_have_provenance: bool, count: u32) -> Severity {
+    if count == 0 {
+        Severity::Warning
+    } else if all_have_provenance {
+        Severity::Pass
+    } else {
+        Severity::Error
+    }
+}
+
 // --- Compliance control predicates ---
 
 /// Core predicate for stale review severity (CC7.2).
@@ -455,5 +485,33 @@ mod tests {
                 "dependency_signature_severity({count}) should be Error"
             );
         }
+    }
+
+    // --- Container image attestation predicate tests ---
+
+    #[test]
+    fn container_signature_severity_equivalence() {
+        // No images -> Warning (NotApplicable at control level)
+        assert_eq!(container_signature_severity(true, 0), Severity::Warning);
+        assert_eq!(container_signature_severity(false, 0), Severity::Warning);
+        // All signed -> Pass
+        assert_eq!(container_signature_severity(true, 1), Severity::Pass);
+        assert_eq!(container_signature_severity(true, 5), Severity::Pass);
+        // Not all signed -> Error
+        assert_eq!(container_signature_severity(false, 1), Severity::Error);
+        assert_eq!(container_signature_severity(false, 10), Severity::Error);
+    }
+
+    #[test]
+    fn container_provenance_severity_equivalence() {
+        // No images -> Warning (NotApplicable at control level)
+        assert_eq!(container_provenance_severity(true, 0), Severity::Warning);
+        assert_eq!(container_provenance_severity(false, 0), Severity::Warning);
+        // All have provenance -> Pass
+        assert_eq!(container_provenance_severity(true, 1), Severity::Pass);
+        assert_eq!(container_provenance_severity(true, 5), Severity::Pass);
+        // Missing provenance -> Error
+        assert_eq!(container_provenance_severity(false, 1), Severity::Error);
+        assert_eq!(container_provenance_severity(false, 10), Severity::Error);
     }
 }

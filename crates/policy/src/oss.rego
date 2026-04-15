@@ -65,6 +65,9 @@ oss_review_on_violated := {
 	"release-asset-attestation",
 	"privileged-workflow-detection",
 	"security-test-in-ci",
+	# Supply chain transparency (SBOM/license tooling may not be configured in OSS)
+	"license-compliance",
+	"sbom-completeness",
 }
 
 map := {"severity": "warning", "decision": "review"} if {
@@ -107,6 +110,9 @@ oss_review_on_indeterminate := {
 	"release-asset-attestation",
 	"privileged-workflow-detection",
 	"security-test-in-ci",
+	# Supply chain transparency
+	"license-compliance",
+	"sbom-completeness",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

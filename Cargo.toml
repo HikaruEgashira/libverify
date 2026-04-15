@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/core", "crates/policy", "crates/output", "crates/github", "crates/gitlab", "crates/vanta", "crates/verif", "crates/gen-docs"]
+members = ["crates/core", "crates/policy", "crates/output", "crates/github", "crates/gitlab", "crates/vanta", "crates/drata", "crates/verif", "crates/gen-docs"]
 resolver = "2"
 
 [workspace.package]
@@ -15,6 +15,7 @@ libverify-policy = { path = "crates/policy", version = "0.12.0" }
 libverify-github = { path = "crates/github", version = "0.12.0" }
 libverify-gitlab = { path = "crates/gitlab", version = "0.12.0" }
 libverify-vanta = { path = "crates/vanta", version = "0.12.0" }
+libverify-drata = { path = "crates/drata", version = "0.12.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 anyhow = "1"

@@ -616,6 +616,9 @@ pub struct AgentSpec {
     /// Extends the built-in default set in `PrivilegedOperationAuditControl`.
     #[serde(default)]
     pub custom_destructive_patterns: Vec<String>,
+    /// MCP servers whose tool calls are always forbidden (e.g. "database", "admin").
+    #[serde(default)]
+    pub forbidden_mcp_servers: Vec<String>,
 }
 
 /// Record of what an agent actually did (Layer 1).
@@ -631,6 +634,24 @@ pub struct AgentExecution {
     pub steps_taken: u32,
     #[serde(default)]
     pub cost_cents: u32,
+}
+
+/// A single MCP tool call made by an agent (Layer 4 enhancement).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct McpToolCall {
+    /// MCP server name (e.g. "github", "filesystem", "database").
+    pub server: String,
+    /// Tool name (e.g. "create_pull_request", "write_file", "execute_query").
+    pub tool: String,
+    /// Whether the call succeeded.
+    #[serde(default)]
+    pub success: bool,
+    /// Call timestamp (ISO 8601).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    /// Duration in milliseconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<u64>,
 }
 
 /// A structured git/platform event for privileged operation auditing.
@@ -673,8 +694,111 @@ impl PrivilegedAction {
     }
 }
 
+/// Result of a single test/harness execution (Layer 2: Deterministic Gates).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct HarnessResult {
+    /// Harness name (e.g. "unit-tests", "integration-tests", "lint", "typecheck").
+    pub name: String,
+    /// Whether the harness passed.
+    pub passed: bool,
+    /// Total number of test cases (if applicable).
+    #[serde(default)]
+    pub total: u32,
+    /// Number of passed test cases.
+    #[serde(default)]
+    pub passed_count: u32,
+    /// Number of failed test cases.
+    #[serde(default)]
+    pub failed_count: u32,
+    /// Number of skipped test cases.
+    #[serde(default)]
+    pub skipped_count: u32,
+    /// Execution duration in seconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_secs: Option<f64>,
+    /// Source format (e.g. "junit-xml", "tap", "custom").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_format: Option<String>,
+}
+
+/// Line/branch coverage metrics from a coverage report (Layer 2).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CoverageReport {
+    /// Coverage percentage (0.0 - 100.0).
+    pub line_coverage_pct: f64,
+    /// Total lines instrumented.
+    #[serde(default)]
+    pub lines_total: u32,
+    /// Lines covered.
+    #[serde(default)]
+    pub lines_covered: u32,
+    /// Branch coverage percentage (optional).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branch_coverage_pct: Option<f64>,
+    /// Source format (e.g. "lcov", "cobertura", "clover").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_format: Option<String>,
+}
+
+/// Evidence for a container image's provenance and signature status.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ContainerImageEvidence {
+    /// Full image reference (e.g. "ghcr.io/owner/repo:v1.0.0").
+    pub reference: String,
+    /// Image digest (e.g. "sha256:abcdef...").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
+    /// Whether a cosign signature was found and verified.
+    pub signature_verified: bool,
+    /// Whether SLSA provenance attestation exists.
+    pub provenance_present: bool,
+    /// Whether SBOM attestation exists.
+    #[serde(default)]
+    pub sbom_present: bool,
+    /// Signer identity (e.g. OIDC subject from Fulcio cert).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signer_identity: Option<String>,
+    /// Source repository from provenance.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_repo: Option<String>,
+    /// Verification outcome (reuse existing VerificationOutcome).
+    pub verification: VerificationOutcome,
+}
+
+/// A single metric observation for behavioral comparison (Layer 3).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MetricObservation {
+    /// Metric name (e.g. "http_request_duration_p99", "error_rate_5xx").
+    pub name: String,
+    /// Current (post-deploy) value.
+    pub current: f64,
+    /// Baseline (pre-deploy) value.
+    pub baseline: f64,
+    /// Unit of measurement (e.g. "ms", "percent", "count/sec").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    /// Observation window in seconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub window_secs: Option<u64>,
+}
+
+/// Behavioral diff evidence comparing pre-deploy and post-deploy metrics (Layer 3).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BehavioralDiff {
+    /// Deployment identifier (e.g. commit SHA, release tag).
+    pub deployment_id: String,
+    /// Environment (e.g. "production", "staging", "canary").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub environment: Option<String>,
+    /// Metric observations comparing baseline to current.
+    pub metrics: Vec<MetricObservation>,
+    /// Observation timestamp (ISO 8601).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub observed_at: Option<String>,
+}
+
 /// Top-level container for all evidence collected from adapters.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct EvidenceBundle {
     pub change_requests: Vec<GovernedChange>,
     pub promotion_batches: Vec<PromotionBatch>,
@@ -684,6 +808,9 @@ pub struct EvidenceBundle {
     pub dependency_signatures: EvidenceState<Vec<DependencySignatureEvidence>>,
     #[serde(default)]
     pub repository_posture: EvidenceState<RepositoryPosture>,
+    // Container image attestation evidence
+    #[serde(default)]
+    pub container_images: EvidenceState<Vec<ContainerImageEvidence>>,
     // Dark Factory evidence (Layers 1, 4)
     #[serde(default)]
     pub agent_action_log: EvidenceState<AgentActionLog>,
@@ -693,4 +820,14 @@ pub struct EvidenceBundle {
     pub agent_execution: EvidenceState<AgentExecution>,
     #[serde(default)]
     pub privileged_git_events: EvidenceState<Vec<PrivilegedGitEvent>>,
+    #[serde(default)]
+    pub mcp_tool_calls: EvidenceState<Vec<McpToolCall>>,
+    // Layer 2: Deterministic Gates
+    #[serde(default)]
+    pub harness_results: EvidenceState<Vec<HarnessResult>>,
+    #[serde(default)]
+    pub coverage_report: EvidenceState<CoverageReport>,
+    // Layer 3: Behavioral Diff
+    #[serde(default)]
+    pub behavioral_diff: EvidenceState<BehavioralDiff>,
 }

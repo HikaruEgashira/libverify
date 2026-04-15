@@ -265,6 +265,38 @@ pub fn release_traceability_severity(linked_cr_count: usize) -> Severity {
     }
 }
 
+// --- Layer 2: Deterministic Gates predicates ---
+
+/// Harness gate severity.
+///
+/// Pass iff all harnesses passed and at least one harness ran.
+/// Error if any harness failed. Indeterminate (Warning) if no harnesses ran.
+#[ensures(all_passed && count > 0u32 ==> result == Severity::Pass)]
+#[ensures(count == 0u32 ==> result == Severity::Warning)]
+#[ensures(!all_passed && count > 0u32 ==> result == Severity::Error)]
+pub fn harness_gate_severity(all_passed: bool, count: u32) -> Severity {
+    if count == 0 {
+        Severity::Warning
+    } else if all_passed {
+        Severity::Pass
+    } else {
+        Severity::Error
+    }
+}
+
+/// Coverage threshold severity.
+///
+/// Pass iff coverage percentage meets or exceeds the threshold.
+#[ensures(pct >= threshold ==> result == Severity::Pass)]
+#[ensures(pct < threshold ==> result == Severity::Error)]
+pub fn coverage_threshold_severity(pct: u64, threshold: u64) -> Severity {
+    if pct >= threshold {
+        Severity::Pass
+    } else {
+        Severity::Error
+    }
+}
+
 // --- AI-ops control predicates ---
 
 /// Agent spec conformance severity.
@@ -291,4 +323,93 @@ pub fn privileged_operation_audit_severity(event_count: usize) -> Severity {
     } else {
         Severity::Error
     }
+}
+
+// --- Supply chain transparency predicates ---
+
+/// License compliance severity (CC7.1).
+///
+/// Pass iff zero copyleft dependencies detected; Error otherwise.
+#[ensures(copyleft_count == 0u32 ==> result == 0u8)]
+#[ensures(copyleft_count >= 1u32 ==> result == 1u8)]
+pub fn license_compliance_severity(copyleft_count: u32) -> u8 {
+    if copyleft_count == 0 { 0u8 } else { 1u8 }
+}
+
+/// SBOM completeness severity (CC7.1 / PI1.4).
+///
+/// Pass iff SBOM is present in the release; Error otherwise.
+#[ensures(result == if has_sbom { 0u8 } else { 1u8 })]
+pub fn sbom_completeness_severity(has_sbom: bool) -> u8 {
+    if has_sbom { 0u8 } else { 1u8 }
+}
+
+// --- Container image attestation predicates ---
+
+/// Container signature severity (PI1.4).
+///
+/// 0 (Pass) iff all images are signed and at least one exists.
+/// 2 (NotApplicable) if no images exist.
+/// 1 (Error) otherwise.
+#[ensures(result == if all_signed && count > 0u32 { 0u8 } else if count == 0u32 { 2u8 } else { 1u8 })]
+pub fn container_signature_severity(all_signed: bool, count: u32) -> u8 {
+    if count == 0 {
+        2u8
+    } else if all_signed {
+        0u8
+    } else {
+        1u8
+    }
+}
+
+/// Container provenance severity (PI1.4).
+///
+/// 0 (Pass) iff all images have provenance and at least one exists.
+/// 2 (NotApplicable) if no images exist.
+/// 1 (Error) otherwise.
+#[ensures(result == if all_have_provenance && count > 0u32 { 0u8 } else if count == 0u32 { 2u8 } else { 1u8 })]
+pub fn container_provenance_severity(all_have_provenance: bool, count: u32) -> u8 {
+    if count == 0 {
+        2u8
+    } else if all_have_provenance {
+        0u8
+    } else {
+        1u8
+    }
+}
+
+// --- Layer 3: Behavioral Diff predicates ---
+
+/// Behavioral regression severity (CC7.1).
+///
+/// 0 (Pass) iff no regressions detected; 1 (Error) otherwise.
+#[ensures(result == if regression_count == 0u32 { 0u8 } else { 1u8 })]
+pub fn behavioral_regression_severity(regression_count: u32) -> u8 {
+    if regression_count == 0 { 0u8 } else { 1u8 }
+}
+
+/// Deployment health severity (CC7.1 / CC7.2).
+///
+/// 0 (Pass) iff deployment is healthy; 1 (Error) otherwise.
+#[ensures(result == if is_healthy { 0u8 } else { 1u8 })]
+pub fn deployment_health_severity(is_healthy: bool) -> u8 {
+    if is_healthy { 0u8 } else { 1u8 }
+}
+
+// --- MCP / Network egress predicates ---
+
+/// MCP scope check severity (CC6.1 / CC8.1).
+///
+/// Pass iff zero MCP tool calls are outside allowed scope; Error otherwise.
+#[ensures(result == if violations == 0u32 { 0u8 } else { 1u8 })]
+pub fn mcp_scope_severity(violations: u32) -> u8 {
+    if violations == 0 { 0u8 } else { 1u8 }
+}
+
+/// Network egress audit severity (CC6.1 / CC6.6).
+///
+/// Pass iff zero network egress operations detected; Error otherwise.
+#[ensures(result == if egress_count == 0u32 { 0u8 } else { 1u8 })]
+pub fn network_egress_severity(egress_count: u32) -> u8 {
+    if egress_count == 0 { 0u8 } else { 1u8 }
 }

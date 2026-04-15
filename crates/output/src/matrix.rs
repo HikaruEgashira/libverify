@@ -63,12 +63,7 @@ pub fn render(result: &VerificationResult, only_failures: bool) -> Result<String
         let rationale = outcome.rationale.replace('|', "\\|");
         out.push_str(&format!(
             "| {} | {} | {} {} | {} | {} |\n",
-            outcome.control_id,
-            status,
-            icon,
-            outcome.decision,
-            framework_ref,
-            rationale,
+            outcome.control_id, status, icon, outcome.decision, framework_ref, rationale,
         ));
     }
 
@@ -109,7 +104,11 @@ pub fn render_batch(batch: &BatchReport, only_failures: bool) -> Result<String> 
         .collect();
     control_ids.sort_by_key(|id| sort_key(*worst.get(id).unwrap()));
 
-    let subject_ids: Vec<&str> = batch.reports.iter().map(|e| e.subject_id.as_str()).collect();
+    let subject_ids: Vec<&str> = batch
+        .reports
+        .iter()
+        .map(|e| e.subject_id.as_str())
+        .collect();
 
     out.push_str("| Control");
     for sid in &subject_ids {

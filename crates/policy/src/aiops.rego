@@ -44,6 +44,8 @@ map := {"severity": "warning", "decision": "review"} if {
 aiops_agent_safety := {
 	"agent-spec-conformance",
 	"privileged-operation-audit",
+	"mcp-scope-check",
+	"network-egress-audit",
 }
 
 map := {"severity": "error", "decision": "fail"} if {

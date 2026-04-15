@@ -1,4 +1,5 @@
 pub mod agent_spec_conformance;
+pub mod behavioral_regression;
 pub mod branch_history_integrity;
 pub mod branch_protection_enforcement;
 pub mod build_isolation;
@@ -6,15 +7,23 @@ pub mod build_provenance;
 pub mod change_request_size;
 pub mod code_scanning_alerts_resolved;
 pub mod codeowners_coverage;
+pub mod container_provenance;
+pub mod container_signature;
 pub mod conventional_title;
+pub mod coverage_threshold;
 pub mod dependency_completeness;
 pub mod dependency_provenance;
 pub mod dependency_signature;
 pub mod dependency_signer_verified;
+pub mod deployment_health;
 pub mod description_quality;
+pub mod harness_gate;
 pub mod hosted_build_platform;
 pub mod issue_linkage;
+pub mod license_compliance;
+pub mod mcp_scope_check;
 pub mod merge_commit_policy;
+pub mod network_egress_audit;
 pub mod privileged_operation_audit;
 pub mod privileged_workflow_detection;
 pub mod provenance_authenticity;
@@ -22,6 +31,7 @@ pub mod release_asset_attestation;
 pub mod release_traceability;
 pub mod required_status_checks;
 pub mod review_independence;
+pub mod sbom_completeness;
 pub mod scoped_change;
 pub mod secret_scanning;
 pub mod security_file_change;
@@ -35,7 +45,11 @@ pub mod vulnerability_scanning;
 use crate::control::{Control, builtin};
 use crate::slsa::{SlsaLevel, SlsaTrack};
 
+use self::container_provenance::ContainerProvenanceControl;
+use self::container_signature::ContainerSignatureControl;
+
 use self::agent_spec_conformance::AgentSpecConformanceControl;
+use self::behavioral_regression::BehavioralRegressionControl;
 use self::branch_history_integrity::BranchHistoryIntegrityControl;
 use self::branch_protection_enforcement::BranchProtectionEnforcementControl;
 use self::build_isolation::BuildIsolationControl;
@@ -44,14 +58,20 @@ use self::change_request_size::ChangeRequestSizeControl;
 use self::code_scanning_alerts_resolved::CodeScanningAlertsResolvedControl;
 use self::codeowners_coverage::CodeownersCoverageControl;
 use self::conventional_title::ConventionalTitleControl;
+use self::coverage_threshold::CoverageThresholdControl;
 use self::dependency_completeness::DependencyCompletenessControl;
 use self::dependency_provenance::DependencyProvenanceControl;
 use self::dependency_signature::DependencySignatureControl;
 use self::dependency_signer_verified::DependencySignerVerifiedControl;
+use self::deployment_health::DeploymentHealthControl;
 use self::description_quality::DescriptionQualityControl;
+use self::harness_gate::HarnessGateControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
 use self::issue_linkage::IssueLinkageControl;
+use self::license_compliance::LicenseComplianceControl;
+use self::mcp_scope_check::McpScopeCheckControl;
 use self::merge_commit_policy::MergeCommitPolicyControl;
+use self::network_egress_audit::NetworkEgressAuditControl;
 use self::privileged_operation_audit::PrivilegedOperationAuditControl;
 use self::privileged_workflow_detection::PrivilegedWorkflowDetectionControl;
 use self::provenance_authenticity::ProvenanceAuthenticityControl;
@@ -59,6 +79,7 @@ use self::release_asset_attestation::ReleaseAssetAttestationControl;
 use self::release_traceability::ReleaseTraceabilityControl;
 use self::required_status_checks::RequiredStatusChecksControl;
 use self::review_independence::ReviewIndependenceControl;
+use self::sbom_completeness::SbomCompletenessControl;
 use self::scoped_change::ScopedChangeControl;
 use self::secret_scanning::SecretScanningControl;
 use self::security_file_change::SecurityFileChangeControl;
@@ -108,8 +129,18 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
             Some(Box::new(PrivilegedWorkflowDetectionControl))
         }
         builtin::SECURITY_TEST_IN_CI => Some(Box::new(SecurityTestInCiControl)),
+        builtin::LICENSE_COMPLIANCE => Some(Box::new(LicenseComplianceControl)),
+        builtin::SBOM_COMPLETENESS => Some(Box::new(SbomCompletenessControl)),
         builtin::AGENT_SPEC_CONFORMANCE => Some(Box::new(AgentSpecConformanceControl)),
         builtin::PRIVILEGED_OPERATION_AUDIT => Some(Box::new(PrivilegedOperationAuditControl)),
+        builtin::MCP_SCOPE_CHECK => Some(Box::new(McpScopeCheckControl)),
+        builtin::NETWORK_EGRESS_AUDIT => Some(Box::new(NetworkEgressAuditControl)),
+        builtin::HARNESS_GATE => Some(Box::new(HarnessGateControl)),
+        builtin::COVERAGE_THRESHOLD => Some(Box::new(CoverageThresholdControl)),
+        builtin::CONTAINER_SIGNATURE => Some(Box::new(ContainerSignatureControl)),
+        builtin::CONTAINER_PROVENANCE => Some(Box::new(ContainerProvenanceControl)),
+        builtin::BEHAVIORAL_REGRESSION => Some(Box::new(BehavioralRegressionControl)),
+        builtin::DEPLOYMENT_HEALTH => Some(Box::new(DeploymentHealthControl)),
         _ => None,
     }
 }
@@ -169,6 +200,14 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(ReleaseAssetAttestationControl),
         Box::new(PrivilegedWorkflowDetectionControl),
         Box::new(SecurityTestInCiControl),
+        Box::new(LicenseComplianceControl),
+        Box::new(SbomCompletenessControl),
+        Box::new(HarnessGateControl),
+        Box::new(CoverageThresholdControl),
+        Box::new(ContainerSignatureControl),
+        Box::new(ContainerProvenanceControl),
+        Box::new(BehavioralRegressionControl),
+        Box::new(DeploymentHealthControl),
     ]
 }
 
@@ -186,6 +225,8 @@ pub fn posture_controls() -> Vec<Box<dyn Control>> {
         Box::new(ReleaseAssetAttestationControl),
         Box::new(PrivilegedWorkflowDetectionControl),
         Box::new(SecurityTestInCiControl),
+        Box::new(LicenseComplianceControl),
+        Box::new(SbomCompletenessControl),
     ]
 }
 
@@ -194,6 +235,8 @@ pub fn aiops_controls() -> Vec<Box<dyn Control>> {
     vec![
         Box::new(AgentSpecConformanceControl),
         Box::new(PrivilegedOperationAuditControl),
+        Box::new(McpScopeCheckControl),
+        Box::new(NetworkEgressAuditControl),
     ]
 }
 
@@ -369,7 +412,9 @@ mod tests {
                 || desc.to_lowercase().contains("sbom")
                 || desc.to_lowercase().contains("attest")
                 || desc.to_lowercase().contains("owner")
-                || desc.to_lowercase().contains("provenance");
+                || desc.to_lowercase().contains("provenance")
+                || desc.to_lowercase().contains("deploy")
+                || desc.to_lowercase().contains("metric");
             assert!(
                 has_relevant_keyword,
                 "control {} description '{}' lacks a relevant keyword",

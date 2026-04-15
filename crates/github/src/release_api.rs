@@ -25,6 +25,18 @@ pub fn compare_refs(
     Ok(response.commits)
 }
 
+/// SBOM asset filename patterns. A release is considered to have an SBOM
+/// if any asset name matches one of these patterns (case-insensitive).
+const SBOM_PATTERNS: &[&str] = &[".spdx.json", ".cdx.json", "sbom"];
+
+/// Returns true if any release asset matches known SBOM filename patterns.
+pub fn has_sbom_asset(assets: &[ReleaseAsset]) -> bool {
+    assets.iter().any(|asset| {
+        let lower = asset.name.to_ascii_lowercase();
+        SBOM_PATTERNS.iter().any(|pattern| lower.contains(pattern))
+    })
+}
+
 /// Fetch release assets for a given tag.
 ///
 /// Returns an empty vec if the tag has no associated release (e.g. lightweight tag).

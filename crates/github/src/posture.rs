@@ -116,6 +116,14 @@ pub fn collect_repository_posture(
             }
         };
 
+    // TODO: Populate copyleft_dependencies from GitHub License API or SBOM parser.
+    // The license-compliance control evaluates this field against known copyleft SPDX IDs.
+    // Until integrated, the field defaults to empty (no copyleft deps detected).
+
+    // TODO: Populate release_has_sbom from release assets (detect *.spdx.json, *.cdx.json, *sbom*).
+    // The sbom-completeness control checks this field. Until integrated with the release API,
+    // the field defaults to false.
+
     let posture = RepositoryPosture {
         codeowners_entries,
         security_analysis_available,

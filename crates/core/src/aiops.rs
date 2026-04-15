@@ -76,8 +76,8 @@ pub fn build_evidence(input: &SessionInput) -> EvidenceBundle {
 
 /// Assess an agent session against AI-ops controls.
 ///
-/// Returns findings from the 2 AI-ops controls
-/// (agent-spec-conformance, privileged-operation-audit).
+/// Returns findings from the 4 AI-ops controls
+/// (agent-spec-conformance, privileged-operation-audit, mcp-scope-check, network-egress-audit).
 ///
 /// Use with an OPA profile for gate decisions:
 /// ```ignore
@@ -188,7 +188,7 @@ mod tests {
             .iter()
             .filter(|o| o.decision == GateDecision::Pass)
             .count();
-        assert_eq!(pass_count, 2, "All 2 AI-ops controls should pass");
+        assert_eq!(pass_count, 4, "All 4 AI-ops controls should pass");
     }
 
     #[test]
