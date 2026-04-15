@@ -81,8 +81,6 @@ soc2_enterprise_advisory_controls := {
 	"sbom-completeness",
 	"container-signature",
 	"container-provenance",
-	"behavioral-regression",
-	"deployment-health",
 }
 
 map := {"severity": "warning", "decision": "review"} if {

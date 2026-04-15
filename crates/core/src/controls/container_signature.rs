@@ -19,7 +19,7 @@ impl Control for ContainerSignatureControl {
     }
 
     fn description(&self) -> &'static str {
-        "Container images must have verified signatures (cosign/Sigstore)"
+        "Container images must have verified signatures (requires external evidence)"
     }
 
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {

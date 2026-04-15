@@ -4,7 +4,9 @@
 //! CODEOWNERS, SECURITY.md, secret scanning, vulnerability scanning,
 //! and branch protection settings.
 
-use libverify_core::evidence::{CodeownersEntry, EvidenceGap, EvidenceState, RepositoryPosture};
+use libverify_core::evidence::{
+    CodeownersEntry, CopyleftDependency, EvidenceGap, EvidenceState, RepositoryPosture,
+};
 
 use crate::client::GitHubClient;
 
@@ -49,6 +51,7 @@ pub fn collect_repository_posture(
         dep_tool,
         permissions_result,
         tag_protection,
+        copyleft_deps,
     ) = std::thread::scope(|s| {
         let h_codeowners = s.spawn(|| collect_codeowners(client, owner, repo, ref_sha));
         let h_security = s.spawn(|| collect_security_policy(client, owner, repo, ref_sha));
@@ -56,6 +59,7 @@ pub fn collect_repository_posture(
         let h_dep_tool = s.spawn(|| collect_dependency_update_tool(client, owner, repo, ref_sha));
         let h_permissions = s.spawn(|| collect_permissions_info(client, owner, repo));
         let h_tag = s.spawn(|| collect_tag_protection(client, owner, repo));
+        let h_copyleft = s.spawn(|| collect_copyleft_dependencies(client, owner, repo));
 
         (
             h_codeowners.join().unwrap(),
@@ -64,6 +68,7 @@ pub fn collect_repository_posture(
             h_dep_tool.join().unwrap(),
             h_permissions.join().unwrap(),
             h_tag.join().unwrap(),
+            h_copyleft.join().unwrap(),
         )
     });
 
@@ -116,14 +121,6 @@ pub fn collect_repository_posture(
             }
         };
 
-    // TODO: Populate copyleft_dependencies from GitHub License API or SBOM parser.
-    // The license-compliance control evaluates this field against known copyleft SPDX IDs.
-    // Until integrated, the field defaults to empty (no copyleft deps detected).
-
-    // TODO: Populate release_has_sbom from release assets (detect *.spdx.json, *.cdx.json, *sbom*).
-    // The sbom-completeness control checks this field. Until integrated with the release API,
-    // the field defaults to false.
-
     let posture = RepositoryPosture {
         codeowners_entries,
         security_analysis_available,
@@ -141,6 +138,7 @@ pub fn collect_repository_posture(
         admin_count,
         direct_collaborator_count,
         tag_protection_enabled: tag_protection,
+        copyleft_dependencies: copyleft_deps,
         ..Default::default()
     };
 
@@ -414,6 +412,55 @@ fn collect_permissions_info(
         admin_count,
         direct_collaborator_count,
     })
+}
+
+/// Collect copyleft dependencies from the GitHub dependency graph SBOM API.
+///
+/// Queries `GET /repos/{owner}/{repo}/dependency-graph/sbom` and checks each
+/// package's `licenseConcluded` against the copyleft classifier. Returns an
+/// empty vec when the API is unavailable or the response cannot be parsed.
+fn collect_copyleft_dependencies(
+    client: &GitHubClient,
+    owner: &str,
+    repo: &str,
+) -> Vec<CopyleftDependency> {
+    let path = format!("/repos/{owner}/{repo}/dependency-graph/sbom");
+    let body = match client.get(&path) {
+        Ok(b) => b,
+        Err(_) => return Vec::new(),
+    };
+
+    let sbom: serde_json::Value = match serde_json::from_str(&body) {
+        Ok(v) => v,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut copyleft = Vec::new();
+    if let Some(packages) = sbom
+        .get("sbom")
+        .and_then(|s| s.get("packages"))
+        .and_then(|p| p.as_array())
+    {
+        for pkg in packages {
+            let name = pkg.get("name").and_then(|n| n.as_str()).unwrap_or("");
+            let license = pkg
+                .get("licenseConcluded")
+                .and_then(|l| l.as_str())
+                .unwrap_or("NOASSERTION");
+
+            if license == "NOASSERTION" || name.is_empty() {
+                continue;
+            }
+
+            if libverify_core::license::is_copyleft(license) {
+                copyleft.push(CopyleftDependency {
+                    name: name.to_string(),
+                    license: license.to_string(),
+                });
+            }
+        }
+    }
+    copyleft
 }
 
 /// Check whether tag protection rules exist.

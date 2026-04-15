@@ -378,24 +378,6 @@ pub fn container_provenance_severity(all_have_provenance: bool, count: u32) -> u
     }
 }
 
-// --- Layer 3: Behavioral Diff predicates ---
-
-/// Behavioral regression severity (CC7.1).
-///
-/// 0 (Pass) iff no regressions detected; 1 (Error) otherwise.
-#[ensures(result == if regression_count == 0u32 { 0u8 } else { 1u8 })]
-pub fn behavioral_regression_severity(regression_count: u32) -> u8 {
-    if regression_count == 0 { 0u8 } else { 1u8 }
-}
-
-/// Deployment health severity (CC7.1 / CC7.2).
-///
-/// 0 (Pass) iff deployment is healthy; 1 (Error) otherwise.
-#[ensures(result == if is_healthy { 0u8 } else { 1u8 })]
-pub fn deployment_health_severity(is_healthy: bool) -> u8 {
-    if is_healthy { 0u8 } else { 1u8 }
-}
-
 // --- MCP / Network egress predicates ---
 
 /// MCP scope check severity (CC6.1 / CC8.1).

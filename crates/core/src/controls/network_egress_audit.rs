@@ -39,7 +39,7 @@ impl Control for NetworkEgressAuditControl {
     }
 
     fn description(&self) -> &'static str {
-        "Agent network egress must be audited for unexpected external communications"
+        "Agent network egress must be audited (requires agent execution log)"
     }
 
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {

@@ -114,17 +114,13 @@ pub mod builtin {
     pub const CONTAINER_SIGNATURE: &str = "container-signature";
     pub const CONTAINER_PROVENANCE: &str = "container-provenance";
 
-    // Layer 3: Behavioral Diff
-    pub const BEHAVIORAL_REGRESSION: &str = "behavioral-regression";
-    pub const DEPLOYMENT_HEALTH: &str = "deployment-health";
-
     // AI-ops (agent execution verification)
     pub const AGENT_SPEC_CONFORMANCE: &str = "agent-spec-conformance";
     pub const PRIVILEGED_OPERATION_AUDIT: &str = "privileged-operation-audit";
     pub const MCP_SCOPE_CHECK: &str = "mcp-scope-check";
     pub const NETWORK_EGRESS_AUDIT: &str = "network-egress-audit";
 
-    /// All 44 built-in control IDs.
+    /// All 42 built-in control IDs.
     pub const ALL: &[&str] = &[
         SOURCE_AUTHENTICITY,
         REVIEW_INDEPENDENCE,
@@ -164,8 +160,6 @@ pub mod builtin {
         COVERAGE_THRESHOLD,
         CONTAINER_SIGNATURE,
         CONTAINER_PROVENANCE,
-        BEHAVIORAL_REGRESSION,
-        DEPLOYMENT_HEALTH,
         AGENT_SPEC_CONFORMANCE,
         PRIVILEGED_OPERATION_AUDIT,
         MCP_SCOPE_CHECK,
@@ -429,12 +423,6 @@ pub fn builtin_remediation_hint(id: &str) -> Option<&'static str> {
         builtin::CONTAINER_PROVENANCE => Some(
             "Generate SLSA provenance for container images using slsa-framework/slsa-github-generator or ko build --provenance",
         ),
-        builtin::BEHAVIORAL_REGRESSION => Some(
-            "Investigate metric regressions post-deploy. Consider rolling back if latency increased >10% or error rate increased >5%",
-        ),
-        builtin::DEPLOYMENT_HEALTH => Some(
-            "Service health degraded post-deployment. Error rate exceeds 5% or availability below 99%. Consider immediate rollback",
-        ),
         builtin::AGENT_SPEC_CONFORMANCE => Some(
             "Define allowed_paths, forbidden_paths, and budget in agent spec to constrain agent scope",
         ),
@@ -500,9 +488,6 @@ pub fn builtin_tsc_mapping(id: &str) -> &'static [&'static str] {
         // Container Image Attestation
         builtin::CONTAINER_SIGNATURE => &["PI1.4"],
         builtin::CONTAINER_PROVENANCE => &["PI1.4"],
-        // Layer 3: Behavioral Diff
-        builtin::BEHAVIORAL_REGRESSION => &["CC7.1"],
-        builtin::DEPLOYMENT_HEALTH => &["CC7.1", "CC7.2"],
         // AI-ops (agent execution verification)
         builtin::AGENT_SPEC_CONFORMANCE => &["CC6.1", "CC8.1"],
         builtin::PRIVILEGED_OPERATION_AUDIT => &["CC6.1", "CC7.2", "CC8.1"],

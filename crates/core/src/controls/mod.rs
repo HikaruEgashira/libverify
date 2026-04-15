@@ -1,5 +1,4 @@
 pub mod agent_spec_conformance;
-pub mod behavioral_regression;
 pub mod branch_history_integrity;
 pub mod branch_protection_enforcement;
 pub mod build_isolation;
@@ -15,7 +14,6 @@ pub mod dependency_completeness;
 pub mod dependency_provenance;
 pub mod dependency_signature;
 pub mod dependency_signer_verified;
-pub mod deployment_health;
 pub mod description_quality;
 pub mod harness_gate;
 pub mod hosted_build_platform;
@@ -49,7 +47,6 @@ use self::container_provenance::ContainerProvenanceControl;
 use self::container_signature::ContainerSignatureControl;
 
 use self::agent_spec_conformance::AgentSpecConformanceControl;
-use self::behavioral_regression::BehavioralRegressionControl;
 use self::branch_history_integrity::BranchHistoryIntegrityControl;
 use self::branch_protection_enforcement::BranchProtectionEnforcementControl;
 use self::build_isolation::BuildIsolationControl;
@@ -63,7 +60,6 @@ use self::dependency_completeness::DependencyCompletenessControl;
 use self::dependency_provenance::DependencyProvenanceControl;
 use self::dependency_signature::DependencySignatureControl;
 use self::dependency_signer_verified::DependencySignerVerifiedControl;
-use self::deployment_health::DeploymentHealthControl;
 use self::description_quality::DescriptionQualityControl;
 use self::harness_gate::HarnessGateControl;
 use self::hosted_build_platform::HostedBuildPlatformControl;
@@ -139,8 +135,6 @@ fn instantiate(id: &str) -> Option<Box<dyn Control>> {
         builtin::COVERAGE_THRESHOLD => Some(Box::new(CoverageThresholdControl)),
         builtin::CONTAINER_SIGNATURE => Some(Box::new(ContainerSignatureControl)),
         builtin::CONTAINER_PROVENANCE => Some(Box::new(ContainerProvenanceControl)),
-        builtin::BEHAVIORAL_REGRESSION => Some(Box::new(BehavioralRegressionControl)),
-        builtin::DEPLOYMENT_HEALTH => Some(Box::new(DeploymentHealthControl)),
         _ => None,
     }
 }
@@ -206,8 +200,6 @@ pub fn compliance_controls() -> Vec<Box<dyn Control>> {
         Box::new(CoverageThresholdControl),
         Box::new(ContainerSignatureControl),
         Box::new(ContainerProvenanceControl),
-        Box::new(BehavioralRegressionControl),
-        Box::new(DeploymentHealthControl),
     ]
 }
 

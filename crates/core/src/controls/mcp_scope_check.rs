@@ -28,7 +28,7 @@ impl Control for McpScopeCheckControl {
     }
 
     fn description(&self) -> &'static str {
-        "MCP tool calls must stay within the allowed scope defined in agent spec"
+        "MCP tool calls must stay within allowed scope (requires agent execution log)"
     }
 
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {

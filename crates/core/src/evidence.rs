@@ -44,6 +44,13 @@ impl<T> EvidenceState<T> {
         }
     }
 
+    pub fn value_mut(&mut self) -> Option<&mut T> {
+        match self {
+            Self::Complete { value } | Self::Partial { value, .. } => Some(value),
+            Self::Missing { .. } | Self::NotApplicable => None,
+        }
+    }
+
     pub fn gaps(&self) -> &[EvidenceGap] {
         match self {
             Self::Partial { gaps, .. } | Self::Missing { gaps } => gaps,

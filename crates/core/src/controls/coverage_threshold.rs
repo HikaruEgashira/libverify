@@ -13,7 +13,7 @@ impl Control for CoverageThresholdControl {
     }
 
     fn description(&self) -> &'static str {
-        "Code coverage must meet the minimum threshold"
+        "Code coverage must meet the minimum threshold (requires --coverage-report)"
     }
 
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {

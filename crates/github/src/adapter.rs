@@ -6,7 +6,9 @@ use libverify_core::evidence::{
     PromotionBatch, SourceRevision, WorkItemRef,
 };
 
-use libverify_core::evidence::{BuildPlatformEvidence, CheckConclusion, CheckRunEvidence};
+use libverify_core::evidence::{
+    BuildPlatformEvidence, CheckConclusion, CheckRunEvidence, HarnessResult,
+};
 
 use crate::types::{
     CheckRunItem, CombinedStatusResponse, CompareCommit, PrCommit, PrFile, PrMetadata,
@@ -431,6 +433,27 @@ fn infer_platform_from_name(name: &str) -> &'static str {
         return "github-actions";
     }
     "unknown"
+}
+
+/// Maps check run evidence into harness results for the harness-gate control.
+///
+/// Each check run becomes a `HarnessResult` with pass/fail derived from its conclusion.
+/// Granular test counts are unavailable from the Check Runs API, so only the
+/// aggregate pass/fail signal is propagated.
+pub fn map_harness_results(check_runs: &[CheckRunEvidence]) -> Vec<HarnessResult> {
+    check_runs
+        .iter()
+        .map(|cr| HarnessResult {
+            name: cr.name.clone(),
+            passed: matches!(cr.conclusion, CheckConclusion::Success),
+            total: 0,
+            passed_count: 0,
+            failed_count: 0,
+            skipped_count: 0,
+            duration_secs: None,
+            source_format: Some("github-check-run".to_string()),
+        })
+        .collect()
 }
 
 fn map_issue_ref_kind(kind: &libverify_core::linkage::IssueRefKind) -> &'static str {

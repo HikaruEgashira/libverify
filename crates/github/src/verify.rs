@@ -237,6 +237,7 @@ pub fn collect_release_pr_evidence(
         if !build_platforms.is_empty() {
             bundle.build_platform = EvidenceState::complete(build_platforms);
         }
+        bundle.harness_results = EvidenceState::complete(adapter::map_harness_results(cr_list));
     }
 
     Ok(bundle)
@@ -246,6 +247,7 @@ pub fn collect_release_pr_evidence(
 ///
 /// Queries branch protection, secret scanning, code scanning, CODEOWNERS,
 /// workflow permissions, tag protection rules, etc.
+/// Also checks release assets for SBOM files and updates the posture.
 pub fn collect_release_repo_evidence(
     client: &GitHubClient,
     owner: &str,
@@ -255,6 +257,13 @@ pub fn collect_release_repo_evidence(
 ) {
     bundle.repository_posture =
         crate::posture::collect_repository_posture(client, owner, repo, head_tag);
+
+    // Check release assets for SBOM and update the posture field.
+    let release_assets =
+        crate::release_api::get_release_assets(client, owner, repo, head_tag).unwrap_or_default();
+    if let Some(posture) = bundle.repository_posture.value_mut() {
+        posture.release_has_sbom = crate::release_api::has_sbom_asset(&release_assets);
+    }
 }
 
 /// Phase 3: Check release asset attestations via the GitHub API and merge
@@ -559,6 +568,7 @@ fn collect_pr_evidence_from_data(
         if !build_platforms.is_empty() {
             bundle.build_platform = EvidenceState::complete(build_platforms);
         }
+        bundle.harness_results = EvidenceState::complete(adapter::map_harness_results(cr_list));
     }
 
     bundle.repository_posture = repository_posture;

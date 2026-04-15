@@ -20,7 +20,7 @@ impl Control for ContainerProvenanceControl {
     }
 
     fn description(&self) -> &'static str {
-        "Container images must include SLSA provenance attestation"
+        "Container images must include SLSA provenance attestation (requires external evidence)"
     }
 
     fn evaluate(&self, evidence: &EvidenceBundle) -> Vec<ControlFinding> {
