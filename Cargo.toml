@@ -25,7 +25,7 @@ base64 = "0.22"
 tempfile = "3"
 p256 = { version = "0.13", features = ["ecdsa"] }
 x509-cert = "0.2"
-regorus = "0.9"
+regorus = "0.10"
 creusot-std = { git = "https://github.com/creusot-rs/creusot", package = "creusot-std" }
 
 [profile.release]
