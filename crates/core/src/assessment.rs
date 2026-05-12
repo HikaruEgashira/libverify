@@ -1,3 +1,5 @@
+use std::cmp::Reverse;
+
 use serde::{Deserialize, Serialize};
 
 use crate::control::{Control, ControlFinding, ControlStatus, evaluate_all};
@@ -178,7 +180,7 @@ impl FleetReport {
         }
 
         // Sort repos by fail count descending (worst first)
-        repos.sort_by(|a, b| b.fail.cmp(&a.fail));
+        repos.sort_by_key(|r| Reverse(r.fail));
 
         // Build control stats sorted by fail count descending
         let mut control_stats: Vec<ControlFleetStat> = control_map
@@ -194,7 +196,7 @@ impl FleetReport {
                 pass_count: pass,
             })
             .collect();
-        control_stats.sort_by(|a, b| b.fail_count.cmp(&a.fail_count));
+        control_stats.sort_by_key(|s| Reverse(s.fail_count));
 
         FleetReport {
             repos,
