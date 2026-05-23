@@ -40,11 +40,16 @@ impl PypiAttestationClient {
             HeaderValue::from_static("libverify-github/0.1.0"),
         );
 
-        let client = Client::builder()
+        let mut builder = Client::builder()
             .default_headers(headers)
             .timeout(std::time::Duration::from_secs(10))
-            .build()
-            .context("failed to create PyPI attestation HTTP client")?;
+            .no_proxy();
+        if let Ok(url) = std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy")) {
+            if let Ok(proxy) = reqwest::Proxy::https(&url) {
+                builder = builder.proxy(proxy);
+            }
+        }
+        let client = builder.build().context("failed to create PyPI attestation HTTP client")?;
         Ok(Self { client })
     }
 
