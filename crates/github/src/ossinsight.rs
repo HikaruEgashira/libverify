@@ -22,10 +22,15 @@ impl OssInsightClient {
             HeaderValue::from_str(user_agent).context("invalid User-Agent")?,
         );
 
-        let client = Client::builder()
-            .default_headers(headers)
-            .build()
-            .context("failed to create OSS Insight HTTP client")?;
+        // Disable auto-detected system proxies (macOS SOCKS/PAC can trigger "scheme is
+        // not http" errors). Re-add only env-var proxies with http/https schemes.
+        let mut builder = Client::builder().default_headers(headers).no_proxy();
+        if let Ok(url) = std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy")) {
+            if let Ok(proxy) = reqwest::Proxy::https(&url) {
+                builder = builder.proxy(proxy);
+            }
+        }
+        let client = builder.build().context("failed to create OSS Insight HTTP client")?;
         Ok(Self { client })
     }
 
