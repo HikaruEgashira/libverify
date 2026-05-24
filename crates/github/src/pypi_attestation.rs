@@ -40,9 +40,21 @@ impl PypiAttestationClient {
             HeaderValue::from_static("libverify-github/0.1.0"),
         );
 
-        let client = Client::builder()
+        let mut builder = Client::builder()
             .default_headers(headers)
             .timeout(std::time::Duration::from_secs(10))
+            .no_proxy();
+        if let Ok(proxy_url) =
+            std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy"))
+            && let Ok(proxy) = reqwest::Proxy::https(&proxy_url)
+        {
+            let no_proxy = std::env::var("NO_PROXY")
+                .or_else(|_| std::env::var("no_proxy"))
+                .ok()
+                .and_then(|s| reqwest::NoProxy::from_string(&s));
+            builder = builder.proxy(proxy.no_proxy(no_proxy));
+        }
+        let client = builder
             .build()
             .context("failed to create PyPI attestation HTTP client")?;
         Ok(Self { client })
@@ -316,6 +328,12 @@ struct TransparencyEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pypi_attestation_client_builds_without_proxy() {
+        // Exercises the .no_proxy() + env-var bypass path without any HTTPS_PROXY set.
+        PypiAttestationClient::new().unwrap();
+    }
 
     #[test]
     fn simple_api_response_deserializes() {

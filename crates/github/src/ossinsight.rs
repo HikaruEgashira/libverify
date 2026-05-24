@@ -22,8 +22,20 @@ impl OssInsightClient {
             HeaderValue::from_str(user_agent).context("invalid User-Agent")?,
         );
 
-        let client = Client::builder()
-            .default_headers(headers)
+        // Disable auto-detected system proxies (macOS SOCKS/PAC can trigger "scheme is
+        // not http" errors). Re-add only env-var http/https proxies, respecting NO_PROXY.
+        let mut builder = Client::builder().default_headers(headers).no_proxy();
+        if let Ok(proxy_url) =
+            std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy"))
+            && let Ok(proxy) = reqwest::Proxy::https(&proxy_url)
+        {
+            let no_proxy = std::env::var("NO_PROXY")
+                .or_else(|_| std::env::var("no_proxy"))
+                .ok()
+                .and_then(|s| reqwest::NoProxy::from_string(&s));
+            builder = builder.proxy(proxy.no_proxy(no_proxy));
+        }
+        let client = builder
             .build()
             .context("failed to create OSS Insight HTTP client")?;
         Ok(Self { client })
@@ -103,4 +115,15 @@ pub struct PullRequestCreator {
     pub prs: String,
     pub first_pr_opened_at: String,
     pub first_pr_merged_at: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn oss_insight_client_builds_without_proxy() {
+        // Exercises the .no_proxy() + env-var bypass path without any HTTPS_PROXY set.
+        OssInsightClient::new().unwrap();
+    }
 }
