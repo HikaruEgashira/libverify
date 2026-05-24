@@ -44,17 +44,14 @@ impl PypiAttestationClient {
             .default_headers(headers)
             .timeout(std::time::Duration::from_secs(10))
             .no_proxy();
-        if let Some(proxy_url) = std::env::var("HTTPS_PROXY")
-            .or_else(|_| std::env::var("https_proxy"))
-            .ok()
+        if let Ok(proxy_url) = std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy"))
+            && let Ok(proxy) = reqwest::Proxy::https(&proxy_url)
         {
-            if let Ok(proxy) = reqwest::Proxy::https(&proxy_url) {
-                let no_proxy = std::env::var("NO_PROXY")
-                    .or_else(|_| std::env::var("no_proxy"))
-                    .ok()
-                    .and_then(|s| reqwest::NoProxy::from_string(&s));
-                builder = builder.proxy(proxy.no_proxy(no_proxy));
-            }
+            let no_proxy = std::env::var("NO_PROXY")
+                .or_else(|_| std::env::var("no_proxy"))
+                .ok()
+                .and_then(|s| reqwest::NoProxy::from_string(&s));
+            builder = builder.proxy(proxy.no_proxy(no_proxy));
         }
         let client = builder
             .build()
