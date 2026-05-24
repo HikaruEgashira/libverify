@@ -50,12 +50,17 @@ impl NpmAttestationClient {
             .default_headers(headers)
             .timeout(std::time::Duration::from_secs(10))
             .no_proxy();
-        if let Some(proxy) = std::env::var("HTTPS_PROXY")
+        if let Some(proxy_url) = std::env::var("HTTPS_PROXY")
             .or_else(|_| std::env::var("https_proxy"))
             .ok()
-            .and_then(|url| reqwest::Proxy::https(&url).ok())
         {
-            builder = builder.proxy(proxy);
+            if let Ok(proxy) = reqwest::Proxy::https(&proxy_url) {
+                let no_proxy = std::env::var("NO_PROXY")
+                    .or_else(|_| std::env::var("no_proxy"))
+                    .ok()
+                    .and_then(|s| reqwest::NoProxy::from_string(&s));
+                builder = builder.proxy(proxy.no_proxy(no_proxy));
+            }
         }
         let client = builder
             .build()
@@ -401,6 +406,12 @@ mod tests {
             base64::Engine::encode(&base64::engine::general_purpose::STANDARD, b"hello world");
         let decoded = base64_decode(&encoded).unwrap();
         assert_eq!(decoded, b"hello world");
+    }
+
+    #[test]
+    fn npm_attestation_client_builds_without_proxy() {
+        // Exercises the .no_proxy() + env-var bypass path without any HTTPS_PROXY set.
+        NpmAttestationClient::new().unwrap();
     }
 
     #[test]

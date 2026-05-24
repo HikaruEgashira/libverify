@@ -52,14 +52,19 @@ impl GitHubClient {
         );
 
         // Disable auto-detected system proxies (macOS SOCKS/PAC can trigger "scheme is
-        // not http" errors). Re-add only env-var proxies with http/https schemes.
+        // not http" errors). Re-add only env-var http/https proxies, respecting NO_PROXY.
         let mut builder = Client::builder().default_headers(headers).no_proxy();
-        if let Some(proxy) = std::env::var("HTTPS_PROXY")
+        if let Some(proxy_url) = std::env::var("HTTPS_PROXY")
             .or_else(|_| std::env::var("https_proxy"))
             .ok()
-            .and_then(|url| reqwest::Proxy::https(&url).ok())
         {
-            builder = builder.proxy(proxy);
+            if let Ok(proxy) = reqwest::Proxy::https(&proxy_url) {
+                let no_proxy = std::env::var("NO_PROXY")
+                    .or_else(|_| std::env::var("no_proxy"))
+                    .ok()
+                    .and_then(|s| reqwest::NoProxy::from_string(&s));
+                builder = builder.proxy(proxy.no_proxy(no_proxy));
+            }
         }
         let client = builder.build().context("failed to create HTTP client")?;
 
@@ -369,5 +374,17 @@ mod tests {
     #[test]
     fn retry_delay_for_prefers_retry_after() {
         assert_eq!(retry_delay_for(2, Some(7)), Duration::from_secs(7));
+    }
+
+    #[test]
+    fn github_client_builds_without_proxy() {
+        use crate::config::GitHubConfig;
+        let cfg = GitHubConfig {
+            token: "dummy_test_token".to_string(),
+            repo: String::new(),
+            host: "api.github.com".to_string(),
+        };
+        // Exercises the .no_proxy() + env-var bypass path without any HTTPS_PROXY set.
+        GitHubClient::with_user_agent(&cfg, "test-ua/0.1.0").unwrap();
     }
 }
