@@ -44,7 +44,8 @@ impl PypiAttestationClient {
             .default_headers(headers)
             .timeout(std::time::Duration::from_secs(10))
             .no_proxy();
-        if let Ok(proxy_url) = std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy"))
+        if let Ok(proxy_url) =
+            std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy"))
             && let Ok(proxy) = reqwest::Proxy::https(&proxy_url)
         {
             let no_proxy = std::env::var("NO_PROXY")

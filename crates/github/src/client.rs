@@ -54,7 +54,8 @@ impl GitHubClient {
         // Disable auto-detected system proxies (macOS SOCKS/PAC can trigger "scheme is
         // not http" errors). Re-add only env-var http/https proxies, respecting NO_PROXY.
         let mut builder = Client::builder().default_headers(headers).no_proxy();
-        if let Ok(proxy_url) = std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy"))
+        if let Ok(proxy_url) =
+            std::env::var("HTTPS_PROXY").or_else(|_| std::env::var("https_proxy"))
             && let Ok(proxy) = reqwest::Proxy::https(&proxy_url)
         {
             let no_proxy = std::env::var("NO_PROXY")
