@@ -223,8 +223,8 @@ fn verify_dsse_signature(envelope: &DsseEnvelope, cert_der: &[u8]) -> Result<()>
     // Parse the X.509 certificate and extract the ECDSA P-256 public key
     let cert = Certificate::from_der(cert_der).context("failed to parse X.509 certificate")?;
     let spki = cert
-        .tbs_certificate
-        .subject_public_key_info
+        .tbs_certificate()
+        .subject_public_key_info()
         .subject_public_key
         .as_bytes()
         .context("missing public key bytes")?;
