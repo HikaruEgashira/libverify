@@ -207,3 +207,380 @@ impl FleetReport {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use crate::control::{Control, ControlFinding, ControlId, ControlStatus};
+    use crate::evidence::EvidenceBundle;
+    use crate::profile::{
+        ControlProfile, FindingSeverity, GateDecision, ProfileOutcome, SeverityLabels,
+    };
+
+    use super::{assess, AssessmentReport, FleetReport};
+
+    // -----------------------------------------------------------------------
+    // Helpers: stub control and profile
+    // -----------------------------------------------------------------------
+
+    struct StubControl {
+        id: &'static str,
+        status: ControlStatus,
+    }
+
+    impl Control for StubControl {
+        fn id(&self) -> ControlId {
+            ControlId::new(self.id)
+        }
+
+        fn evaluate(&self, _evidence: &EvidenceBundle) -> Vec<ControlFinding> {
+            vec![match self.status {
+                ControlStatus::Satisfied => {
+                    ControlFinding::satisfied(self.id(), "ok", vec!["s".into()])
+                }
+                ControlStatus::Violated => {
+                    ControlFinding::violated(self.id(), "bad", vec!["s".into()])
+                }
+                ControlStatus::Indeterminate => {
+                    ControlFinding::indeterminate(self.id(), "unknown", vec!["s".into()], vec![])
+                }
+                ControlStatus::NotApplicable => ControlFinding::not_applicable(self.id(), "n/a"),
+            }]
+        }
+    }
+
+    struct StubProfile;
+
+    impl ControlProfile for StubProfile {
+        fn name(&self) -> &str {
+            "stub"
+        }
+
+        fn map(&self, finding: &ControlFinding) -> ProfileOutcome {
+            let (severity, decision) = match finding.status {
+                ControlStatus::Satisfied => (FindingSeverity::Info, GateDecision::Pass),
+                ControlStatus::Violated => (FindingSeverity::Error, GateDecision::Fail),
+                ControlStatus::Indeterminate => (FindingSeverity::Warning, GateDecision::Review),
+                ControlStatus::NotApplicable => (FindingSeverity::Info, GateDecision::Pass),
+            };
+            ProfileOutcome {
+                control_id: finding.control_id.clone(),
+                severity,
+                decision,
+                rationale: finding.rationale.clone(),
+                annotations: BTreeMap::new(),
+            }
+        }
+    }
+
+    fn make_report(outcomes: Vec<(ControlId, GateDecision)>) -> AssessmentReport {
+        let findings: Vec<ControlFinding> = outcomes
+            .iter()
+            .map(|(id, decision)| match decision {
+                GateDecision::Pass => {
+                    ControlFinding::satisfied(id.clone(), "ok", vec!["s".into()])
+                }
+                GateDecision::Fail => {
+                    ControlFinding::violated(id.clone(), "bad", vec!["s".into()])
+                }
+                GateDecision::Review => {
+                    ControlFinding::indeterminate(id.clone(), "unknown", vec!["s".into()], vec![])
+                }
+            })
+            .collect();
+
+        let profile_outcomes: Vec<ProfileOutcome> = outcomes
+            .into_iter()
+            .map(|(id, decision)| {
+                let severity = match decision {
+                    GateDecision::Pass => FindingSeverity::Info,
+                    GateDecision::Fail => FindingSeverity::Error,
+                    GateDecision::Review => FindingSeverity::Warning,
+                };
+                ProfileOutcome {
+                    control_id: id,
+                    severity,
+                    decision,
+                    rationale: String::new(),
+                    annotations: BTreeMap::new(),
+                }
+            })
+            .collect();
+
+        AssessmentReport {
+            profile_name: "stub".into(),
+            findings,
+            outcomes: profile_outcomes,
+            severity_labels: SeverityLabels::default(),
+        }
+    }
+
+    // ===================================================================
+    // 1. assess() — NotApplicable filtering (kills != mutation on line 65)
+    // ===================================================================
+
+    #[test]
+    fn assess_filters_not_applicable_findings() {
+        let evidence = EvidenceBundle::default();
+        let controls: Vec<Box<dyn Control>> = vec![
+            Box::new(StubControl {
+                id: "ctrl-ok",
+                status: ControlStatus::Satisfied,
+            }),
+            Box::new(StubControl {
+                id: "ctrl-na",
+                status: ControlStatus::NotApplicable,
+            }),
+        ];
+
+        let report = assess(&evidence, &controls, &StubProfile);
+
+        assert_eq!(report.findings.len(), 1);
+        assert_eq!(report.findings[0].control_id.as_str(), "ctrl-ok");
+        assert_eq!(report.findings[0].status, ControlStatus::Satisfied);
+    }
+
+    #[test]
+    fn assess_includes_violated_finding() {
+        let evidence = EvidenceBundle::default();
+        let controls: Vec<Box<dyn Control>> = vec![Box::new(StubControl {
+            id: "ctrl-bad",
+            status: ControlStatus::Violated,
+        })];
+
+        let report = assess(&evidence, &controls, &StubProfile);
+
+        assert_eq!(report.findings.len(), 1);
+        assert_eq!(report.findings[0].status, ControlStatus::Violated);
+        assert_eq!(report.outcomes.len(), 1);
+        assert_eq!(report.outcomes[0].decision, GateDecision::Fail);
+    }
+
+    #[test]
+    fn assess_includes_indeterminate_finding() {
+        let evidence = EvidenceBundle::default();
+        let controls: Vec<Box<dyn Control>> = vec![Box::new(StubControl {
+            id: "ctrl-unk",
+            status: ControlStatus::Indeterminate,
+        })];
+
+        let report = assess(&evidence, &controls, &StubProfile);
+
+        assert_eq!(report.findings.len(), 1);
+        assert_eq!(report.findings[0].status, ControlStatus::Indeterminate);
+    }
+
+    #[test]
+    fn assess_profile_name_propagated() {
+        let evidence = EvidenceBundle::default();
+        let controls: Vec<Box<dyn Control>> = vec![];
+        let report = assess(&evidence, &controls, &StubProfile);
+        assert_eq!(report.profile_name, "stub");
+    }
+
+    // ===================================================================
+    // 2. FleetReport::from_assessments — totals, sorting, per-control
+    // ===================================================================
+
+    #[test]
+    fn fleet_report_totals_are_correct() {
+        let id_a = ControlId::new("ctrl-a");
+        let id_b = ControlId::new("ctrl-b");
+
+        let r1 = make_report(vec![
+            (id_a.clone(), GateDecision::Pass),
+            (id_b.clone(), GateDecision::Fail),
+        ]);
+        let r2 = make_report(vec![
+            (id_a.clone(), GateDecision::Pass),
+            (id_b.clone(), GateDecision::Pass),
+        ]);
+
+        let fleet = FleetReport::from_assessments(vec![
+            ("repo-1".into(), &r1),
+            ("repo-2".into(), &r2),
+        ]);
+
+        assert_eq!(fleet.total_pass, 3);
+        assert_eq!(fleet.total_review, 0);
+        assert_eq!(fleet.total_fail, 1);
+        assert_eq!(fleet.repos.len(), 2);
+    }
+
+    #[test]
+    fn fleet_report_totals_with_review() {
+        let id_a = ControlId::new("ctrl-a");
+        let id_b = ControlId::new("ctrl-b");
+        let id_c = ControlId::new("ctrl-c");
+
+        let r1 = make_report(vec![
+            (id_a.clone(), GateDecision::Pass),
+            (id_b.clone(), GateDecision::Review),
+            (id_c.clone(), GateDecision::Fail),
+        ]);
+        let r2 = make_report(vec![
+            (id_a.clone(), GateDecision::Review),
+            (id_b.clone(), GateDecision::Fail),
+            (id_c.clone(), GateDecision::Fail),
+        ]);
+
+        let fleet = FleetReport::from_assessments(vec![
+            ("repo-1".into(), &r1),
+            ("repo-2".into(), &r2),
+        ]);
+
+        assert_eq!(fleet.total_pass, 1);
+        assert_eq!(fleet.total_review, 2);
+        assert_eq!(fleet.total_fail, 3);
+    }
+
+    #[test]
+    fn fleet_report_repos_sorted_by_fail_descending() {
+        let id = ControlId::new("ctrl-a");
+
+        let r_good = make_report(vec![(id.clone(), GateDecision::Pass)]);
+        let r_bad = make_report(vec![(id.clone(), GateDecision::Fail)]);
+
+        let fleet = FleetReport::from_assessments(vec![
+            ("repo-good".into(), &r_good),
+            ("repo-bad".into(), &r_bad),
+        ]);
+
+        assert_eq!(fleet.repos[0].repo_id, "repo-bad");
+        assert_eq!(fleet.repos[0].fail, 1);
+        assert_eq!(fleet.repos[1].repo_id, "repo-good");
+        assert_eq!(fleet.repos[1].fail, 0);
+    }
+
+    #[test]
+    fn fleet_report_control_stats_sorted_by_fail_descending() {
+        let id_a = ControlId::new("ctrl-a");
+        let id_b = ControlId::new("ctrl-b");
+
+        let r1 = make_report(vec![
+            (id_a.clone(), GateDecision::Fail),
+            (id_b.clone(), GateDecision::Pass),
+        ]);
+        let r2 = make_report(vec![
+            (id_a.clone(), GateDecision::Fail),
+            (id_b.clone(), GateDecision::Pass),
+        ]);
+
+        let fleet = FleetReport::from_assessments(vec![
+            ("repo-1".into(), &r1),
+            ("repo-2".into(), &r2),
+        ]);
+
+        assert_eq!(fleet.control_stats[0].control_id, "ctrl-a");
+        assert_eq!(fleet.control_stats[0].fail_count, 2);
+        assert_eq!(fleet.control_stats[0].pass_count, 0);
+
+        let stat_b = fleet
+            .control_stats
+            .iter()
+            .find(|s| s.control_id == "ctrl-b")
+            .unwrap();
+        assert_eq!(stat_b.fail_count, 0);
+        assert_eq!(stat_b.pass_count, 2);
+    }
+
+    #[test]
+    fn fleet_report_per_control_counts_are_exact() {
+        let id_x = ControlId::new("ctrl-x");
+
+        let r_pass = make_report(vec![(id_x.clone(), GateDecision::Pass)]);
+        let r_review = make_report(vec![(id_x.clone(), GateDecision::Review)]);
+        let r_fail = make_report(vec![(id_x.clone(), GateDecision::Fail)]);
+
+        let fleet = FleetReport::from_assessments(vec![
+            ("repo-pass".into(), &r_pass),
+            ("repo-review".into(), &r_review),
+            ("repo-fail".into(), &r_fail),
+        ]);
+
+        assert_eq!(fleet.control_stats.len(), 1);
+        let stat = &fleet.control_stats[0];
+        assert_eq!(stat.control_id, "ctrl-x");
+        assert_eq!(stat.pass_count, 1);
+        assert_eq!(stat.review_count, 1);
+        assert_eq!(stat.fail_count, 1);
+    }
+
+    #[test]
+    fn fleet_report_failing_controls_listed() {
+        let id_a = ControlId::new("ctrl-a");
+        let id_b = ControlId::new("ctrl-b");
+
+        let r = make_report(vec![
+            (id_a.clone(), GateDecision::Pass),
+            (id_b.clone(), GateDecision::Fail),
+        ]);
+
+        let fleet = FleetReport::from_assessments(vec![("repo-1".into(), &r)]);
+
+        let repo = &fleet.repos[0];
+        assert_eq!(repo.failing_controls, vec!["ctrl-b"]);
+    }
+
+    #[test]
+    fn fleet_report_empty_input() {
+        let fleet = FleetReport::from_assessments(vec![]);
+
+        assert_eq!(fleet.repos.len(), 0);
+        assert_eq!(fleet.control_stats.len(), 0);
+        assert_eq!(fleet.total_pass, 0);
+        assert_eq!(fleet.total_review, 0);
+        assert_eq!(fleet.total_fail, 0);
+    }
+
+    #[test]
+    fn fleet_report_repo_summary_counts_match_totals() {
+        let id_a = ControlId::new("ctrl-a");
+        let id_b = ControlId::new("ctrl-b");
+        let id_c = ControlId::new("ctrl-c");
+
+        let r1 = make_report(vec![
+            (id_a.clone(), GateDecision::Pass),
+            (id_b.clone(), GateDecision::Review),
+            (id_c.clone(), GateDecision::Fail),
+        ]);
+        let r2 = make_report(vec![
+            (id_a.clone(), GateDecision::Fail),
+            (id_b.clone(), GateDecision::Fail),
+            (id_c.clone(), GateDecision::Review),
+        ]);
+        let r3 = make_report(vec![
+            (id_a.clone(), GateDecision::Pass),
+            (id_b.clone(), GateDecision::Pass),
+            (id_c.clone(), GateDecision::Pass),
+        ]);
+
+        let fleet = FleetReport::from_assessments(vec![
+            ("repo-1".into(), &r1),
+            ("repo-2".into(), &r2),
+            ("repo-3".into(), &r3),
+        ]);
+
+        // Sum individual repo counts and verify they match fleet totals
+        let sum_pass: usize = fleet.repos.iter().map(|r| r.pass).sum();
+        let sum_review: usize = fleet.repos.iter().map(|r| r.review).sum();
+        let sum_fail: usize = fleet.repos.iter().map(|r| r.fail).sum();
+        assert_eq!(sum_pass, fleet.total_pass);
+        assert_eq!(sum_review, fleet.total_review);
+        assert_eq!(sum_fail, fleet.total_fail);
+
+        // Verify exact values (kills += to -= and += to *= mutations)
+        assert_eq!(fleet.total_pass, 4);
+        assert_eq!(fleet.total_review, 2);
+        assert_eq!(fleet.total_fail, 3);
+
+        // Sum control stats and verify they match fleet totals
+        let ctrl_pass: usize = fleet.control_stats.iter().map(|s| s.pass_count).sum();
+        let ctrl_review: usize = fleet.control_stats.iter().map(|s| s.review_count).sum();
+        let ctrl_fail: usize = fleet.control_stats.iter().map(|s| s.fail_count).sum();
+        assert_eq!(ctrl_pass, fleet.total_pass);
+        assert_eq!(ctrl_review, fleet.total_review);
+        assert_eq!(ctrl_fail, fleet.total_fail);
+    }
+}

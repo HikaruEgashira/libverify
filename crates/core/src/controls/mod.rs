@@ -414,4 +414,71 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn instantiate_all_builtin_ids_return_some() {
+        for id in builtin::ALL {
+            let control = instantiate(id);
+            assert!(
+                control.is_some(),
+                "instantiate({id}) should return Some"
+            );
+        }
+    }
+
+    #[test]
+    fn instantiate_unknown_returns_none() {
+        assert!(instantiate("nonexistent-control").is_none());
+    }
+
+    #[test]
+    fn instantiate_id_matches_input() {
+        for id in builtin::ALL {
+            let control = instantiate(id).unwrap();
+            assert_eq!(
+                control.id().as_str(),
+                *id,
+                "instantiated control id should match input"
+            );
+        }
+    }
+
+    #[test]
+    fn posture_controls_count_and_membership() {
+        let controls = posture_controls();
+        assert!(
+            !controls.is_empty(),
+            "posture_controls should not be empty"
+        );
+        let all_set: std::collections::HashSet<&str> =
+            builtin::ALL.iter().copied().collect();
+        for c in &controls {
+            assert!(
+                all_set.contains(c.id().as_str()),
+                "posture control {:?} not in builtin::ALL",
+                c.id()
+            );
+        }
+        assert_eq!(controls.len(), 10);
+    }
+
+    #[test]
+    fn control_description_known_ids() {
+        let desc = control_description(builtin::SOURCE_AUTHENTICITY);
+        assert_ne!(desc, "Custom control");
+        assert!(!desc.is_empty());
+
+        let desc = control_description(builtin::REVIEW_INDEPENDENCE);
+        assert_ne!(desc, "Custom control");
+        assert!(!desc.is_empty());
+
+        let desc = control_description(builtin::SECRET_SCANNING);
+        assert_ne!(desc, "Custom control");
+        assert!(!desc.is_empty());
+    }
+
+    #[test]
+    fn control_description_unknown_returns_fallback() {
+        assert_eq!(control_description("nonexistent-control"), "Custom control");
+    }
 }

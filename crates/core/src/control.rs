@@ -543,4 +543,119 @@ mod tests {
             assert!(seen.insert(id), "duplicate built-in ID: {id}");
         }
     }
+
+    #[test]
+    fn control_status_as_str_all_variants() {
+        assert_eq!(ControlStatus::Satisfied.as_str(), "satisfied");
+        assert_eq!(ControlStatus::Violated.as_str(), "violated");
+        assert_eq!(ControlStatus::Indeterminate.as_str(), "indeterminate");
+        assert_eq!(ControlStatus::NotApplicable.as_str(), "not_applicable");
+    }
+
+    #[test]
+    fn builtin_tsc_mapping_mapped_ids_non_empty() {
+        // Controls that are explicitly mapped should return non-empty slices.
+        let mapped_ids = [
+            builtin::SOURCE_AUTHENTICITY,
+            builtin::BRANCH_PROTECTION_ENFORCEMENT,
+            builtin::CODEOWNERS_COVERAGE,
+            builtin::SECRET_SCANNING,
+            builtin::ISSUE_LINKAGE,
+            builtin::STALE_REVIEW,
+            builtin::SECURITY_FILE_CHANGE,
+            builtin::RELEASE_TRACEABILITY,
+            builtin::REQUIRED_STATUS_CHECKS,
+            builtin::VULNERABILITY_SCANNING,
+            builtin::SECURITY_POLICY,
+            builtin::REVIEW_INDEPENDENCE,
+            builtin::TWO_PARTY_REVIEW,
+            builtin::CHANGE_REQUEST_SIZE,
+            builtin::TEST_COVERAGE,
+            builtin::SCOPED_CHANGE,
+            builtin::DESCRIPTION_QUALITY,
+            builtin::MERGE_COMMIT_POLICY,
+            builtin::CONVENTIONAL_TITLE,
+            builtin::BRANCH_HISTORY_INTEGRITY,
+            builtin::BUILD_PROVENANCE,
+            builtin::HOSTED_BUILD_PLATFORM,
+            builtin::PROVENANCE_AUTHENTICITY,
+            builtin::BUILD_ISOLATION,
+            builtin::DEPENDENCY_SIGNATURE,
+            builtin::DEPENDENCY_PROVENANCE_CHECK,
+            builtin::DEPENDENCY_SIGNER_VERIFIED,
+            builtin::DEPENDENCY_COMPLETENESS,
+            builtin::CODE_SCANNING_ALERTS_RESOLVED,
+            builtin::LICENSE_COMPLIANCE,
+            builtin::SBOM_COMPLETENESS,
+            builtin::RELEASE_ASSET_ATTESTATION,
+            builtin::PRIVILEGED_WORKFLOW_DETECTION,
+            builtin::HARNESS_GATE,
+            builtin::COVERAGE_THRESHOLD,
+            builtin::CONTAINER_SIGNATURE,
+            builtin::CONTAINER_PROVENANCE,
+            builtin::AGENT_SPEC_CONFORMANCE,
+            builtin::PRIVILEGED_OPERATION_AUDIT,
+            builtin::MCP_SCOPE_CHECK,
+            builtin::NETWORK_EGRESS_AUDIT,
+        ];
+        for id in mapped_ids {
+            let mapping = builtin_tsc_mapping(id);
+            assert!(
+                !mapping.is_empty(),
+                "built-in control {id} should have non-empty TSC mapping"
+            );
+        }
+    }
+
+    #[test]
+    fn builtin_tsc_mapping_specific_controls() {
+        assert_eq!(builtin_tsc_mapping(builtin::SOURCE_AUTHENTICITY), &["CC6.1"]);
+        assert_eq!(
+            builtin_tsc_mapping(builtin::BRANCH_PROTECTION_ENFORCEMENT),
+            &["CC6.1", "CC8.1"]
+        );
+        assert_eq!(builtin_tsc_mapping(builtin::REVIEW_INDEPENDENCE), &["CC8.1"]);
+        assert_eq!(builtin_tsc_mapping(builtin::BUILD_PROVENANCE), &["PI1.4"]);
+        assert_eq!(
+            builtin_tsc_mapping(builtin::DEPENDENCY_SIGNATURE),
+            &["CC7.1", "PI1.4"]
+        );
+    }
+
+    #[test]
+    fn builtin_tsc_mapping_unknown_returns_empty() {
+        assert!(builtin_tsc_mapping("nonexistent-control").is_empty());
+    }
+
+    #[test]
+    fn evaluate_all_with_mock_control() {
+        struct MockControl;
+        impl Control for MockControl {
+            fn id(&self) -> ControlId {
+                ControlId::new("mock-control")
+            }
+            fn evaluate(&self, _evidence: &EvidenceBundle) -> Vec<ControlFinding> {
+                vec![ControlFinding::violated(
+                    self.id(),
+                    "mock violation",
+                    vec!["subject1".to_string()],
+                )]
+            }
+        }
+
+        let controls: Vec<Box<dyn Control>> = vec![Box::new(MockControl)];
+        let evidence = EvidenceBundle::default();
+        let findings = evaluate_all(&controls, &evidence);
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].control_id.as_str(), "mock-control");
+        assert_eq!(findings[0].status, ControlStatus::Violated);
+    }
+
+    #[test]
+    fn evaluate_all_empty_controls() {
+        let controls: Vec<Box<dyn Control>> = vec![];
+        let evidence = EvidenceBundle::default();
+        let findings = evaluate_all(&controls, &evidence);
+        assert!(findings.is_empty());
+    }
 }

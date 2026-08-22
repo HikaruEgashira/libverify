@@ -838,3 +838,183 @@ pub struct EvidenceBundle {
     #[serde(default)]
     pub behavioral_diff: EvidenceState<BehavioralDiff>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- EvidenceState::has_gaps ---
+
+    #[test]
+    fn has_gaps_complete_returns_false() {
+        let state = EvidenceState::complete(42);
+        assert!(!state.has_gaps());
+    }
+
+    #[test]
+    fn has_gaps_partial_with_gaps_returns_true() {
+        let state = EvidenceState::partial(
+            42,
+            vec![EvidenceGap::DiffUnavailable {
+                subject: "x".into(),
+            }],
+        );
+        assert!(state.has_gaps());
+    }
+
+    #[test]
+    fn has_gaps_missing_with_gaps_returns_true() {
+        let state: EvidenceState<()> = EvidenceState::missing(vec![EvidenceGap::DiffUnavailable {
+            subject: "x".into(),
+        }]);
+        assert!(state.has_gaps());
+    }
+
+    #[test]
+    fn has_gaps_not_applicable_returns_false() {
+        let state: EvidenceState<()> = EvidenceState::not_applicable();
+        assert!(!state.has_gaps());
+    }
+
+    // --- EvidenceState::not_applicable ---
+
+    #[test]
+    fn not_applicable_creates_correct_variant() {
+        let state: EvidenceState<String> = EvidenceState::not_applicable();
+        assert_eq!(state, EvidenceState::NotApplicable);
+    }
+
+    // --- GovernedChange::is_bot_submitted ---
+
+    fn governed_change_with_author(author: Option<&str>) -> GovernedChange {
+        GovernedChange {
+            id: ChangeRequestId::new("test", "1"),
+            title: "t".into(),
+            summary: None,
+            submitted_by: author.map(|s| s.to_string()),
+            changed_assets: EvidenceState::not_applicable(),
+            approval_decisions: EvidenceState::not_applicable(),
+            source_revisions: EvidenceState::not_applicable(),
+            work_item_refs: EvidenceState::not_applicable(),
+        }
+    }
+
+    #[test]
+    fn is_bot_submitted_known_bots() {
+        for bot in ["dependabot", "renovate[bot]", "bors"] {
+            assert!(
+                governed_change_with_author(Some(bot)).is_bot_submitted(),
+                "{bot} should be detected as bot"
+            );
+        }
+    }
+
+    #[test]
+    fn is_bot_submitted_mixed_case() {
+        assert!(governed_change_with_author(Some("Dependabot")).is_bot_submitted());
+        assert!(governed_change_with_author(Some("BORS")).is_bot_submitted());
+    }
+
+    #[test]
+    fn is_bot_submitted_bot_suffix() {
+        assert!(governed_change_with_author(Some("my-custom[bot]")).is_bot_submitted());
+    }
+
+    #[test]
+    fn is_bot_submitted_regular_user() {
+        assert!(!governed_change_with_author(Some("alice")).is_bot_submitted());
+    }
+
+    #[test]
+    fn is_bot_submitted_none_author() {
+        assert!(!governed_change_with_author(None).is_bot_submitted());
+    }
+
+    // --- VerificationOutcome::failure_detail ---
+
+    #[test]
+    fn failure_detail_returns_some_for_all_failure_variants() {
+        let failures = [
+            VerificationOutcome::SignatureInvalid { detail: "a".into() },
+            VerificationOutcome::SignerMismatch { detail: "b".into() },
+            VerificationOutcome::TransparencyLogMissing { detail: "c".into() },
+            VerificationOutcome::AttestationAbsent { detail: "d".into() },
+            VerificationOutcome::DigestMismatch { detail: "e".into() },
+            VerificationOutcome::Failed { detail: "f".into() },
+        ];
+        for (i, outcome) in failures.iter().enumerate() {
+            assert!(
+                outcome.failure_detail().is_some(),
+                "variant {i} should return Some"
+            );
+        }
+    }
+
+    #[test]
+    fn failure_detail_returns_none_for_success_variants() {
+        assert!(VerificationOutcome::Verified.failure_detail().is_none());
+        assert!(VerificationOutcome::ChecksumMatch.failure_detail().is_none());
+    }
+
+    // --- default_true ---
+
+    #[test]
+    fn default_true_returns_true() {
+        assert!(default_true());
+    }
+
+    // --- DependencySignatureEvidence::registry_provenance_capability ---
+
+    fn dep_evidence_with_registry(registry: Option<&str>) -> DependencySignatureEvidence {
+        DependencySignatureEvidence {
+            name: "pkg".into(),
+            version: "1.0.0".into(),
+            registry: registry.map(|s| s.to_string()),
+            verification: VerificationOutcome::Verified,
+            signature_mechanism: None,
+            signer_identity: None,
+            source_repo: None,
+            source_commit: None,
+            pinned_digest: None,
+            actual_digest: None,
+            transparency_log_uri: None,
+            is_direct: true,
+        }
+    }
+
+    #[test]
+    fn registry_provenance_npm_returns_full_trust_chain() {
+        let dep = dep_evidence_with_registry(Some("registry.npmjs.org"));
+        assert_eq!(
+            dep.registry_provenance_capability(),
+            RegistryProvenanceCapability::FullTrustChain
+        );
+    }
+
+    #[test]
+    fn registry_provenance_pypi_returns_full_trust_chain() {
+        let dep = dep_evidence_with_registry(Some("pypi.org"));
+        assert_eq!(
+            dep.registry_provenance_capability(),
+            RegistryProvenanceCapability::FullTrustChain
+        );
+    }
+
+    #[test]
+    fn registry_provenance_crates_io_returns_checksum_only() {
+        let dep = dep_evidence_with_registry(Some("crates.io"));
+        assert_eq!(
+            dep.registry_provenance_capability(),
+            RegistryProvenanceCapability::ChecksumOnly
+        );
+    }
+
+    #[test]
+    fn registry_provenance_none_returns_checksum_only() {
+        let dep = dep_evidence_with_registry(None);
+        assert_eq!(
+            dep.registry_provenance_capability(),
+            RegistryProvenanceCapability::ChecksumOnly
+        );
+    }
+}

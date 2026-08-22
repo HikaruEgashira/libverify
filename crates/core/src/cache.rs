@@ -131,6 +131,29 @@ mod tests {
     }
 
     #[test]
+    fn path_for_sanitizes_special_chars() {
+        let dir = std::env::temp_dir().join("libverify-path-for-test");
+        let _ = std::fs::remove_dir_all(&dir);
+        let cache = FsCache::new(&dir, 3600).unwrap();
+
+        // '@', ':', '/', '.' should all become '_'
+        let path = cache.path_for("pr:owner/repo@v1.0");
+        let filename = path.file_name().unwrap().to_str().unwrap();
+        assert_eq!(filename, "pr_owner_repo_v1_0.json");
+
+        // '-' and '_' are preserved
+        let path = cache.path_for("my-key_name");
+        let filename = path.file_name().unwrap().to_str().unwrap();
+        assert_eq!(filename, "my-key_name.json");
+
+        // result always ends with ".json"
+        let path = cache.path_for("anything");
+        assert!(path.to_str().unwrap().ends_with(".json"));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn fs_cache_expired_returns_none() {
         let dir = std::env::temp_dir().join("libverify-cache-expire-test");
         let _ = std::fs::remove_dir_all(&dir);

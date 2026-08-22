@@ -476,6 +476,22 @@ mod tests {
     }
 
     #[test]
+    fn short_sha_truncates_long_input() {
+        let sha = "abc1234def5678901234567890abcdef12345678";
+        assert_eq!(short_sha(sha), "abc1234");
+    }
+
+    #[test]
+    fn short_sha_preserves_short_input() {
+        assert_eq!(short_sha("abcde"), "abcde");
+    }
+
+    #[test]
+    fn short_sha_exact_seven_chars() {
+        assert_eq!(short_sha("abc1234"), "abc1234");
+    }
+
+    #[test]
     fn dependency_signature_severity_equivalence() {
         assert_eq!(dependency_signature_severity(0), Severity::Pass);
         for count in 1..=100 {
