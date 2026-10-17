@@ -419,10 +419,7 @@ mod tests {
     fn instantiate_all_builtin_ids_return_some() {
         for id in builtin::ALL {
             let control = instantiate(id);
-            assert!(
-                control.is_some(),
-                "instantiate({id}) should return Some"
-            );
+            assert!(control.is_some(), "instantiate({id}) should return Some");
         }
     }
 
@@ -446,12 +443,8 @@ mod tests {
     #[test]
     fn posture_controls_count_and_membership() {
         let controls = posture_controls();
-        assert!(
-            !controls.is_empty(),
-            "posture_controls should not be empty"
-        );
-        let all_set: std::collections::HashSet<&str> =
-            builtin::ALL.iter().copied().collect();
+        assert!(!controls.is_empty(), "posture_controls should not be empty");
+        let all_set: std::collections::HashSet<&str> = builtin::ALL.iter().copied().collect();
         for c in &controls {
             assert!(
                 all_set.contains(c.id().as_str()),

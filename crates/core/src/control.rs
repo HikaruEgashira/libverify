@@ -609,12 +609,18 @@ mod tests {
 
     #[test]
     fn builtin_tsc_mapping_specific_controls() {
-        assert_eq!(builtin_tsc_mapping(builtin::SOURCE_AUTHENTICITY), &["CC6.1"]);
+        assert_eq!(
+            builtin_tsc_mapping(builtin::SOURCE_AUTHENTICITY),
+            &["CC6.1"]
+        );
         assert_eq!(
             builtin_tsc_mapping(builtin::BRANCH_PROTECTION_ENFORCEMENT),
             &["CC6.1", "CC8.1"]
         );
-        assert_eq!(builtin_tsc_mapping(builtin::REVIEW_INDEPENDENCE), &["CC8.1"]);
+        assert_eq!(
+            builtin_tsc_mapping(builtin::REVIEW_INDEPENDENCE),
+            &["CC8.1"]
+        );
         assert_eq!(builtin_tsc_mapping(builtin::BUILD_PROVENANCE), &["PI1.4"]);
         assert_eq!(
             builtin_tsc_mapping(builtin::DEPENDENCY_SIGNATURE),

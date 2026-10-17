@@ -953,7 +953,11 @@ mod tests {
     #[test]
     fn failure_detail_returns_none_for_success_variants() {
         assert!(VerificationOutcome::Verified.failure_detail().is_none());
-        assert!(VerificationOutcome::ChecksumMatch.failure_detail().is_none());
+        assert!(
+            VerificationOutcome::ChecksumMatch
+                .failure_detail()
+                .is_none()
+        );
     }
 
     // --- default_true ---

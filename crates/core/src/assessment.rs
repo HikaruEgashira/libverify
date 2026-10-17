@@ -218,7 +218,7 @@ mod tests {
         ControlProfile, FindingSeverity, GateDecision, ProfileOutcome, SeverityLabels,
     };
 
-    use super::{assess, AssessmentReport, FleetReport};
+    use super::{AssessmentReport, FleetReport, assess};
 
     // -----------------------------------------------------------------------
     // Helpers: stub control and profile
@@ -278,12 +278,8 @@ mod tests {
         let findings: Vec<ControlFinding> = outcomes
             .iter()
             .map(|(id, decision)| match decision {
-                GateDecision::Pass => {
-                    ControlFinding::satisfied(id.clone(), "ok", vec!["s".into()])
-                }
-                GateDecision::Fail => {
-                    ControlFinding::violated(id.clone(), "bad", vec!["s".into()])
-                }
+                GateDecision::Pass => ControlFinding::satisfied(id.clone(), "ok", vec!["s".into()]),
+                GateDecision::Fail => ControlFinding::violated(id.clone(), "bad", vec!["s".into()]),
                 GateDecision::Review => {
                     ControlFinding::indeterminate(id.clone(), "unknown", vec!["s".into()], vec![])
                 }
@@ -397,10 +393,8 @@ mod tests {
             (id_b.clone(), GateDecision::Pass),
         ]);
 
-        let fleet = FleetReport::from_assessments(vec![
-            ("repo-1".into(), &r1),
-            ("repo-2".into(), &r2),
-        ]);
+        let fleet =
+            FleetReport::from_assessments(vec![("repo-1".into(), &r1), ("repo-2".into(), &r2)]);
 
         assert_eq!(fleet.total_pass, 3);
         assert_eq!(fleet.total_review, 0);
@@ -425,10 +419,8 @@ mod tests {
             (id_c.clone(), GateDecision::Fail),
         ]);
 
-        let fleet = FleetReport::from_assessments(vec![
-            ("repo-1".into(), &r1),
-            ("repo-2".into(), &r2),
-        ]);
+        let fleet =
+            FleetReport::from_assessments(vec![("repo-1".into(), &r1), ("repo-2".into(), &r2)]);
 
         assert_eq!(fleet.total_pass, 1);
         assert_eq!(fleet.total_review, 2);
@@ -467,10 +459,8 @@ mod tests {
             (id_b.clone(), GateDecision::Pass),
         ]);
 
-        let fleet = FleetReport::from_assessments(vec![
-            ("repo-1".into(), &r1),
-            ("repo-2".into(), &r2),
-        ]);
+        let fleet =
+            FleetReport::from_assessments(vec![("repo-1".into(), &r1), ("repo-2".into(), &r2)]);
 
         assert_eq!(fleet.control_stats[0].control_id, "ctrl-a");
         assert_eq!(fleet.control_stats[0].fail_count, 2);
