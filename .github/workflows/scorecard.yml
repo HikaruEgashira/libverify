@@ -10,7 +10,7 @@ permissions: read-all
 jobs:
   analysis:
     timeout-minutes: 5
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, arm64, hikae-flash]
     permissions:
       id-token: write
     steps:
