@@ -232,6 +232,19 @@ cargo creusot prove '<predicate_name>' -- -p libverify-verif
 - **Primitive types only** — extract `bool`/`usize` predicates from complex functions
 - **Severity enum duplicated** in verif crate to avoid pulling serde
 
+## Releasing
+
+1. Bump the workspace version and the workspace dependency versions in `Cargo.toml`.
+2. Confirm the crates.io token used by the publish workflow is an owner of every
+   crate listed in `.github/scripts/publish-crates.sh` (including `libverify-vanta`
+   and `libverify-drata`).
+3. Push a `v<version>` tag. To retry a partially published version, manually run
+   the **Publish to crates.io** workflow from a ref whose workspace version is
+   that version.
+
+The workflow publishes crates in dependency order and skips versions already on
+crates.io, so a partially completed release can be re-run.
+
 ## CI
 
 GitHub Actions runs on push/PR to main:

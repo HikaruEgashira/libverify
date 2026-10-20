@@ -2,13 +2,17 @@ name: Publish to crates.io
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 permissions:
   contents: read
   id-token: write
   attestations: write
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   publish:
-    timeout-minutes: 15
+    timeout-minutes: 30
     runs-on: [self-hosted, linux, arm64, hikae-flash]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -22,40 +26,9 @@ jobs:
       - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
         id: auth
         timeout-minutes: 5
-      - name: Publish libverify-core
-        timeout-minutes: 5
-        run: cargo publish -p libverify-core
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-      - name: Wait for crates.io index
-        timeout-minutes: 2
-        run: sleep 30
-      - name: Publish libverify-policy
-        timeout-minutes: 5
-        run: cargo publish -p libverify-policy
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-      - name: Publish libverify-vanta
-        timeout-minutes: 5
-        run: cargo publish -p libverify-vanta
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-      - name: Publish libverify-output
-        timeout-minutes: 5
-        run: cargo publish -p libverify-output
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-      - name: Wait for crates.io index
-        timeout-minutes: 2
-        run: sleep 30
-      - name: Publish libverify-github
-        timeout-minutes: 5
-        run: cargo publish -p libverify-github
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-      - name: Publish libverify-gitlab
-        timeout-minutes: 5
-        run: cargo publish -p libverify-gitlab
+      - name: Publish crates in dependency order
+        timeout-minutes: 25
+        run: bash .github/scripts/publish-crates.sh
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
       - name: Generate SLSA build provenance attestation
