@@ -23,8 +23,6 @@ jobs:
         timeout-minutes: 5
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        timeout-minutes: 5
       - name: Build and run gen-docs
         timeout-minutes: 10
         run: cargo run --release -p gen-docs
