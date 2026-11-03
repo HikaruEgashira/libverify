@@ -238,12 +238,13 @@ cargo creusot prove '<predicate_name>' -- -p libverify-verif
 2. Confirm the crates.io token used by the publish workflow is an owner of every
    crate listed in `.github/scripts/publish-crates.sh` (including `libverify-vanta`
    and `libverify-drata`).
-3. Push a `v<version>` tag. To retry a partially published version, manually run
-   the **Publish to crates.io** workflow from a ref whose workspace version is
-   that version.
+3. Push a `v<version>` tag. The **Publish to crates.io** workflow only runs for
+   pushed `v*` tags; it has no manual trigger.
 
 The workflow publishes crates in dependency order and skips versions already on
-crates.io, so a partially completed release can be re-run.
+crates.io. To recover from a partially completed release, re-run the failed
+jobs of that tag's workflow run, or bump the version and push a new `v<version>`
+tag.
 
 ## CI
 
