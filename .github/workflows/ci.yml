@@ -24,6 +24,10 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         timeout-minutes: 5
+        # Caching is best-effort: a stalled cache upload must not fail the job.
+        continue-on-error: true
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - timeout-minutes: 5
         run: cargo test --workspace --exclude libverify-verif
   clippy:
@@ -41,6 +45,10 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         timeout-minutes: 5
+        # Caching is best-effort: a stalled cache upload must not fail the job.
+        continue-on-error: true
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - timeout-minutes: 5
         run: cargo clippy --workspace --exclude libverify-verif -- -D warnings
   fmt:
