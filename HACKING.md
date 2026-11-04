@@ -252,3 +252,7 @@ GitHub Actions runs on push/PR to main:
 1. `cargo test --workspace --exclude libverify-verif`
 2. `cargo clippy --workspace --exclude libverify-verif -- -D warnings`
 3. `cargo fmt --all -- --check`
+
+The `Swatinem/rust-cache` steps are best-effort (`continue-on-error: true`) and
+only save new cache entries on `main`, so a slow or stalled cache upload cannot
+turn a passing build red.
