@@ -244,4 +244,99 @@ mod tests {
         assert!(output.contains("repo-b"));
         assert!(output.contains(builtin::REVIEW_INDEPENDENCE));
     }
+    #[test]
+    fn decision_icons_are_exact() {
+        assert_eq!(decision_icon(GateDecision::Pass), "✅");
+        assert_eq!(decision_icon(GateDecision::Review), "⚠️");
+        assert_eq!(decision_icon(GateDecision::Fail), "❌");
+    }
+
+    #[test]
+    fn render_exact_output_counts_and_order() {
+        let result = result_with_outcomes(vec![
+            outcome(builtin::REVIEW_INDEPENDENCE, GateDecision::Pass),
+            outcome(builtin::SOURCE_AUTHENTICITY, GateDecision::Pass),
+            outcome(builtin::BUILD_PROVENANCE, GateDecision::Review),
+            outcome(builtin::TWO_PARTY_REVIEW, GateDecision::Fail),
+            outcome(builtin::REQUIRED_STATUS_CHECKS, GateDecision::Fail),
+            outcome(builtin::HOSTED_BUILD_PLATFORM, GateDecision::Fail),
+        ]);
+        let output = render(&result, false).unwrap();
+        let labels = SeverityLabels::default();
+        let label = labels.label_for(FindingSeverity::Info);
+        let row = |id: &str, icon: &str, d: GateDecision| {
+            format!("| {id} | {label} | {icon} {d} |  | test rationale |\n")
+        };
+        let expected = format!(
+            "# Compliance Matrix — test-profile\n\n\
+             **Summary:** ✅ 2 pass, ⚠️ 1 review, ❌ 3 fail\n\n\
+             | Control | Status | Decision | Framework Ref | Rationale |\n\
+             |---------|--------|----------|---------------|-----------|\n\
+             {}{}{}{}{}{}",
+            row(builtin::TWO_PARTY_REVIEW, "❌", GateDecision::Fail),
+            row(builtin::REQUIRED_STATUS_CHECKS, "❌", GateDecision::Fail),
+            row(builtin::HOSTED_BUILD_PLATFORM, "❌", GateDecision::Fail),
+            row(builtin::BUILD_PROVENANCE, "⚠️", GateDecision::Review),
+            row(builtin::REVIEW_INDEPENDENCE, "✅", GateDecision::Pass),
+            row(builtin::SOURCE_AUTHENTICITY, "✅", GateDecision::Pass),
+        );
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn render_batch_exact_output() {
+        let entry = |sid: &str, outcomes| libverify_core::assessment::BatchEntry {
+            subject_id: sid.to_string(),
+            result: result_with_outcomes(outcomes),
+        };
+        let batch = BatchReport {
+            reports: vec![
+                entry(
+                    "repo-a",
+                    vec![
+                        outcome(builtin::REVIEW_INDEPENDENCE, GateDecision::Pass),
+                        outcome(builtin::TWO_PARTY_REVIEW, GateDecision::Review),
+                        outcome(builtin::BUILD_PROVENANCE, GateDecision::Fail),
+                    ],
+                ),
+                entry(
+                    "repo-b",
+                    vec![
+                        outcome(builtin::REVIEW_INDEPENDENCE, GateDecision::Pass),
+                        outcome(builtin::TWO_PARTY_REVIEW, GateDecision::Fail),
+                    ],
+                ),
+            ],
+            total_pass: 2,
+            total_review: 1,
+            total_fail: 2,
+            skipped: vec![libverify_core::assessment::SkippedEntry {
+                subject_id: "repo-c".to_string(),
+                reason: "archived".to_string(),
+            }],
+        };
+        let output = render_batch(&batch, false).unwrap();
+        let expected = format!(
+            "# Compliance Matrix — Batch Report\n\n\
+             **Summary:** 2 subjects, ✅ 2 pass, ⚠️ 1 review, ❌ 2 fail\n\n\
+             | Control | repo-a | repo-b |\n\
+             |--------|--------|--------|\n\
+             | {} | ❌ | — |\n\
+             | {} | ⚠️ | ❌ |\n\
+             | {} | ✅ | ✅ |\n\
+             \n## Skipped\n\n\
+             | Subject | Reason |\n\
+             |---------|--------|\n\
+             | repo-c | archived |\n",
+            builtin::BUILD_PROVENANCE,
+            builtin::TWO_PARTY_REVIEW,
+            builtin::REVIEW_INDEPENDENCE,
+        );
+        assert_eq!(output, expected);
+
+        let failures = render_batch(&batch, true).unwrap();
+        assert!(failures.contains(builtin::BUILD_PROVENANCE));
+        assert!(failures.contains(builtin::TWO_PARTY_REVIEW));
+        assert!(!failures.contains(builtin::REVIEW_INDEPENDENCE));
+    }
 }
