@@ -244,4 +244,128 @@ mod tests {
         assert!(output.contains("repo-b"));
         assert!(output.contains(builtin::REVIEW_INDEPENDENCE));
     }
+
+    fn entry(
+        subject: &str,
+        outcomes: Vec<ProfileOutcome>,
+    ) -> libverify_core::assessment::BatchEntry {
+        libverify_core::assessment::BatchEntry {
+            subject_id: subject.to_string(),
+            result: result_with_outcomes(outcomes),
+        }
+    }
+
+    #[test]
+    fn decision_icon_values() {
+        assert_eq!(decision_icon(GateDecision::Pass), "✅");
+        assert_eq!(decision_icon(GateDecision::Review), "⚠️");
+        assert_eq!(decision_icon(GateDecision::Fail), "❌");
+    }
+
+    #[test]
+    fn render_exact_output() {
+        let mut annotated = outcome(builtin::REVIEW_INDEPENDENCE, GateDecision::Pass);
+        annotated
+            .annotations
+            .insert("framework_ref".to_string(), "CC8.1".to_string());
+        annotated.rationale = "a|b".to_string();
+        let result = result_with_outcomes(vec![
+            annotated,
+            outcome(builtin::TWO_PARTY_REVIEW, GateDecision::Fail),
+            outcome(builtin::SOURCE_AUTHENTICITY, GateDecision::Review),
+            outcome(builtin::BRANCH_HISTORY_INTEGRITY, GateDecision::Pass),
+        ]);
+        let header = "# Compliance Matrix — test-profile\n\n\
+            **Summary:** ✅ 2 pass, ⚠️ 1 review, ❌ 1 fail\n\n\
+            | Control | Status | Decision | Framework Ref | Rationale |\n\
+            |---------|--------|----------|---------------|-----------|\n";
+        let fail_row = "| two-party-review | compliant | ❌ fail |  | test rationale |\n";
+        let expected = format!(
+            "{header}{fail_row}\
+            | source-authenticity | compliant | ⚠️ review |  | test rationale |\n\
+            | review-independence | compliant | ✅ pass | CC8.1 | a\\|b |\n\
+            | branch-history-integrity | compliant | ✅ pass |  | test rationale |\n"
+        );
+        assert_eq!(render(&result, false).unwrap(), expected);
+        assert_eq!(
+            render(&result, true).unwrap(),
+            format!("{header}{fail_row}")
+        );
+    }
+
+    #[test]
+    fn render_counts_multiple_reviews_and_fails() {
+        let result = result_with_outcomes(vec![
+            outcome(builtin::REVIEW_INDEPENDENCE, GateDecision::Review),
+            outcome(builtin::TWO_PARTY_REVIEW, GateDecision::Review),
+            outcome(builtin::SOURCE_AUTHENTICITY, GateDecision::Fail),
+            outcome(builtin::BRANCH_HISTORY_INTEGRITY, GateDecision::Fail),
+        ]);
+        let output = render(&result, false).unwrap();
+        assert!(output.contains("**Summary:** ✅ 0 pass, ⚠️ 2 review, ❌ 2 fail\n"));
+    }
+
+    fn sample_batch(skipped: Vec<libverify_core::assessment::SkippedEntry>) -> BatchReport {
+        BatchReport {
+            reports: vec![
+                entry(
+                    "repo-a",
+                    vec![
+                        outcome(builtin::TWO_PARTY_REVIEW, GateDecision::Fail),
+                        outcome(builtin::BRANCH_HISTORY_INTEGRITY, GateDecision::Pass),
+                        outcome(builtin::REVIEW_INDEPENDENCE, GateDecision::Review),
+                        outcome(builtin::SOURCE_AUTHENTICITY, GateDecision::Pass),
+                    ],
+                ),
+                entry(
+                    "repo-b",
+                    vec![
+                        outcome(builtin::TWO_PARTY_REVIEW, GateDecision::Pass),
+                        outcome(builtin::SOURCE_AUTHENTICITY, GateDecision::Fail),
+                        outcome(builtin::BRANCH_PROTECTION_ENFORCEMENT, GateDecision::Review),
+                        outcome(builtin::BRANCH_HISTORY_INTEGRITY, GateDecision::Pass),
+                    ],
+                ),
+            ],
+            total_pass: 4,
+            total_review: 2,
+            total_fail: 2,
+            skipped,
+        }
+    }
+
+    const BATCH_HEADER: &str = "# Compliance Matrix — Batch Report\n\n\
+        **Summary:** 2 subjects, ✅ 4 pass, ⚠️ 2 review, ❌ 2 fail\n\n\
+        | Control | repo-a | repo-b |\n\
+        |--------|--------|--------|\n";
+    const BATCH_FAIL_ROWS: &str = "| source-authenticity | ✅ | ❌ |\n\
+        | two-party-review | ❌ | ✅ |\n";
+
+    #[test]
+    fn render_batch_exact_output() {
+        let batch = sample_batch(vec![]);
+        let expected = format!(
+            "{BATCH_HEADER}{BATCH_FAIL_ROWS}\
+            | branch-protection-enforcement | — | ⚠️ |\n\
+            | review-independence | ⚠️ | — |\n\
+            | branch-history-integrity | ✅ | ✅ |\n"
+        );
+        assert_eq!(render_batch(&batch, false).unwrap(), expected);
+    }
+
+    #[test]
+    fn render_batch_only_failures_with_skipped() {
+        let batch = sample_batch(vec![libverify_core::assessment::SkippedEntry {
+            subject_id: "repo-c".to_string(),
+            reason: "not found".to_string(),
+        }]);
+        let expected = format!(
+            "{BATCH_HEADER}{BATCH_FAIL_ROWS}\n\
+            ## Skipped\n\n\
+            | Subject | Reason |\n\
+            |---------|--------|\n\
+            | repo-c | not found |\n"
+        );
+        assert_eq!(render_batch(&batch, true).unwrap(), expected);
+    }
 }
